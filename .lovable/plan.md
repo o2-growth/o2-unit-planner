@@ -1,22 +1,17 @@
 
 
-# Corrigir Largura dos Inputs e Adicionar Linha Total na Tabela de Impostos
+# Ajustar Label e Lógica da Receita Mensal Recorrente
 
-## Problema
-Os valores com decimais (ex: 0,65 / 2,88 / 1,08) estao sendo cortados porque os inputs tem largura fixa de `w-16` (64px), que e insuficiente para exibir numeros com 2 casas decimais.
+## Mudanças
 
-## Solucao
+### 1. `src/components/simulator/SectionProfile.tsx` (linha 61)
+- Alterar label de "Qual a receita total mensal hoje?" para "Qual a receita total mensal **recorrente** hoje?"
 
-### Arquivo: `src/components/simulator/SectionTaxes.tsx`
+### 2. `src/lib/financial.ts` (linha 75)
+- Alterar a lógica para que `receitaPreExistente` apareça em **todos os meses**, não apenas no mês 1
+- Mudar de `m === 1 ? state.profile.receitaMensal : 0` para simplesmente `state.profile.receitaMensal`
+- Isso faz sentido porque receita recorrente se mantém mês a mês (não é pontual)
 
-1. **Aumentar largura dos inputs**: Trocar `w-16` por `w-20` (80px) para comportar todos os valores sem corte
-
-2. **Adicionar linha "Total" no rodape da tabela**: Uma linha `<tfoot>` que soma as aliquotas de cada coluna (BU), exibindo o total por produto. Os valores serao exibidos como texto (nao editaveis), formatados com ate 2 casas decimais.
-
-```text
-Estrutura da linha total:
-Total  |  soma CaaS  |  soma SaaS  |  soma Setup  |  soma Education  |  soma Expansao  |  soma Tax
-```
-
-A soma sera calculada inline iterando `data.impostos` para cada produto.
+### Impacto
+A receita pré-existente recorrente será somada à receita bruta de CaaS em todos os meses da projeção, refletindo corretamente que é uma receita contínua do sócio.
 
