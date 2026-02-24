@@ -17,7 +17,7 @@ import { ActionButtons } from '@/components/simulator/ActionButtons';
 import { PremissasHeader } from '@/components/simulator/PremissasHeader';
 import { AdminLogin } from '@/components/simulator/AdminLogin';
 import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+
 import { calculateProjections } from '@/lib/financial';
 import { INITIAL_STATE, type SimulatorState } from '@/types/simulator';
 
@@ -62,22 +62,6 @@ function isMixDone(state: SimulatorState) {
   return (mix.caas + mix.saas + mix.diagnostico) > 0;
 }
 
-function getProgress(state: SimulatorState) {
-  const steps = [
-    isProfileDone(state),
-    isGoalsDone(state),
-    true, // horizonte always has default
-    isMixDone(state),
-    isMixDone(state), // matrix visible when mix done
-    isMixDone(state), // churn
-    isMixDone(state), // taxes
-    isMixDone(state), // revenue rules
-    isMixDone(state), // P&L
-    isMixDone(state), // ROI
-  ];
-  const done = steps.filter(Boolean).length;
-  return Math.round((done / steps.length) * 100);
-}
 
 const Index = () => {
   const { user } = useAuth();
@@ -146,7 +130,6 @@ const Index = () => {
   const profileDone = isProfileDone(state);
   const goalsDone = isGoalsDone(state);
   const mixDone = isMixDone(state);
-  const progress = getProgress(state);
 
   return (
     <div className="min-h-screen bg-background">
@@ -175,16 +158,6 @@ const Index = () => {
           </div>
         </div>
       </header>
-
-      {/* Progress bar */}
-      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b">
-        <div className="max-w-4xl mx-auto px-4 py-2">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">{progress}% completo</span>
-            <Progress value={progress} className="h-2" />
-          </div>
-        </div>
-      </div>
 
       {/* Action buttons top */}
       <div className="max-w-4xl mx-auto px-4">

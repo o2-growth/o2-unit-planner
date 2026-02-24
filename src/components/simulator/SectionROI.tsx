@@ -69,7 +69,7 @@ export function SectionROI({ data, onChange, projections, metaROIMeses }: Props)
 
   return (
     <section>
-      <SectionHeader number={11} title="ROI e Payback" description="Investimento inicial e retorno projetado" />
+      <SectionHeader number={10} title="ROI e Payback" description="Investimento inicial e retorno projetado" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardContent className="pt-6 space-y-3">
