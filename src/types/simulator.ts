@@ -57,7 +57,7 @@ export interface TaxConfig {
   nome: string;
   key: string;
   aliquota: number;
-  aplicaA: { caas: boolean; saas: boolean; education: boolean; expansao: boolean; tax: boolean };
+  aplicaA: { caas: number; saas: number; education: number; expansao: number; tax: number };
 }
 
 export interface TaxesData {
@@ -180,12 +180,12 @@ export const DEFAULT_TICKETS: ProductTicket[] = [
 ];
 
 export const DEFAULT_TAXES: TaxConfig[] = [
-  { nome: 'PIS', key: 'pis', aliquota: 0, aplicaA: { caas: true, saas: true, education: true, expansao: true, tax: true } },
-  { nome: 'COFINS', key: 'cofins', aliquota: 0, aplicaA: { caas: true, saas: true, education: true, expansao: true, tax: true } },
-  { nome: 'IRPJ', key: 'irpj', aliquota: 0, aplicaA: { caas: true, saas: true, education: true, expansao: true, tax: true } },
-  { nome: 'CSLL', key: 'csll', aliquota: 0, aplicaA: { caas: true, saas: true, education: true, expansao: true, tax: true } },
-  { nome: 'ISSQN', key: 'issqn', aliquota: 0, aplicaA: { caas: true, saas: true, education: true, expansao: true, tax: true } },
-  { nome: 'ICMS', key: 'icms', aliquota: 0, aplicaA: { caas: false, saas: false, education: false, expansao: false, tax: false } },
+  { nome: 'PIS', key: 'pis', aliquota: 0, aplicaA: { caas: 0, saas: 0, education: 0, expansao: 0, tax: 0 } },
+  { nome: 'COFINS', key: 'cofins', aliquota: 0, aplicaA: { caas: 0, saas: 0, education: 0, expansao: 0, tax: 0 } },
+  { nome: 'IRPJ', key: 'irpj', aliquota: 0, aplicaA: { caas: 0, saas: 0, education: 0, expansao: 0, tax: 0 } },
+  { nome: 'CSLL', key: 'csll', aliquota: 0, aplicaA: { caas: 0, saas: 0, education: 0, expansao: 0, tax: 0 } },
+  { nome: 'ISSQN', key: 'issqn', aliquota: 0, aplicaA: { caas: 0, saas: 0, education: 0, expansao: 0, tax: 0 } },
+  { nome: 'ICMS', key: 'icms', aliquota: 0, aplicaA: { caas: 0, saas: 0, education: 0, expansao: 0, tax: 0 } },
 ];
 
 export const INITIAL_STATE: SimulatorState = {
