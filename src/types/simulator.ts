@@ -226,7 +226,7 @@ export const INITIAL_STATE: SimulatorState = {
   revenueRules: {
     revenueShareSaaS: 30,
     royalties: 20,
-    mapeamento: { setup: 'expansao', diagnostico: 'expansao', caas: 'caas', saas: 'saas' },
+    mapeamento: { setup: 'saas', diagnostico: 'caas', caas: 'caas', saas: 'saas' },
   },
   fixedCosts: [
     { nome: 'Despesas de Marketing', key: 'marketing', percentual: 7.5 },

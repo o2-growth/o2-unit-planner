@@ -1,14 +1,18 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { SectionHeader } from './SectionHeader';
 import { Lock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import type { RevenueRulesData } from '@/types/simulator';
 
-const PLAN_ACCOUNTS = ['caas', 'saas', 'education', 'expansao', 'tax'];
+const FIXED_MAPPING = [
+  { label: 'Setup', value: 'SAAS' },
+  { label: 'Diagnóstico Estratégico', value: 'CAAS' },
+  { label: 'CAAS', value: 'CAAS' },
+  { label: 'SAAS', value: 'SAAS' },
+];
 
 interface Props {
   data: RevenueRulesData;
@@ -61,27 +65,11 @@ export function SectionRevenueRules({ data, onChange }: Props) {
           <div>
             <Label className="text-base font-semibold">Mapeamento de Produtos → Plano de Contas</Label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-              {[
-                { key: 'setup', label: 'Setup' },
-                { key: 'diagnostico', label: 'Diagnóstico Estratégico' },
-                { key: 'caas', label: 'CAAS' },
-                { key: 'saas', label: 'SAAS' },
-              ].map(item => (
-                <div key={item.key}>
-                  <Label className="text-sm">{item.label} →</Label>
-                  <Select
-                    value={data.mapeamento[item.key as keyof typeof data.mapeamento]}
-                    onValueChange={v => onChange({ ...data, mapeamento: { ...data.mapeamento, [item.key]: v } })}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PLAN_ACCOUNTS.map(a => (
-                        <SelectItem key={a} value={a}>{a.charAt(0).toUpperCase() + a.slice(1)}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              {FIXED_MAPPING.map(item => (
+                <div key={item.label} className="flex items-center gap-2 rounded-md border px-3 py-2 bg-muted/50">
+                  <span className="text-sm font-medium">{item.label}</span>
+                  <span className="text-sm text-muted-foreground">→</span>
+                  <Badge variant="secondary">{item.value}</Badge>
                 </div>
               ))}
             </div>
