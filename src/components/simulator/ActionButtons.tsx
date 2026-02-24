@@ -1,8 +1,10 @@
 import { Button } from '@/components/ui/button';
-import { Save, RotateCcw, FileText, FileSpreadsheet } from 'lucide-react';
+import { Save, RotateCcw, FileText, FileSpreadsheet, Download } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import type { SimulatorState, MonthlyProjection } from '@/types/simulator';
-import { formatCurrency, formatPercent } from '@/lib/formatters';
+import { formatCurrency } from '@/lib/formatters';
 
 interface Props {
   state: SimulatorState;
@@ -12,16 +14,61 @@ interface Props {
 }
 
 export function ActionButtons({ state, projections, onReset, onLoad }: Props) {
-  const handleSave = () => {
+  const { user } = useAuth();
+
+  const handleSave = async () => {
+    if (!user) {
+      localStorage.setItem('o2-simulator', JSON.stringify(state));
+      toast({ title: 'Simulação salva localmente!' });
+      return;
+    }
+
+    const { data: existing } = await supabase
+      .from('simulations')
+      .select('id')
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (existing) {
+      await supabase
+        .from('simulations')
+        .update({ state: state as any, updated_at: new Date().toISOString() })
+        .eq('id', existing.id);
+    } else {
+      await supabase
+        .from('simulations')
+        .insert({ user_id: user.id, state: state as any });
+    }
+
     localStorage.setItem('o2-simulator', JSON.stringify(state));
-    toast({ title: 'Simulação salva!', description: 'Dados armazenados no navegador.' });
+    toast({ title: 'Simulação salva!', description: 'Dados salvos no servidor.' });
   };
 
-  const handleLoad = () => {
-    const saved = localStorage.getItem('o2-simulator');
-    if (saved) {
-      onLoad(JSON.parse(saved));
-      toast({ title: 'Simulação carregada!', description: 'Dados restaurados com sucesso.' });
+  const handleLoad = async () => {
+    if (!user) {
+      const saved = localStorage.getItem('o2-simulator');
+      if (saved) {
+        onLoad(JSON.parse(saved));
+        toast({ title: 'Simulação carregada!' });
+      } else {
+        toast({ title: 'Nenhuma simulação salva', variant: 'destructive' });
+      }
+      return;
+    }
+
+    const { data } = await supabase
+      .from('simulations')
+      .select('state')
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (data?.state) {
+      onLoad(data.state as unknown as SimulatorState);
+      toast({ title: 'Simulação carregada!', description: 'Dados restaurados do servidor.' });
     } else {
       toast({ title: 'Nenhuma simulação salva', variant: 'destructive' });
     }
@@ -87,7 +134,7 @@ export function ActionButtons({ state, projections, onReset, onLoad }: Props) {
         <Save className="mr-2 h-4 w-4" /> Salvar Simulação
       </Button>
       <Button onClick={handleLoad} variant="outline">
-        <Save className="mr-2 h-4 w-4" /> Carregar Simulação
+        <Download className="mr-2 h-4 w-4" /> Carregar Simulação
       </Button>
       <Button onClick={onReset} variant="outline">
         <RotateCcw className="mr-2 h-4 w-4" /> Resetar Premissas
