@@ -92,7 +92,7 @@ export function SectionCharts({ projections, investment }: Props) {
 
   return (
     <section>
-      <SectionHeader number={13} title="Gráficos de Resultados" description="Visualização da evolução financeira e payback" />
+      <SectionHeader number={11} title="Gráficos de Resultados" description="Visualização da evolução financeira e payback" />
 
       {/* KPI Payback highlight */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

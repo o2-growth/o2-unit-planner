@@ -51,7 +51,7 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
 
   return (
     <section>
-      <SectionHeader number={10} title="Premissas do DRE Gerencial" description="Custos e despesas em % sobre receita" />
+      <SectionHeader number={9} title="Premissas do DRE Gerencial" description="Custos e despesas em % sobre receita" />
 
       {/* Cost inputs */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
