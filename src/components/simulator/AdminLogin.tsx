@@ -1,61 +1,21 @@
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Shield, LogOut } from 'lucide-react';
+import { LogOut, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function AdminLogin() {
-  const { isAdmin, login, logout } = useAuth();
-  const [open, setOpen] = useState(false);
-  const [user, setUser] = useState('');
-  const [pass, setPass] = useState('');
-  const [error, setError] = useState(false);
+  const { profile, signOut } = useAuth();
 
-  const handleLogin = () => {
-    if (login(user, pass)) {
-      setOpen(false);
-      setUser('');
-      setPass('');
-      setError(false);
-    } else {
-      setError(true);
-    }
-  };
-
-  if (isAdmin) {
-    return (
-      <Button variant="outline" size="sm" onClick={logout} className="gap-2">
-        <Shield className="h-4 w-4" /> Admin ativo <LogOut className="h-3 w-3" />
-      </Button>
-    );
-  }
+  if (!profile) return null;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground">
-          <Shield className="h-4 w-4" /> Admin
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Login Administrativo</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <Label>Usuário</Label>
-            <Input value={user} onChange={e => { setUser(e.target.value); setError(false); }} />
-          </div>
-          <div>
-            <Label>Senha</Label>
-            <Input type="password" value={pass} onChange={e => { setPass(e.target.value); setError(false); }} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
-          </div>
-          {error && <p className="text-sm text-destructive">Credenciais inválidas</p>}
-          <Button onClick={handleLogin} className="w-full">Entrar</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-white/80 flex items-center gap-1">
+        <User className="h-3.5 w-3.5" />
+        {profile.nome}
+      </span>
+      <Button variant="ghost" size="sm" onClick={signOut} className="gap-1 text-white/60 hover:text-white hover:bg-white/10">
+        <LogOut className="h-3.5 w-3.5" /> Sair
+      </Button>
+    </div>
   );
 }

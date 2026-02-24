@@ -1,4 +1,6 @@
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { SectionProfile } from '@/components/simulator/SectionProfile';
 import { SectionGoals } from '@/components/simulator/SectionGoals';
 import { SectionHorizon } from '@/components/simulator/SectionHorizon';
@@ -78,6 +80,8 @@ function getProgress(state: SimulatorState) {
 }
 
 const Index = () => {
+  const { user } = useAuth();
+
   const [state, setState] = useState<SimulatorState>(() => {
     const saved = localStorage.getItem('o2-simulator');
     if (saved) {
@@ -87,6 +91,23 @@ const Index = () => {
     }
     return { ...INITIAL_STATE };
   });
+
+  // Load from DB on mount
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('simulations')
+      .select('state')
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single()
+      .then(({ data }) => {
+        if (data?.state) {
+          setState(migrateState(data.state as any));
+        }
+      });
+  }, [user]);
 
   // Snapshot for "Restaurar Respostas Oficiais"
   const initialSnapshot = useRef<SimulatorState>(JSON.parse(JSON.stringify(state)));
