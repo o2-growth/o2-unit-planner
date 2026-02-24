@@ -30,9 +30,8 @@ function migrateState(parsed: any): SimulatorState {
     parsed.variableCostRates = INITIAL_STATE.variableCostRates.map(c => ({ ...c }));
   }
   // Remove old belowEbitda fields
-  if (parsed.belowEbitda?.outrasReceitas !== undefined) {
-    const { outrasReceitas, despNaoOperacionais, provisaoIRCSLL, ...rest } = parsed.belowEbitda;
-    parsed.belowEbitda = { ...INITIAL_STATE.belowEbitda, ...rest };
+  if (parsed.belowEbitda?.outrasReceitas !== undefined || parsed.belowEbitda?.recFinanceiras !== undefined) {
+    parsed.belowEbitda = { ...INITIAL_STATE.belowEbitda };
   }
   // Ensure investment fields
   if (!parsed.investment?.cupom && parsed.investment?.cupom !== '') {

@@ -139,8 +139,12 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
       irpjCsll = calcTaxDed('irpj') + calcTaxDed('csll');
     }
 
-    const resultadoLiquido = ebitda + belowEbitda.recFinanceiras - belowEbitda.despFinanceiras - irpjCsll;
-    const resultadoFinal = resultadoLiquido - belowEbitda.amortizacao - belowEbitda.investimentosMensal;
+    const recFinanceiras = receitaBrutaTotal * (belowEbitda.recFinanceirasPercent / 100);
+    const despFinanceiras = receitaBrutaTotal * (belowEbitda.despFinanceirasPercent / 100);
+    const amortizacaoMes = belowEbitda.amortizacaoPMT;
+
+    const resultadoLiquido = ebitda + recFinanceiras - despFinanceiras - irpjCsll;
+    const resultadoFinal = resultadoLiquido - amortizacaoMes - belowEbitda.investimentosMensal;
 
     months.push({
       month: m,
@@ -161,11 +165,11 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
       lucroBruto, margemBruta,
       despMarketing, despComerciais, despPessoal, despAdm, despFixasTotal,
       ebitda, margemEbitda,
-      recFinanceiras: belowEbitda.recFinanceiras,
-      despFinanceiras: belowEbitda.despFinanceiras,
+      recFinanceiras,
+      despFinanceiras,
       irpjCsll,
       resultadoLiquido,
-      amortizacao: belowEbitda.amortizacao,
+      amortizacao: amortizacaoMes,
       investimentos: belowEbitda.investimentosMensal,
       resultadoFinal,
       mrrCaasOwn, mrrSaasOwn, mrrMatriz,

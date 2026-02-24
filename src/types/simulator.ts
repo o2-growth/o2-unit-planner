@@ -165,9 +165,9 @@ export interface SimulatorState {
   variableCostRates: CostLine[];
   investment: InvestmentData;
   belowEbitda: {
-    recFinanceiras: number;
-    despFinanceiras: number;
-    amortizacao: number;
+    recFinanceirasPercent: number;
+    despFinanceirasPercent: number;
+    amortizacaoPMT: number;
     investimentosMensal: number;
   };
 }
@@ -252,9 +252,9 @@ export const INITIAL_STATE: SimulatorState = {
     cupomAplicado: false,
   },
   belowEbitda: {
-    recFinanceiras: 0,
-    despFinanceiras: 0,
-    amortizacao: 0,
+    recFinanceirasPercent: 0,
+    despFinanceirasPercent: 1,
+    amortizacaoPMT: 0,
     investimentosMensal: 0,
   },
 };

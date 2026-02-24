@@ -10,9 +10,9 @@ import { ChevronRight, Info } from 'lucide-react';
 import type { MonthlyProjection, CostLine, GoalsData } from '@/types/simulator';
 
 type BelowEbitdaData = {
-  recFinanceiras: number;
-  despFinanceiras: number;
-  amortizacao: number;
+  recFinanceirasPercent: number;
+  despFinanceirasPercent: number;
+  amortizacaoPMT: number;
   investimentosMensal: number;
 };
 
@@ -114,22 +114,65 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
       {/* Below EBITDA */}
       <Card className="mb-4">
         <CardContent className="pt-4">
-          <Label className="text-base font-semibold mb-3 block">Ajustes Abaixo do EBITDA (R$/mês)</Label>
+          <Label className="text-base font-semibold mb-3 block">Ajustes Abaixo do EBITDA</Label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              { key: 'recFinanceiras', label: 'Receitas Financeiras' },
-              { key: 'despFinanceiras', label: 'Despesas Financeiras' },
-              { key: 'amortizacao', label: 'Amortização da Dívida' },
-              { key: 'investimentosMensal', label: 'Investimentos' },
-            ].map(item => (
-              <div key={item.key}>
-                <Label className="text-xs">{item.label}</Label>
-                <CurrencyInput
-                  value={belowEbitda[item.key as keyof typeof belowEbitda]}
-                  onChange={v => onBelowEbitdaChange({ ...belowEbitda, [item.key]: v })}
+            {/* Receitas Financeiras (%) */}
+            <div>
+              <Label className="text-xs">Receitas Financeiras (% s/ receita)</Label>
+              <div className="flex items-center gap-1">
+                <Input
+                  type="number" min={0} max={100} step={0.1}
+                  value={belowEbitda.recFinanceirasPercent}
+                  onChange={e => onBelowEbitdaChange({ ...belowEbitda, recFinanceirasPercent: parseFloat(e.target.value) || 0 })}
+                  className="h-8 text-xs text-right"
                 />
+                <span className="text-xs text-muted-foreground">%</span>
               </div>
-            ))}
+            </div>
+
+            {/* Despesas Financeiras (%) */}
+            <div>
+              <Label className="text-xs">Despesas Financeiras (% s/ receita)</Label>
+              <div className="flex items-center gap-1">
+                <Input
+                  type="number" min={0} max={100} step={0.1}
+                  value={belowEbitda.despFinanceirasPercent}
+                  onChange={e => onBelowEbitdaChange({ ...belowEbitda, despFinanceirasPercent: parseFloat(e.target.value) || 0 })}
+                  className="h-8 text-xs text-right"
+                />
+                <span className="text-xs text-muted-foreground">%</span>
+              </div>
+              <div className="flex items-start gap-1 mt-1 text-xs text-muted-foreground">
+                <Info className="w-3 h-3 mt-0.5 shrink-0" />
+                <span>Padrão de 1% sobre receita bruta. Pode ser alterado conforme a operação.</span>
+              </div>
+            </div>
+
+            {/* PMT Empréstimo */}
+            <div>
+              <Label className="text-xs">PMT Empréstimo (parcela mensal)</Label>
+              <CurrencyInput
+                value={belowEbitda.amortizacaoPMT}
+                onChange={v => onBelowEbitdaChange({ ...belowEbitda, amortizacaoPMT: v })}
+              />
+              <div className="flex items-start gap-1 mt-1 text-xs text-muted-foreground">
+                <Info className="w-3 h-3 mt-0.5 shrink-0" />
+                <span>Pagamento mensal de empréstimo bancário/mútuo para início da operação.</span>
+              </div>
+            </div>
+
+            {/* Investimentos */}
+            <div>
+              <Label className="text-xs">Investimentos</Label>
+              <CurrencyInput
+                value={belowEbitda.investimentosMensal}
+                onChange={v => onBelowEbitdaChange({ ...belowEbitda, investimentosMensal: v })}
+              />
+              <div className="flex items-start gap-1 mt-1 text-xs text-muted-foreground">
+                <Info className="w-3 h-3 mt-0.5 shrink-0" />
+                <span>Investimentos mensais em ativos (computadores, branding, compra de escritórios, partnership na matriz, etc.)</span>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
