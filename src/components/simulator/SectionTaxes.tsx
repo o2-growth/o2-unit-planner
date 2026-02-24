@@ -66,13 +66,29 @@ export function SectionTaxes({ data, onChange }: Props) {
                           }}
                           placeholder="0"
                           disabled={!isAdmin}
-                          className={`w-16 h-8 text-sm text-center ${!isAdmin ? 'opacity-60' : ''}`}
+                          className={`w-20 h-8 text-sm text-center ${!isAdmin ? 'opacity-60' : ''}`}
                         />
                       </td>
                     ))}
                   </tr>
                 ))}
               </tbody>
+              <tfoot>
+                <tr className="border-t font-semibold">
+                  <td className="py-2 pr-4">Total</td>
+                  {PRODUCTS.map(p => {
+                    const total = data.impostos.reduce(
+                      (sum, imp) => sum + (imp.aplicaA[p.key as keyof typeof imp.aplicaA] || 0),
+                      0
+                    );
+                    return (
+                      <td key={p.key} className="text-center py-2 px-2">
+                        {total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
+                      </td>
+                    );
+                  })}
+                </tr>
+              </tfoot>
             </table>
           </div>
         </CardContent>
