@@ -84,7 +84,7 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
 
     // --- Deductions per tax (excluding IRPJ/CSLL → post-EBITDA) ---
     const revenueByProduct: Record<string, number> = {
-      caas: rbCaas, saas: rbSaas, education: rbEducation, expansao: rbExpansao, tax: rbTax,
+      caas: rbCaas, saas: rbSaas, setup: setupOwn, education: rbEducation, expansao: rbExpansao, tax: rbTax,
     };
 
     const calcTaxDed = (key: string): number => {

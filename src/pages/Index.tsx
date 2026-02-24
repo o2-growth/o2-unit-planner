@@ -42,6 +42,13 @@ function migrateState(parsed: any): SimulatorState {
     const { setup, ...rest } = parsed.commercial.mix;
     parsed.commercial.mix = rest;
   }
+  // Migrate taxes: ensure setup field exists in aplicaA
+  if (parsed.taxes?.impostos) {
+    parsed.taxes.impostos = parsed.taxes.impostos.map((imp: any) => ({
+      ...imp,
+      aplicaA: { setup: 0, ...imp.aplicaA },
+    }));
+  }
   // Ensure goals fields
   if (!parsed.goals?.proLaboreDesejado && parsed.goals?.proLaboreDesejado !== 0) {
     parsed.goals = { ...INITIAL_STATE.goals, ...parsed.goals };
