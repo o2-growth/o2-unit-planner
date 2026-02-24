@@ -25,7 +25,7 @@ export function SectionRevenueRules({ data, onChange }: Props) {
   return (
     <section>
       <SectionHeader
-        number={9}
+        number={8}
         title="Regras Comerciais / Receita"
         description="Revenue share do SAAS, royalties e mapeamento de produtos para o plano de contas."
       />

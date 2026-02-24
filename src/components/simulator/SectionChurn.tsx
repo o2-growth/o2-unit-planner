@@ -12,7 +12,7 @@ export function SectionChurn({ churnMensal, onChangeChurn }: Props) {
   return (
     <section>
       <SectionHeader
-        number={7}
+        number={6}
         title="Churn sobre MRR"
         tooltip="O churn incide sobre a base de MRR do mês anterior. O efeito aparece no DRE e nos resultados."
       />

@@ -22,7 +22,7 @@ export function SectionTaxes({ data, onChange }: Props) {
   return (
     <section>
       <SectionHeader
-        number={8}
+        number={7}
         title="Impostos / Deduções"
         description="Configure as alíquotas manualmente e marque quais impostos se aplicam a cada produto."
       />

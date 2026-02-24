@@ -19,7 +19,7 @@ interface Props {
 export function SectionHorizon({ value, onChange }: Props) {
   return (
     <section>
-      <SectionHeader number={4} title="Horizonte de Projeção" description="Selecione o período para a modelagem financeira" />
+      <SectionHeader number={3} title="Horizonte de Projeção" description="Selecione o período para a modelagem financeira" />
       <Card>
         <CardContent className="pt-6">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">

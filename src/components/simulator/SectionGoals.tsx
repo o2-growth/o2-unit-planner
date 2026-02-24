@@ -18,7 +18,7 @@ export function SectionGoals({ data, onChange }: Props) {
 
   return (
     <section>
-      <SectionHeader number={3} title="Objetivos do Franqueado" description="Defina suas metas financeiras" />
+      <SectionHeader number={2} title="Objetivos do Franqueado" description="Defina suas metas financeiras" />
       <Card>
         <CardContent className="pt-6 space-y-5">
           <div>
