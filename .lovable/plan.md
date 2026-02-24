@@ -1,26 +1,71 @@
 
-# Fixar Mapeamento de Produtos como Regra
 
-## O que muda
-O mapeamento de produtos para o plano de contas deixa de ser configuravel (dropdowns) e passa a ser uma regra fixa exibida apenas como texto informativo:
+# Melhorias de UX: Revelacao Progressiva e Mensagens Condicionais
 
-- **Setup** → SAAS
-- **Diagnostico Estrategico** → CAAS
-- **CAAS** → CAAS
-- **SAAS** → SAAS
+## Problema Principal
+Todas as secoes e mensagens de transicao ("Muito obrigado por suas respostas...", "Excelente. Bora para os numeros.") aparecem imediatamente, antes do usuario preencher qualquer campo. Isso quebra a experiencia de uma jornada guiada e faz o simulador parecer um formulario generico em vez de uma ferramenta profissional de planejamento.
+
+## Solucao: Revelacao Progressiva
+
+Implementar logica de visibilidade condicional no `Index.tsx` para que cada secao e mensagem de transicao so apareca apos a secao anterior ter dados preenchidos. A identidade visual permanece intacta.
+
+### Regras de Visibilidade
+
+```text
+Secao 1 - Perfil              -> Sempre visivel
+  Mensagem "Muito obrigado..." -> Visivel quando Perfil tem nome preenchido
+Secao 2 - Objetivos           -> Visivel quando Perfil tem nome preenchido  
+  Mensagem "Excelente..."     -> Visivel quando Objetivos tem faturamento12m > 0
+Secao 3 - Horizonte           -> Visivel quando Objetivos tem faturamento12m > 0
+Secao 4 - Premissas Comerciais -> Visivel quando Horizonte selecionado (sempre true, default=12)
+Secao 5 - Clientes Matriz     -> Visivel quando mix total > 0
+Secao 6 - Churn               -> Visivel quando secao 5 visivel
+Secao 7 - Impostos            -> Visivel quando secao 6 visivel
+Secao 8 - Regras Comerciais   -> Visivel quando secao 7 visivel
+Premissas Header               -> Visivel quando secao 8 visivel
+Secao 9 - DRE (P&L)           -> Visivel quando secao 8 visivel
+Secao 10 - ROI                -> Visivel quando secao 9 visivel
+Graficos                       -> Visivel quando secao 10 visivel
+Resultados                     -> Visivel quando secao 10 visivel
+```
+
+### Barra de Progresso
+Adicionar uma barra de progresso fixa no topo (abaixo do header) mostrando quantas etapas o usuario completou, sem alterar cores ou tipografia.
+
+### Correcao de Numeracao
+Ajustar a numeracao das secoes para ser sequencial: 1, 2, 3, 4... em vez de 1, 3, 4, 5...
 
 ## Detalhes Tecnicos
 
-### Arquivo: `src/types/simulator.ts`
-- Alterar o valor default do `mapeamento` de `{ setup: 'expansao', diagnostico: 'expansao', caas: 'caas', saas: 'saas' }` para `{ setup: 'saas', diagnostico: 'caas', caas: 'caas', saas: 'saas' }`
-- O tipo pode permanecer no `RevenueRulesData` para manter compatibilidade, mas o valor sera sempre fixo
+### Arquivo: `src/pages/Index.tsx`
+- Criar funcoes helper para verificar completude de cada secao (ex: `isProfileDone`, `isGoalsDone`)
+- Envolver cada secao e mensagem de transicao em renderizacao condicional
+- Adicionar componente de progresso simples (div com barra percentual) entre o header e o conteudo
+- Corrigir prop `number` nos `SectionHeader` para ser sequencial
+
+### Arquivo: `src/components/simulator/SectionGoals.tsx`
+- Alterar `number={3}` para `number={2}`
+
+### Arquivo: `src/components/simulator/SectionHorizon.tsx`
+- Alterar `number={4}` para `number={3}`
+
+### Arquivo: `src/components/simulator/SectionCommercial.tsx`
+- Alterar `number={5}` para `number={4}`
+
+### Arquivo: `src/components/simulator/SectionMatrixClients.tsx`
+- Alterar `number={6}` para `number={5}`
+
+### Arquivo: `src/components/simulator/SectionChurn.tsx`
+- Alterar `number={7}` para `number={6}`
+
+### Arquivo: `src/components/simulator/SectionTaxes.tsx`
+- Alterar `number={8}` para `number={7}`
 
 ### Arquivo: `src/components/simulator/SectionRevenueRules.tsx`
-- Remover os `Select` dropdowns do mapeamento
-- Substituir por texto estatico mostrando cada mapeamento como label (ex: "Setup → SAAS", "CAAS → CAAS")
-- Remover imports nao utilizados (`Select`, `SelectContent`, `SelectItem`, `SelectTrigger`, `SelectValue`)
-- Remover constante `PLAN_ACCOUNTS`
-- O `onChange` nao precisa mais atualizar o mapeamento — os valores ficam fixos no default
+- Alterar `number={9}` para `number={8}`
 
-### Garantia de consistencia
-- Como o `mapeamento` nao e usado em nenhum outro arquivo alem do tipo e do componente, nao ha impacto em calculos. Se futuramente for usado nos calculos do DRE, os valores fixos do default serao lidos corretamente.
+### Comportamento
+- Secoes aparecem com transicao suave (CSS transition opacity/transform)
+- Ao carregar simulacao salva com dados, todas as secoes relevantes aparecem imediatamente
+- O botao "Resetar Premissas" volta o formulario ao estado inicial (so secao 1 visivel)
+
