@@ -78,7 +78,7 @@ export interface RevenueRulesData {
 export interface CostLine {
   nome: string;
   key: string;
-  valorMensal: number;
+  percentual: number;
 }
 
 export interface InvestmentData {
@@ -95,15 +95,21 @@ export interface InvestmentData {
 export interface MonthlyProjection {
   month: number;
   // Revenue
+  receitaPreExistente: number;
   receitaBrutaCaas: number;
   receitaBrutaSaas: number;
-  receitaBrutaSetup: number;
   receitaBrutaEducation: number;
   receitaBrutaExpansao: number;
   receitaBrutaTax: number;
   receitaBrutaTotal: number;
-  // Deductions
-  deducoes: number;
+  receitaSetupPontual: number;
+  receitaDiagPontual: number;
+  // Deductions (per tax, excluding IRPJ/CSLL)
+  deducaoPIS: number;
+  deducaoCOFINS: number;
+  deducaoISSQN: number;
+  deducaoICMS: number;
+  deducoesTotal: number;
   receitaLiquida: number;
   // Variable costs
   custosCaas: number;
@@ -128,19 +134,18 @@ export interface MonthlyProjection {
   // Below EBITDA
   recFinanceiras: number;
   despFinanceiras: number;
-  outrasReceitas: number;
-  despNaoOperacionais: number;
-  provisaoIRCSLL: number;
+  irpjCsll: number;
   resultadoLiquido: number;
   // Final
   amortizacao: number;
   investimentos: number;
   resultadoFinal: number;
-  // MRR
-  mrrInicial: number;
+  // MRR tracking
+  mrrCaasOwn: number;
+  mrrSaasOwn: number;
+  mrrMatriz: number;
+  mrrTotal: number;
   churnValor: number;
-  novoMrr: number;
-  mrrFinal: number;
   // Matrix
   clientesCompradosMes: number;
   clientesCompradosAcum: number;
@@ -162,9 +167,6 @@ export interface SimulatorState {
   belowEbitda: {
     recFinanceiras: number;
     despFinanceiras: number;
-    outrasReceitas: number;
-    despNaoOperacionais: number;
-    provisaoIRCSLL: number;
     amortizacao: number;
     investimentosMensal: number;
   };
@@ -227,18 +229,17 @@ export const INITIAL_STATE: SimulatorState = {
     mapeamento: { setup: 'expansao', diagnostico: 'expansao', caas: 'caas', saas: 'saas' },
   },
   fixedCosts: [
-    { nome: 'Despesas de Marketing', key: 'marketing', valorMensal: 0 },
-    { nome: 'Despesas Comerciais', key: 'comerciais', valorMensal: 0 },
-    { nome: 'Despesas com Pessoal', key: 'pessoal', valorMensal: 0 },
-    { nome: 'Despesas Administrativas', key: 'administrativas', valorMensal: 0 },
+    { nome: 'Despesas de Marketing', key: 'marketing', percentual: 7.5 },
+    { nome: 'Despesas Comerciais', key: 'comerciais', percentual: 7.5 },
+    { nome: 'Despesas Administrativas', key: 'administrativas', percentual: 6 },
   ],
   variableCostRates: [
-    { nome: 'Custos CAAS', key: 'caas', valorMensal: 0 },
-    { nome: 'Custos SAAS', key: 'saas', valorMensal: 0 },
-    { nome: 'Custos Education', key: 'education', valorMensal: 0 },
-    { nome: 'Custos Customer Success', key: 'cs', valorMensal: 0 },
-    { nome: 'Custos Expansão', key: 'expansao', valorMensal: 0 },
-    { nome: 'Custos Tax', key: 'tax', valorMensal: 0 },
+    { nome: 'Custos CAAS', key: 'caas', percentual: 25 },
+    { nome: 'Custos SAAS', key: 'saas', percentual: 0 },
+    { nome: 'Custos Education', key: 'education', percentual: 0 },
+    { nome: 'Custos Customer Success', key: 'cs', percentual: 0 },
+    { nome: 'Custos Expansão', key: 'expansao', percentual: 0 },
+    { nome: 'Custos Tax', key: 'tax', percentual: 0 },
   ],
   investment: {
     taxaFranquia: 190000,
@@ -253,9 +254,6 @@ export const INITIAL_STATE: SimulatorState = {
   belowEbitda: {
     recFinanceiras: 0,
     despFinanceiras: 0,
-    outrasReceitas: 0,
-    despNaoOperacionais: 0,
-    provisaoIRCSLL: 0,
     amortizacao: 0,
     investimentosMensal: 0,
   },

@@ -1,17 +1,19 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CurrencyInput } from './CurrencyInput';
-import { Settings2 } from 'lucide-react';
+import { Settings2, RotateCcw, Info } from 'lucide-react';
 import type { SimulatorState } from '@/types/simulator';
 
 interface Props {
   state: SimulatorState;
   onUpdate: <K extends keyof SimulatorState>(key: K, value: SimulatorState[K]) => void;
+  onResetPremissas: () => void;
 }
 
-export function PremissasHeader({ state, onUpdate }: Props) {
+export function PremissasHeader({ state, onUpdate, onResetPremissas }: Props) {
   const { commercial, matrixClients, churn, goals } = state;
 
   const updateTicket = (key: string, valor: number) => {
@@ -26,9 +28,18 @@ export function PremissasHeader({ state, onUpdate }: Props) {
   return (
     <Card className="border-primary/30 bg-accent/20">
       <CardContent className="pt-4 pb-4">
-        <div className="flex items-center gap-2 mb-4">
-          <Settings2 className="w-5 h-5 text-primary" />
-          <h3 className="text-base font-bold">Premissas da Simulação — Ajuste Rápido</h3>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Settings2 className="w-5 h-5 text-primary" />
+            <h3 className="text-base font-bold">Premissas da Simulação — Ajuste Rápido</h3>
+          </div>
+          <Button variant="outline" size="sm" onClick={onResetPremissas} className="gap-1 text-xs">
+            <RotateCcw className="w-3 h-3" /> Restaurar Respostas Oficiais
+          </Button>
+        </div>
+        <div className="flex items-start gap-1 mb-4 text-xs text-muted-foreground">
+          <Info className="w-3 h-3 mt-0.5 shrink-0" />
+          <span>Os números abaixo foram puxados das suas respostas anteriores, mas podem ser alterados diretamente aqui para fins de projeção do DRE.</span>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
           {/* Horizonte */}

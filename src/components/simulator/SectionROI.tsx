@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { SectionHeader } from './SectionHeader';
 import { CurrencyInput } from './CurrencyInput';
 import { formatCurrency, formatPercent } from '@/lib/formatters';
-import { CheckCircle2, XCircle, Tag, AlertCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, Tag, AlertCircle, HelpCircle } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { InvestmentData, MonthlyProjection } from '@/types/simulator';
 import { calculateROI } from '@/lib/financial';
 
@@ -18,6 +19,32 @@ interface Props {
 }
 
 const CUPOM_VALIDO = 'FRANQUIAOURO';
+
+const TOOLTIPS: Record<string, string> = {
+  implantacao: 'Reforma, pintura, manutenção do espaço físico.',
+  marketingInicial: 'Patrocinar eventos na região, fazer um coquetel de lançamento convidando clientes, prospects e parceiros.',
+  equipamentos: 'Mesa, cadeira, televisão, computadores, wifi, etc.',
+  outros: 'Vinho, brinde, lojinha O2 Inc., etc.',
+};
+
+function FieldWithTooltip({ label, tooltip, children }: { label: string; tooltip: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="flex items-center gap-1">
+        <Label className="text-sm">{label}</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button type="button" className="text-muted-foreground hover:text-primary">
+              <HelpCircle className="w-4 h-4" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="text-sm max-w-xs">{tooltip}</PopoverContent>
+        </Popover>
+      </div>
+      {children}
+    </div>
+  );
+}
 
 export function SectionROI({ data, onChange, projections, metaROIMeses }: Props) {
   const [cupomInput, setCupomInput] = useState(data.cupom || '');
@@ -37,16 +64,8 @@ export function SectionROI({ data, onChange, projections, metaROIMeses }: Props)
     });
   };
 
-  const { totalInvestimento, roiAnual, paybackMeses, taxaFinal } = calculateROI(data, projections);
+  const { totalInvestimento, capitalGiro, roiDireto, roiTotal, paybackMeses, taxaFinal } = calculateROI(data, projections);
   const atingeMeta = paybackMeses > 0 && paybackMeses <= metaROIMeses;
-
-  const fields: { key: keyof InvestmentData; label: string }[] = [
-    { key: 'capitalGiro', label: 'Capital de Giro Inicial' },
-    { key: 'implantacao', label: 'Implantação / Setup da Unidade' },
-    { key: 'marketingInicial', label: 'Marketing Inicial' },
-    { key: 'equipamentos', label: 'Equipamentos / Mobiliário' },
-    { key: 'outros', label: 'Outros Investimentos' },
-  ];
 
   return (
     <section>
@@ -90,21 +109,54 @@ export function SectionROI({ data, onChange, projections, metaROIMeses }: Props)
               <div className="flex items-center gap-1 text-destructive text-xs"><AlertCircle className="w-4 h-4" /> Cupom inválido. Taxa mantida em {formatCurrency(190000)}.</div>
             )}
 
-            {fields.map(f => (
-              <div key={f.key}>
-                <Label className="text-sm">{f.label}</Label>
-                <CurrencyInput value={data[f.key] as number} onChange={v => update(f.key, v)} />
+            {/* Investment fields with tooltips */}
+            <FieldWithTooltip label="Implantação / Setup da Unidade" tooltip={TOOLTIPS.implantacao}>
+              <CurrencyInput value={data.implantacao} onChange={v => update('implantacao', v)} />
+            </FieldWithTooltip>
+
+            <FieldWithTooltip label="Marketing Inicial" tooltip={TOOLTIPS.marketingInicial}>
+              <CurrencyInput value={data.marketingInicial} onChange={v => update('marketingInicial', v)} />
+            </FieldWithTooltip>
+
+            <FieldWithTooltip label="Equipamentos / Mobiliário" tooltip={TOOLTIPS.equipamentos}>
+              <CurrencyInput value={data.equipamentos} onChange={v => update('equipamentos', v)} />
+            </FieldWithTooltip>
+
+            <FieldWithTooltip label="Outros Investimentos" tooltip={TOOLTIPS.outros}>
+              <CurrencyInput value={data.outros} onChange={v => update('outros', v)} />
+            </FieldWithTooltip>
+
+            {/* Capital de giro (calculado) */}
+            <div className="pt-3 border-t space-y-2">
+              <div className="flex justify-between items-center text-sm">
+                <span>Prejuízo meses iniciais</span>
+                <span className="font-medium text-destructive">
+                  {formatCurrency(capitalGiro - data.implantacao - data.marketingInicial - data.equipamentos - data.outros)}
+                </span>
               </div>
-            ))}
-            <div className="pt-3 border-t">
               <div className="flex justify-between items-center">
-                <span className="font-bold">Investimento Total</span>
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold">Capital de Giro Sugerido</span>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="text-muted-foreground hover:text-primary"><HelpCircle className="w-4 h-4" /></button>
+                    </PopoverTrigger>
+                    <PopoverContent className="text-sm max-w-xs">
+                      Capital de giro = prejuízo acumulado dos primeiros meses + implantação + marketing inicial + equipamentos + outros investimentos.
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <span className="text-lg font-bold">{formatCurrency(capitalGiro)}</span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t">
+                <span className="font-bold text-lg">Investimento Total</span>
                 <span className="text-xl font-bold text-primary">{formatCurrency(totalInvestimento)}</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
+        {/* Results card */}
         <Card className={atingeMeta ? 'border-primary' : 'border-destructive'}>
           <CardContent className="pt-6 space-y-6">
             <div className="text-center">
@@ -121,14 +173,51 @@ export function SectionROI({ data, onChange, projections, metaROIMeses }: Props)
             </div>
 
             <div className="space-y-4">
-              <div className="flex justify-between">
-                <span>ROI Anual</span>
-                <span className="font-bold text-lg">{formatPercent(roiAnual)}</span>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-1">
+                  <span>Payback Projetado</span>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="text-muted-foreground hover:text-primary"><HelpCircle className="w-3 h-3" /></button>
+                    </PopoverTrigger>
+                    <PopoverContent className="text-sm max-w-xs">
+                      Tempo estimado para recuperar o investimento total com base no resultado mensal projetado.
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <span className="font-bold text-lg">{paybackMeses > 0 ? `${paybackMeses.toFixed(2)} meses` : '—'}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Payback Projetado</span>
-                <span className="font-bold text-lg">{paybackMeses > 0 ? `${paybackMeses} meses` : '—'}</span>
+
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-1">
+                  <span>ROI Direto</span>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="text-muted-foreground hover:text-primary"><HelpCircle className="w-3 h-3" /></button>
+                    </PopoverTrigger>
+                    <PopoverContent className="text-sm max-w-xs">
+                      Retorno sobre a taxa de franquia apenas ({formatCurrency(taxaFinal)}). Indica o retorno direto do investimento na marca.
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <span className="font-bold text-lg">{formatPercent(roiDireto)}</span>
               </div>
+
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-1">
+                  <span>ROI Total</span>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="text-muted-foreground hover:text-primary"><HelpCircle className="w-3 h-3" /></button>
+                    </PopoverTrigger>
+                    <PopoverContent className="text-sm max-w-xs">
+                      Retorno sobre o investimento total ({formatCurrency(totalInvestimento)}), incluindo taxa de franquia + capital de giro.
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <span className="font-bold text-lg">{formatPercent(roiTotal)}</span>
+              </div>
+
               <div className="flex justify-between">
                 <span>Meta do Franqueado</span>
                 <span className="font-medium">{metaROIMeses} meses</span>
@@ -136,7 +225,7 @@ export function SectionROI({ data, onChange, projections, metaROIMeses }: Props)
               {paybackMeses > 0 && !atingeMeta && (
                 <div className="flex justify-between text-destructive">
                   <span>Diferença</span>
-                  <span className="font-medium">+{paybackMeses - metaROIMeses} meses</span>
+                  <span className="font-medium">+{(paybackMeses - metaROIMeses).toFixed(2)} meses</span>
                 </div>
               )}
             </div>

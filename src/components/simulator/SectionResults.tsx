@@ -18,20 +18,21 @@ export function SectionResults({ projections, investment, metaROIMeses, churnMen
 
   const total = (key: keyof MonthlyProjection) => projections.reduce((s, p) => s + (p[key] as number), 0);
   const last = projections[projections.length - 1];
-  const { roiAnual, paybackMeses } = calculateROI(investment, projections);
+  const { roiDireto, roiTotal, paybackMeses } = calculateROI(investment, projections);
 
   const kpis = [
     { label: 'Receita Bruta Total', value: formatCurrency(total('receitaBrutaTotal')) },
     { label: 'Receita Líquida', value: formatCurrency(total('receitaLiquida')) },
-    { label: 'MRR Final Projetado', value: formatCurrency(last.mrrFinal) },
+    { label: 'MRR Final Projetado', value: formatCurrency(last.mrrTotal) },
     { label: 'Churn Mensal', value: formatPercent(churnMensal) },
     { label: 'Lucro Bruto', value: formatCurrency(total('lucroBruto')) },
     { label: 'EBITDA Total', value: formatCurrency(total('ebitda')) },
     { label: 'Margem EBITDA', value: formatPercent(total('ebitda') / (total('receitaBrutaTotal') || 1) * 100) },
     { label: 'Resultado Líquido', value: formatCurrency(total('resultadoLiquido')) },
     { label: 'Resultado Final', value: formatCurrency(total('resultadoFinal')) },
-    { label: 'ROI Anual', value: formatPercent(roiAnual) },
-    { label: 'Payback', value: paybackMeses > 0 ? `${paybackMeses} meses` : '—' },
+    { label: 'ROI Direto', value: formatPercent(roiDireto) },
+    { label: 'ROI Total', value: formatPercent(roiTotal) },
+    { label: 'Payback', value: paybackMeses > 0 ? `${paybackMeses.toFixed(2)} meses` : '—' },
   ];
 
   return (
@@ -79,9 +80,9 @@ export function SectionResults({ projections, investment, metaROIMeses, churnMen
                     <TableRow key={p.month}>
                       <TableCell className="sticky left-0 bg-card z-10 font-medium">{p.month}</TableCell>
                       <TableCell>{formatCurrency(p.receitaBrutaTotal)}</TableCell>
-                      <TableCell>{formatCurrency(p.mrrFinal)}</TableCell>
+                      <TableCell>{formatCurrency(p.mrrTotal)}</TableCell>
                       <TableCell className="text-destructive">{formatCurrency(p.churnValor)}</TableCell>
-                      <TableCell>{formatCurrency(p.deducoes)}</TableCell>
+                      <TableCell>{formatCurrency(p.deducoesTotal)}</TableCell>
                       <TableCell>{formatCurrency(p.receitaLiquida)}</TableCell>
                       <TableCell>{formatCurrency(p.lucroBruto)}</TableCell>
                       <TableCell>{formatCurrency(p.ebitda)}</TableCell>
@@ -113,10 +114,6 @@ export function SectionResults({ projections, investment, metaROIMeses, churnMen
                     <span className={`font-bold ${item.val < 0 ? 'text-destructive' : ''}`}>{formatCurrency(item.val)}</span>
                   </div>
                 ))}
-                <div className="flex justify-between p-3 rounded-lg bg-muted">
-                  <span>Média Mensal (Resultado Final)</span>
-                  <span className="font-bold">{formatCurrency(total('resultadoFinal') / projections.length)}</span>
-                </div>
               </div>
             </CardContent>
           </Card>
