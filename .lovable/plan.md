@@ -1,42 +1,44 @@
 
 
-# Remover Barra de Progresso e Corrigir Numeracao das Secoes
+# Substituir Checkboxes por Campos Editaveis na Tabela de Impostos
 
 ## Resumo
-Remover completamente a barra de progresso do header sticky e corrigir a numeracao das secoes que atualmente pula os numeros 9 e 12.
+Cada BU (CaaS, SaaS, Education, Expansao, Tax) tera sua propria aliquota editavel por imposto, em vez de um checkbox on/off. Isso permite definir cargas tributarias diferentes por linha de negocio.
 
-## Mudancas
+## Mudanca de Dados
 
-### 1. Remover barra de progresso
-- Remover o bloco sticky com `Progress` do `Index.tsx` (linhas 179-187)
-- Remover a importacao do componente `Progress`
-- Remover a funcao `getProgress()` que ja nao sera usada
+A estrutura `TaxConfig` muda de:
+```text
+aliquota: number (global)
+aplicaA: { caas: boolean, saas: boolean, ... }
+```
+Para:
+```text
+aliquota: number (mantido como referencia/default)
+aplicaA: { caas: number, saas: number, ... }
+```
 
-### 2. Corrigir numeracao das secoes
-Renumerar sequencialmente de 1 a 12:
+Cada valor em `aplicaA` passa a ser a aliquota especifica daquela BU (0 = nao se aplica).
 
-| Atual | Novo | Secao |
-|-------|------|-------|
-| 1 | 1 | Perfil do Novo Socio |
-| 2 | 2 | Objetivos do Franqueado |
-| 3 | 3 | Horizonte de Projecao |
-| 4 | 4 | Premissas Comerciais |
-| 5 | 5 | Clientes Comprados da Matriz |
-| 6 | 6 | Churn sobre MRR |
-| 7 | 7 | Impostos/Deducoes |
-| 8 | 8 | Regras Comerciais/Receita |
-| 10 | 9 | DRE Gerencial |
-| 11 | 10 | ROI e Payback |
-| 13 | 11 | Graficos de Resultados |
-| 14 | 12 | Resultados da Simulacao |
+## Arquivos modificados
 
-### Arquivos modificados
+### 1. `src/types/simulator.ts`
+- Mudar tipo de `aplicaA` de `{ caas: boolean; ... }` para `{ caas: number; ... }`
+- Atualizar `DEFAULT_TAXES`: onde era `true` passa a copiar o valor de `aliquota` (0 por padrao), onde era `false` fica 0
 
-- `src/pages/Index.tsx` - Remover barra de progresso, funcao `getProgress`, importacao de `Progress`
-- `src/components/simulator/SectionPL.tsx` - Mudar number de 10 para 9
-- `src/components/simulator/SectionROI.tsx` - Mudar number de 11 para 10
-- `src/components/simulator/SectionCharts.tsx` - Mudar number de 13 para 11
-- `src/components/simulator/SectionResults.tsx` - Mudar number de 14 para 12
+### 2. `src/components/simulator/SectionTaxes.tsx`
+- Substituir os `Checkbox` por `Input` de numero em cada celula da tabela
+- Remover import do `Checkbox`
+- Cada campo editavel permite definir a aliquota especifica por BU
+- Atualizar a descricao da secao para refletir a nova funcionalidade
 
-Secoes 1-8 permanecem inalteradas.
+### 3. `src/lib/financial.ts`
+- Ajustar o calculo: em vez de `if (aplicaA[prod]) { total += receita * (aliquota / 100) }`, usar `total += receita * (aplicaA[prod] / 100)` diretamente
 
+### 4. `src/pages/Index.tsx`
+- Atualizar o deep clone de `aplicaA` (ja funciona igual pois a estrutura do objeto nao muda, so o tipo dos valores)
+
+## Comportamento
+- O campo "Aliquota (%)" global permanece como referencia rapida
+- Cada celula por BU pode ter um valor diferente (ex: PIS pode ser 0.65% para CaaS e 1.65% para SaaS)
+- Valor 0 significa que o imposto nao se aplica aquela BU
