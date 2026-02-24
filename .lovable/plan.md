@@ -1,53 +1,18 @@
 
 
-# Reformular Ajustes Abaixo do EBITDA
+# Alinhar Altura dos Widgets "Ajustes Abaixo do EBITDA"
 
-## Resumo
-Transformar os campos de Receita e Despesa Financeira para aceitar percentual (%) sobre receita bruta, configurar Amortizacao como PMT de emprestimo bancario/mutuo, e adicionar descricoes/tooltips explicativos em cada campo.
+## Problema
+Os 4 widgets (Receitas Financeiras, Despesas Financeiras, PMT Emprestimo, Investimentos) estao com alturas diferentes porque alguns tem texto auxiliar e outros nao. O campo "Investimentos" fica desalinhado em relacao aos demais.
 
-## Mudancas
+## Solucao
+Adicionar `items-start` no grid container para que todos os widgets se alinhem pelo topo, e usar `flex flex-col h-full` em cada widget para que ocupem a mesma altura dentro do grid. Isso fara com que os inputs fiquem todos na mesma linha horizontal.
 
-### 1. Alterar tipo de dados (`src/components/simulator/SectionPL.tsx`)
+## Arquivo modificado
 
-O tipo `BelowEbitdaData` muda de:
-```text
-recFinanceiras: number (R$)
-despFinanceiras: number (R$)
-amortizacao: number (R$)
-investimentosMensal: number (R$)
-```
-Para:
-```text
-recFinanceirasPercent: number (% sobre receita bruta)
-despFinanceirasPercent: number (% sobre receita bruta, default 1%)
-amortizacaoPMT: number (R$ - parcela mensal do emprestimo)
-investimentosMensal: number (R$ - mantido igual)
-```
+### `src/components/simulator/SectionPL.tsx`
+- Linha 118: Adicionar `items-start` ao grid container e trocar para `items-stretch` para forcar mesma altura
+- Cada div filho (linhas 120, 134, 152, 165) recebe `flex flex-col` para empilhar label + input + helper text de forma consistente
+- O input fica sempre na mesma posicao vertical em todos os widgets
 
-### 2. Atualizar UI dos campos (`src/components/simulator/SectionPL.tsx`)
-
-- **Receitas Financeiras**: Campo de percentual (%) com label "Receitas Financeiras (% s/ receita)"
-- **Despesas Financeiras**: Campo de percentual (%) com valor padrao 1% e aviso informativo: "Padrao de 1% sobre receita bruta. Pode ser alterado conforme a operacao."
-- **Amortizacao da Divida**: Renomear para "PMT Emprestimo (parcela mensal)" com tooltip explicando que se refere ao pagamento mensal de emprestimo bancario/mutuo para inicio da operacao
-- **Investimentos**: Adicionar tooltip explicando: "Investimentos mensais em ativos (computadores, branding do escritorio, compra de outros escritorios, partnership na matriz, etc.)"
-
-### 3. Atualizar calculo financeiro (`src/lib/financial.ts`)
-
-- `recFinanceiras` passa a ser calculado: `receitaBrutaTotal * (recFinanceirasPercent / 100)`
-- `despFinanceiras` passa a ser calculado: `receitaBrutaTotal * (despFinanceirasPercent / 100)`
-- `amortizacao` usa o valor fixo de `amortizacaoPMT` diretamente (parcela mensal)
-- `investimentos` permanece igual
-
-### 4. Atualizar estado inicial (`src/pages/Index.tsx`)
-
-- Ajustar o estado `belowEbitda` para usar os novos nomes de campos
-- Definir `despFinanceirasPercent: 1` como valor padrao
-
-### Arquivos modificados
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/simulator/SectionPL.tsx` | Tipo BelowEbitdaData, UI com inputs de %, tooltips |
-| `src/lib/financial.ts` | Calculo de rec/desp financeiras como % da receita |
-| `src/pages/Index.tsx` | Estado inicial com novos campos e default 1% |
-
+Mudanca principal: o grid passa de `grid grid-cols-2 md:grid-cols-4 gap-3` para `grid grid-cols-2 md:grid-cols-4 gap-3 items-start`, e cada coluna interna usa `flex flex-col justify-between` para distribuir o espaco uniformemente.
