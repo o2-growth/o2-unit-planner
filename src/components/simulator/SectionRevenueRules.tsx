@@ -27,13 +27,13 @@ export function SectionRevenueRules({ data, onChange }: Props) {
       />
       <Card>
         <CardContent className="pt-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+            <div className="flex flex-col">
+              <div className="min-h-[3rem] flex flex-col justify-center mb-1">
                 <Label>Revenue Share da Franquia no SAAS (%)</Label>
-                {!isAdmin && <Badge variant="outline" className="text-xs gap-1"><Lock className="w-3 h-3" /> Somente Admin</Badge>}
+                {!isAdmin && <Badge variant="outline" className="text-xs gap-1 mt-1 w-fit"><Lock className="w-3 h-3" /> Somente Admin</Badge>}
               </div>
-              <p className="text-xs text-muted-foreground mb-1">A receita total do SAAS é faturada pela Matriz. A franquia reconhece apenas o revenue share.</p>
+              <p className="text-xs text-muted-foreground mb-2 min-h-[2rem]">A receita total do SAAS é faturada pela Matriz. A franquia reconhece apenas o revenue share.</p>
               <Input
                 type="number" min={0} max={100} step={1}
                 value={data.revenueShareSaaS}
@@ -42,12 +42,12 @@ export function SectionRevenueRules({ data, onChange }: Props) {
                 className={!isAdmin ? 'opacity-60' : ''}
               />
             </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
+            <div className="flex flex-col">
+              <div className="min-h-[3rem] flex flex-col justify-center mb-1">
                 <Label>Royalties sobre Receita Bruta (%)</Label>
-                {!isAdmin && <Badge variant="outline" className="text-xs gap-1"><Lock className="w-3 h-3" /> Somente Admin</Badge>}
+                {!isAdmin && <Badge variant="outline" className="text-xs gap-1 mt-1 w-fit"><Lock className="w-3 h-3" /> Somente Admin</Badge>}
               </div>
-              <p className="text-xs text-muted-foreground mb-1">Incide sobre a receita bruta reconhecida da franquia.</p>
+              <p className="text-xs text-muted-foreground mb-2 min-h-[2rem]">Incide sobre a receita bruta reconhecida da franquia.</p>
               <Input
                 type="number" min={0} max={100} step={1}
                 value={data.royalties}
