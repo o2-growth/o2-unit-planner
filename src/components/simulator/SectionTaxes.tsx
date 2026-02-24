@@ -1,12 +1,15 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { SectionHeader } from './SectionHeader';
+import { Lock } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import type { TaxesData } from '@/types/simulator';
 
 const PRODUCTS = [
   { key: 'caas', label: 'CaaS' },
   { key: 'saas', label: 'SaaS' },
+  { key: 'setup', label: 'Setup' },
   { key: 'education', label: 'Education' },
   { key: 'expansao', label: 'Expansão' },
   { key: 'tax', label: 'Tax' },
@@ -18,21 +21,27 @@ interface Props {
 }
 
 export function SectionTaxes({ data, onChange }: Props) {
+  const { isAdmin } = useAuth();
+
   return (
     <section>
       <SectionHeader
         number={7}
         title="Impostos / Deduções"
-        description="Defina a alíquota específica de cada imposto por BU. Valor 0 = não se aplica."
+        description="Alíquota específica de cada imposto por BU."
       />
       <Card>
         <CardContent className="pt-6">
+          {!isAdmin && (
+            <Badge variant="outline" className="text-xs gap-1 mb-4 w-fit">
+              <Lock className="w-3 h-3" /> Somente Admin
+            </Badge>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
                   <th className="text-left py-2 pr-4">Imposto</th>
-                  <th className="text-left py-2 pr-4 w-24">Alíquota (%)</th>
                   {PRODUCTS.map(p => (
                     <th key={p.key} className="text-center py-2 px-2">{p.label}</th>
                   ))}
@@ -42,19 +51,6 @@ export function SectionTaxes({ data, onChange }: Props) {
                 {data.impostos.map((imp, idx) => (
                   <tr key={imp.key} className="border-b">
                     <td className="py-2 pr-4 font-medium">{imp.nome}</td>
-                    <td className="py-2 pr-4">
-                      <Input
-                        type="number" min={0} max={100} step={0.01}
-                        value={imp.aliquota || ''}
-                        onChange={e => {
-                          const newImpostos = [...data.impostos];
-                          newImpostos[idx] = { ...imp, aliquota: parseFloat(e.target.value) || 0 };
-                          onChange({ ...data, impostos: newImpostos });
-                        }}
-                        placeholder="0"
-                        className="w-20 h-8 text-sm"
-                      />
-                    </td>
                     {PRODUCTS.map(p => (
                       <td key={p.key} className="text-center py-2 px-2">
                         <Input
@@ -69,7 +65,8 @@ export function SectionTaxes({ data, onChange }: Props) {
                             onChange({ ...data, impostos: newImpostos });
                           }}
                           placeholder="0"
-                          className="w-16 h-8 text-sm text-center"
+                          disabled={!isAdmin}
+                          className={`w-16 h-8 text-sm text-center ${!isAdmin ? 'opacity-60' : ''}`}
                         />
                       </td>
                     ))}
