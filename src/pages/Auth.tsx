@@ -41,34 +41,35 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 o2-gradient">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <img src="/logo-o2-color.svg" alt="O2 Inc." className="h-10 mx-auto mb-4" />
-          <h1 className="text-xl font-bold text-foreground">Unit Planner</h1>
-          <p className="text-sm text-muted-foreground mt-1">Simulador de Business Plan</p>
+          <h1 className="text-xl font-bold text-white">Unit Planner</h1>
+          <p className="text-sm text-white/50 mt-1">Simulador de Business Plan</p>
         </div>
 
-        <Card>
+        <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-lg">{isSignUp ? 'Criar Conta' : 'Entrar'}</CardTitle>
+            <CardTitle className="text-lg text-white">{isSignUp ? 'Criar Conta' : 'Entrar'}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {isSignUp && (
                 <div>
-                  <Label htmlFor="nome">Nome</Label>
+                  <Label htmlFor="nome" className="text-white/80">Nome</Label>
                   <Input
                     id="nome"
                     value={nome}
                     onChange={e => setNome(e.target.value)}
                     placeholder="Seu nome"
                     required
+                    className="border-white/15 bg-white/5 text-white placeholder:text-white/30 focus-visible:ring-[hsl(var(--o2-green))]"
                   />
                 </div>
               )}
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-white/80">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -76,10 +77,11 @@ const Auth = () => {
                   onChange={e => setEmail(e.target.value)}
                   placeholder="seu@email.com"
                   required
+                  className="border-white/15 bg-white/5 text-white placeholder:text-white/30 focus-visible:ring-[hsl(var(--o2-green))]"
                 />
               </div>
               <div>
-                <Label htmlFor="password">Senha</Label>
+                <Label htmlFor="password" className="text-white/80">Senha</Label>
                 <Input
                   id="password"
                   type="password"
@@ -88,6 +90,7 @@ const Auth = () => {
                   placeholder="Mínimo 6 caracteres"
                   minLength={6}
                   required
+                  className="border-white/15 bg-white/5 text-white placeholder:text-white/30 focus-visible:ring-[hsl(var(--o2-green))]"
                 />
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
@@ -98,7 +101,7 @@ const Auth = () => {
             <div className="mt-4 text-center">
               <button
                 type="button"
-                className="text-sm text-primary hover:underline"
+                className="text-sm text-[hsl(var(--o2-green))] hover:underline"
                 onClick={() => { setIsSignUp(!isSignUp); setError(''); }}
               >
                 {isSignUp ? 'Já tem conta? Entrar' : 'Não tem conta? Criar'}
