@@ -136,7 +136,7 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
 
       {/* DRE Table */}
       <Card>
-        <CardContent className="pt-4 overflow-x-auto">
+        <CardContent className="pt-4">
           <Table>
             <TableHeader>
               <TableRow className="bg-primary text-primary-foreground">
