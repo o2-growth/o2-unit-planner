@@ -1,44 +1,53 @@
 
 
-# Substituir Checkboxes por Campos Editaveis na Tabela de Impostos
+# Reformular Ajustes Abaixo do EBITDA
 
 ## Resumo
-Cada BU (CaaS, SaaS, Education, Expansao, Tax) tera sua propria aliquota editavel por imposto, em vez de um checkbox on/off. Isso permite definir cargas tributarias diferentes por linha de negocio.
+Transformar os campos de Receita e Despesa Financeira para aceitar percentual (%) sobre receita bruta, configurar Amortizacao como PMT de emprestimo bancario/mutuo, e adicionar descricoes/tooltips explicativos em cada campo.
 
-## Mudanca de Dados
+## Mudancas
 
-A estrutura `TaxConfig` muda de:
+### 1. Alterar tipo de dados (`src/components/simulator/SectionPL.tsx`)
+
+O tipo `BelowEbitdaData` muda de:
 ```text
-aliquota: number (global)
-aplicaA: { caas: boolean, saas: boolean, ... }
+recFinanceiras: number (R$)
+despFinanceiras: number (R$)
+amortizacao: number (R$)
+investimentosMensal: number (R$)
 ```
 Para:
 ```text
-aliquota: number (mantido como referencia/default)
-aplicaA: { caas: number, saas: number, ... }
+recFinanceirasPercent: number (% sobre receita bruta)
+despFinanceirasPercent: number (% sobre receita bruta, default 1%)
+amortizacaoPMT: number (R$ - parcela mensal do emprestimo)
+investimentosMensal: number (R$ - mantido igual)
 ```
 
-Cada valor em `aplicaA` passa a ser a aliquota especifica daquela BU (0 = nao se aplica).
+### 2. Atualizar UI dos campos (`src/components/simulator/SectionPL.tsx`)
 
-## Arquivos modificados
+- **Receitas Financeiras**: Campo de percentual (%) com label "Receitas Financeiras (% s/ receita)"
+- **Despesas Financeiras**: Campo de percentual (%) com valor padrao 1% e aviso informativo: "Padrao de 1% sobre receita bruta. Pode ser alterado conforme a operacao."
+- **Amortizacao da Divida**: Renomear para "PMT Emprestimo (parcela mensal)" com tooltip explicando que se refere ao pagamento mensal de emprestimo bancario/mutuo para inicio da operacao
+- **Investimentos**: Adicionar tooltip explicando: "Investimentos mensais em ativos (computadores, branding do escritorio, compra de outros escritorios, partnership na matriz, etc.)"
 
-### 1. `src/types/simulator.ts`
-- Mudar tipo de `aplicaA` de `{ caas: boolean; ... }` para `{ caas: number; ... }`
-- Atualizar `DEFAULT_TAXES`: onde era `true` passa a copiar o valor de `aliquota` (0 por padrao), onde era `false` fica 0
+### 3. Atualizar calculo financeiro (`src/lib/financial.ts`)
 
-### 2. `src/components/simulator/SectionTaxes.tsx`
-- Substituir os `Checkbox` por `Input` de numero em cada celula da tabela
-- Remover import do `Checkbox`
-- Cada campo editavel permite definir a aliquota especifica por BU
-- Atualizar a descricao da secao para refletir a nova funcionalidade
+- `recFinanceiras` passa a ser calculado: `receitaBrutaTotal * (recFinanceirasPercent / 100)`
+- `despFinanceiras` passa a ser calculado: `receitaBrutaTotal * (despFinanceirasPercent / 100)`
+- `amortizacao` usa o valor fixo de `amortizacaoPMT` diretamente (parcela mensal)
+- `investimentos` permanece igual
 
-### 3. `src/lib/financial.ts`
-- Ajustar o calculo: em vez de `if (aplicaA[prod]) { total += receita * (aliquota / 100) }`, usar `total += receita * (aplicaA[prod] / 100)` diretamente
+### 4. Atualizar estado inicial (`src/pages/Index.tsx`)
 
-### 4. `src/pages/Index.tsx`
-- Atualizar o deep clone de `aplicaA` (ja funciona igual pois a estrutura do objeto nao muda, so o tipo dos valores)
+- Ajustar o estado `belowEbitda` para usar os novos nomes de campos
+- Definir `despFinanceirasPercent: 1` como valor padrao
 
-## Comportamento
-- O campo "Aliquota (%)" global permanece como referencia rapida
-- Cada celula por BU pode ter um valor diferente (ex: PIS pode ser 0.65% para CaaS e 1.65% para SaaS)
-- Valor 0 significa que o imposto nao se aplica aquela BU
+### Arquivos modificados
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/simulator/SectionPL.tsx` | Tipo BelowEbitdaData, UI com inputs de %, tooltips |
+| `src/lib/financial.ts` | Calculo de rec/desp financeiras como % da receita |
+| `src/pages/Index.tsx` | Estado inicial com novos campos e default 1% |
+
