@@ -1,4 +1,4 @@
-import type { SimulatorState, MonthlyProjection } from '@/types/simulator';
+import type { SimulatorState, MonthlyProjection, InvestmentData } from '@/types/simulator';
 
 export function calculateProjections(state: SimulatorState): MonthlyProjection[] {
   const months: MonthlyProjection[] = [];
@@ -30,7 +30,9 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
     const tSaas = tickets.find(t => t.key === 'saas')?.valor || 0;
     const tDiag = tickets.find(t => t.key === 'diagnostico')?.valor || 0;
 
-    const recSetup = mix.setup * tSetup;
+    // SETUP automático = CAAS + SAAS
+    const setupAutomatico = mix.caas + mix.saas;
+    const recSetup = setupAutomatico * tSetup;
     const recCaas = mix.caas * tCaas;
     const recSaasTotal = mix.saas * tSaas;
     const recSaasReconhecida = recSaasTotal * (revenueRules.revenueShareSaaS / 100);
@@ -40,14 +42,10 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
     const map = revenueRules.mapeamento;
     let rbCaas = recCaas;
     let rbSaas = recSaasReconhecida;
+    let rbSetup = recSetup + setupMatriz;
     let rbEducation = 0;
     let rbExpansao = 0;
     let rbTax = 0;
-
-    // Setup mapping
-    if (map.setup === 'expansao') rbExpansao += recSetup + setupMatriz;
-    else if (map.setup === 'education') rbEducation += recSetup + setupMatriz;
-    else rbExpansao += recSetup + setupMatriz;
 
     // Diagnostico mapping
     if (map.diagnostico === 'expansao') rbExpansao += recDiag;
@@ -57,32 +55,18 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
     // --- MRR with churn ---
     const mrrInicial = mrrAcumulado;
     const churnValor = mrrInicial * (churn.churnMensal / 100);
-    const novoMrrOwn = mix.caas * tCaas; // CAAS is recurring
-    const novoMrrTotal = novoMrrMatriz + (m === 1 ? novoMrrOwn : 0); // Own MRR only starts month 1 initial
-    // Actually, own CAAS is monthly recurring, so it adds every month from own sales
-    // Let's simplify: own CAAS MRR adds each month from new sales
-    const mrrFinal = mrrInicial - churnValor + novoMrrMatriz + recSaasReconhecida;
-    // Add CAAS as recurring
-    // For simplicity: MRR = CAAS monthly + SaaS rev share + matrix MRR accumulated with churn
-
-    // Let me recalculate MRR properly:
-    // MRR base = previous month final
-    // New MRR = matrix clients MRR (new this month) 
-    // Churn applies to base
-    // Own CAAS and SaaS revenue are monthly (not accumulated in MRR base for now, they repeat each month)
-    
     const mrrFinalCalc = mrrInicial - churnValor + novoMrrMatriz;
     mrrAcumulado = mrrFinalCalc;
 
     // Add MRR to CAAS revenue (matrix clients' recurring)
-    rbCaas += mrrFinalCalc; // Matrix MRR goes into CAAS line
+    rbCaas += mrrFinalCalc;
 
-    const receitaBrutaTotal = rbCaas + rbSaas + rbEducation + rbExpansao + rbTax;
+    const receitaBrutaTotal = rbCaas + rbSaas + rbSetup + rbEducation + rbExpansao + rbTax;
 
     // --- Deductions (taxes) ---
     let deducoes = 0;
     const revenueByProduct: Record<string, number> = {
-      caas: rbCaas, saas: rbSaas, education: rbEducation, expansao: rbExpansao, tax: rbTax,
+      caas: rbCaas, saas: rbSaas, education: rbEducation, expansao: rbExpansao + rbSetup, tax: rbTax,
     };
     for (const imposto of taxes.impostos) {
       if (imposto.aliquota <= 0) continue;
@@ -128,6 +112,7 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
       month: m,
       receitaBrutaCaas: rbCaas,
       receitaBrutaSaas: rbSaas,
+      receitaBrutaSetup: rbSetup,
       receitaBrutaEducation: rbEducation,
       receitaBrutaExpansao: rbExpansao,
       receitaBrutaTax: rbTax,
@@ -165,19 +150,28 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
   return months;
 }
 
-export function calculateROI(investment: { taxaFranquia: number; capitalGiro: number; implantacao: number; marketingInicial: number; equipamentos: number; outros: number }, projections: MonthlyProjection[]) {
-  const totalInvestimento = investment.taxaFranquia + investment.capitalGiro + investment.implantacao
+export function calculateROI(investment: InvestmentData, projections: MonthlyProjection[]) {
+  const taxaFinal = investment.cupomAplicado ? 140000 : investment.taxaFranquia;
+  const totalInvestimento = taxaFinal + investment.capitalGiro + investment.implantacao
     + investment.marketingInicial + investment.equipamentos + investment.outros;
   
   if (totalInvestimento === 0 || projections.length === 0) {
-    return { totalInvestimento, roiAnual: 0, paybackMeses: 0 };
+    return { totalInvestimento, roiAnual: 0, paybackMeses: 0, taxaFinal };
   }
 
   const resultadoAnual = projections.slice(0, 12).reduce((s, p) => s + p.resultadoFinal, 0);
   const roiAnual = (resultadoAnual / totalInvestimento) * 100;
 
-  const mediaMensal = projections.reduce((s, p) => s + p.resultadoFinal, 0) / projections.length;
-  const paybackMeses = mediaMensal > 0 ? Math.ceil(totalInvestimento / mediaMensal) : 0;
+  // Payback: find month where accumulated result >= investment
+  let acum = 0;
+  let paybackMeses = 0;
+  for (const p of projections) {
+    acum += p.resultadoFinal;
+    if (acum >= totalInvestimento) {
+      paybackMeses = p.month;
+      break;
+    }
+  }
 
-  return { totalInvestimento, roiAnual, paybackMeses };
+  return { totalInvestimento, roiAnual, paybackMeses, taxaFinal };
 }

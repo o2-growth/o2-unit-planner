@@ -108,8 +108,9 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
             </TableHeader>
             <TableBody>
               <DRERow label="= RECEITA BRUTA" values={projections.map(p => p.receitaBrutaTotal)} highlight />
-              <DRERow label="  CaaS" values={projections.map(p => p.receitaBrutaCaas)} />
-              <DRERow label="  SaaS" values={projections.map(p => p.receitaBrutaSaas)} />
+              <DRERow label="  CAAS" values={projections.map(p => p.receitaBrutaCaas)} />
+              <DRERow label="  SAAS" values={projections.map(p => p.receitaBrutaSaas)} />
+              <DRERow label="  Setup" values={projections.map(p => p.receitaBrutaSetup)} />
               <DRERow label="  Education" values={projections.map(p => p.receitaBrutaEducation)} />
               <DRERow label="  Expansão" values={projections.map(p => p.receitaBrutaExpansao)} />
               <DRERow label="  Tax" values={projections.map(p => p.receitaBrutaTax)} />

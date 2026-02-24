@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { SectionHeader } from './SectionHeader';
 import { CurrencyInput } from './CurrencyInput';
 import { formatCurrency, formatPercent } from '@/lib/formatters';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, Tag, AlertCircle } from 'lucide-react';
 import type { InvestmentData, MonthlyProjection } from '@/types/simulator';
 import { calculateROI } from '@/lib/financial';
 
@@ -14,15 +17,30 @@ interface Props {
   metaROIMeses: number;
 }
 
+const CUPOM_VALIDO = 'FRANQUIAOURO';
+
 export function SectionROI({ data, onChange, projections, metaROIMeses }: Props) {
-  const update = <K extends keyof InvestmentData>(key: K, value: number) =>
+  const [cupomInput, setCupomInput] = useState(data.cupom || '');
+  const [cupomFeedback, setCupomFeedback] = useState<'valid' | 'invalid' | null>(data.cupomAplicado ? 'valid' : null);
+
+  const update = <K extends keyof InvestmentData>(key: K, value: InvestmentData[K]) =>
     onChange({ ...data, [key]: value });
 
-  const { totalInvestimento, roiAnual, paybackMeses } = calculateROI(data, projections);
+  const handleAplicarCupom = () => {
+    const isValid = cupomInput.trim().toUpperCase() === CUPOM_VALIDO;
+    setCupomFeedback(isValid ? 'valid' : 'invalid');
+    onChange({
+      ...data,
+      cupom: cupomInput.trim().toUpperCase(),
+      cupomAplicado: isValid,
+      taxaFranquia: isValid ? 140000 : 190000,
+    });
+  };
+
+  const { totalInvestimento, roiAnual, paybackMeses, taxaFinal } = calculateROI(data, projections);
   const atingeMeta = paybackMeses > 0 && paybackMeses <= metaROIMeses;
 
   const fields: { key: keyof InvestmentData; label: string }[] = [
-    { key: 'taxaFranquia', label: 'Taxa de Franquia' },
     { key: 'capitalGiro', label: 'Capital de Giro Inicial' },
     { key: 'implantacao', label: 'Implantação / Setup da Unidade' },
     { key: 'marketingInicial', label: 'Marketing Inicial' },
@@ -36,10 +54,46 @@ export function SectionROI({ data, onChange, projections, metaROIMeses }: Props)
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardContent className="pt-6 space-y-3">
+            {/* Taxa de franquia */}
+            <div className="p-3 rounded-lg border border-primary/20 bg-accent/30">
+              <Label className="text-sm font-semibold">Taxa de Franquia</Label>
+              <div className="flex items-center justify-between mt-1">
+                <span className="text-lg font-bold">{formatCurrency(taxaFinal)}</span>
+                {data.cupomAplicado && (
+                  <span className="text-xs text-primary line-through">{formatCurrency(190000)}</span>
+                )}
+              </div>
+              {data.cupomAplicado && (
+                <p className="text-xs text-primary mt-1">Desconto aplicado: {formatCurrency(50000)}</p>
+              )}
+            </div>
+
+            {/* Cupom */}
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <Label className="text-xs">Cupom de desconto</Label>
+                <Input
+                  value={cupomInput}
+                  onChange={e => setCupomInput(e.target.value)}
+                  placeholder="Digite o cupom"
+                  className="mt-1"
+                />
+              </div>
+              <Button onClick={handleAplicarCupom} variant="outline" size="sm" className="gap-1">
+                <Tag className="w-3 h-3" /> Aplicar
+              </Button>
+            </div>
+            {cupomFeedback === 'valid' && (
+              <div className="flex items-center gap-1 text-primary text-xs"><CheckCircle2 className="w-4 h-4" /> Cupom válido! Taxa ajustada para {formatCurrency(140000)}.</div>
+            )}
+            {cupomFeedback === 'invalid' && (
+              <div className="flex items-center gap-1 text-destructive text-xs"><AlertCircle className="w-4 h-4" /> Cupom inválido. Taxa mantida em {formatCurrency(190000)}.</div>
+            )}
+
             {fields.map(f => (
               <div key={f.key}>
                 <Label className="text-sm">{f.label}</Label>
-                <CurrencyInput value={data[f.key]} onChange={v => update(f.key, v)} />
+                <CurrencyInput value={data[f.key] as number} onChange={v => update(f.key, v)} />
               </div>
             ))}
             <div className="pt-3 border-t">

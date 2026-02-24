@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { SectionHeader } from './SectionHeader';
 import { CurrencyInput } from './CurrencyInput';
-import { AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import type { CommercialData } from '@/types/simulator';
 
@@ -14,8 +14,9 @@ interface Props {
 }
 
 export function SectionCommercial({ data, onChange }: Props) {
-  const mixTotal = data.mix.setup + data.mix.caas + data.mix.saas + data.mix.diagnostico;
+  const mixTotal = data.mix.caas + data.mix.saas + data.mix.diagnostico;
   const mixValid = mixTotal === data.compromissoMensal;
+  const setupAutomatico = data.mix.caas + data.mix.saas;
 
   return (
     <section>
@@ -83,10 +84,12 @@ export function SectionCommercial({ data, onChange }: Props) {
                 {mixTotal} de {data.compromissoMensal}
               </span>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {(['setup', 'caas', 'saas', 'diagnostico'] as const).map(key => (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {(['caas', 'saas', 'diagnostico'] as const).map(key => (
                 <div key={key}>
-                  <Label className="text-xs capitalize">{key === 'caas' ? 'CAAS' : key === 'saas' ? 'SaaS' : key === 'diagnostico' ? 'Diagnóstico' : 'Setup'}</Label>
+                  <Label className="text-xs">
+                    {key === 'caas' ? 'CAAS' : key === 'saas' ? 'SAAS' : 'Diagnóstico'}
+                  </Label>
                   <Input
                     type="number"
                     min={0}
@@ -96,6 +99,17 @@ export function SectionCommercial({ data, onChange }: Props) {
                   />
                 </div>
               ))}
+            </div>
+
+            {/* Setup automático */}
+            <div className="mt-4 p-3 rounded-lg bg-accent/50 border border-primary/20">
+              <div className="flex items-center gap-2 mb-1">
+                <Info className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold text-primary">Setup gerado automaticamente: {setupAutomatico}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                SETUP é obrigatório na contratação de CAAS e/ou SAAS e será calculado automaticamente (CAAS + SAAS).
+              </p>
             </div>
           </div>
         </CardContent>

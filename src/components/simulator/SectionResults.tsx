@@ -36,7 +36,7 @@ export function SectionResults({ projections, investment, metaROIMeses, churnMen
 
   return (
     <section>
-      <SectionHeader number={12} title="Resultados da Simulação" description="Visão consolidada dos principais indicadores" />
+      <SectionHeader number={14} title="Resultados da Simulação" description="Visão consolidada dos principais indicadores" />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">

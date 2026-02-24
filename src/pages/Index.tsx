@@ -9,8 +9,11 @@ import { SectionTaxes } from '@/components/simulator/SectionTaxes';
 import { SectionRevenueRules } from '@/components/simulator/SectionRevenueRules';
 import { SectionPL } from '@/components/simulator/SectionPL';
 import { SectionROI } from '@/components/simulator/SectionROI';
+import { SectionCharts } from '@/components/simulator/SectionCharts';
 import { SectionResults } from '@/components/simulator/SectionResults';
 import { ActionButtons } from '@/components/simulator/ActionButtons';
+import { PremissasHeader } from '@/components/simulator/PremissasHeader';
+import { AdminLogin } from '@/components/simulator/AdminLogin';
 import { Card, CardContent } from '@/components/ui/card';
 import { calculateProjections } from '@/lib/financial';
 import { INITIAL_STATE, type SimulatorState } from '@/types/simulator';
@@ -19,7 +22,18 @@ const Index = () => {
   const [state, setState] = useState<SimulatorState>(() => {
     const saved = localStorage.getItem('o2-simulator');
     if (saved) {
-      try { return JSON.parse(saved); } catch { /* ignore */ }
+      try {
+        const parsed = JSON.parse(saved);
+        // Backward compat: ensure new fields exist
+        if (!parsed.investment?.cupom) {
+          parsed.investment = { ...INITIAL_STATE.investment, ...parsed.investment };
+        }
+        if (parsed.commercial?.mix?.setup !== undefined) {
+          const { setup, ...rest } = parsed.commercial.mix;
+          parsed.commercial.mix = rest;
+        }
+        return parsed;
+      } catch { /* ignore */ }
     }
     return { ...INITIAL_STATE };
   });
@@ -46,13 +60,16 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="o2-gradient py-8 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-2">
-            Simulador Financeiro
-          </h1>
-          <p className="text-primary-foreground/80 text-lg">
-            O2 Inc. — Franquias
-          </p>
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="text-center flex-1">
+            <h1 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-2">
+              Simulador Financeiro
+            </h1>
+            <p className="text-primary-foreground/80 text-lg">
+              O2 Inc. — Franquias
+            </p>
+          </div>
+          <AdminLogin />
         </div>
       </header>
 
@@ -96,18 +113,20 @@ const Index = () => {
         {/* Section 6 - Matrix Clients */}
         <SectionMatrixClients data={state.matrixClients} onChange={v => update('matrixClients', v)} />
 
-        {/* Section 7 - Churn */}
+        {/* Section 7 - Churn (simplified) */}
         <SectionChurn
           churnMensal={state.churn.churnMensal}
           onChangeChurn={v => update('churn', { churnMensal: v })}
-          projections={projections}
         />
 
         {/* Section 8 - Taxes */}
         <SectionTaxes data={state.taxes} onChange={v => update('taxes', v)} />
 
-        {/* Section 9 - Revenue Rules */}
+        {/* Section 9 - Revenue Rules (admin-locked) */}
         <SectionRevenueRules data={state.revenueRules} onChange={v => update('revenueRules', v)} />
+
+        {/* Premissas Header (editable quick-access) */}
+        <PremissasHeader state={state} onUpdate={update} />
 
         {/* Section 10 - P&L */}
         <SectionPL
@@ -128,7 +147,10 @@ const Index = () => {
           metaROIMeses={state.goals.metaROIMeses}
         />
 
-        {/* Section 12 - Results */}
+        {/* Section 13 - Charts */}
+        <SectionCharts projections={projections} investment={state.investment} />
+
+        {/* Section 14 - Results */}
         <SectionResults
           projections={projections}
           investment={state.investment}

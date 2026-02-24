@@ -26,7 +26,6 @@ export interface ProductTicket {
 }
 
 export interface SalesMix {
-  setup: number;
   caas: number;
   saas: number;
   diagnostico: number;
@@ -89,6 +88,8 @@ export interface InvestmentData {
   marketingInicial: number;
   equipamentos: number;
   outros: number;
+  cupom: string;
+  cupomAplicado: boolean;
 }
 
 export interface MonthlyProjection {
@@ -96,6 +97,7 @@ export interface MonthlyProjection {
   // Revenue
   receitaBrutaCaas: number;
   receitaBrutaSaas: number;
+  receitaBrutaSetup: number;
   receitaBrutaEducation: number;
   receitaBrutaExpansao: number;
   receitaBrutaTax: number;
@@ -171,7 +173,7 @@ export interface SimulatorState {
 export const DEFAULT_TICKETS: ProductTicket[] = [
   { nome: 'Setup', key: 'setup', sugerido: 15000, minimo: 8000, valor: 15000 },
   { nome: 'CFO as a Service (CAAS)', key: 'caas', sugerido: 9500, minimo: 6500, valor: 9500 },
-  { nome: 'SaaS', key: 'saas', sugerido: 2500, minimo: 730, valor: 2500 },
+  { nome: 'SAAS', key: 'saas', sugerido: 2500, minimo: 730, valor: 2500 },
   { nome: 'Diagnóstico Estratégico', key: 'diagnostico', sugerido: 18000, minimo: 12000, valor: 18000 },
 ];
 
@@ -206,7 +208,7 @@ export const INITIAL_STATE: SimulatorState = {
   commercial: {
     compromissoMensal: 3,
     tickets: DEFAULT_TICKETS.map(t => ({ ...t })),
-    mix: { setup: 1, caas: 1, saas: 1, diagnostico: 0 },
+    mix: { caas: 1, saas: 1, diagnostico: 1 },
   },
   matrixClients: {
     qtdMensalInicial: 0,
@@ -231,20 +233,22 @@ export const INITIAL_STATE: SimulatorState = {
     { nome: 'Despesas Administrativas', key: 'administrativas', valorMensal: 0 },
   ],
   variableCostRates: [
-    { nome: 'Custos CaaS', key: 'caas', valorMensal: 0 },
-    { nome: 'Custos SaaS', key: 'saas', valorMensal: 0 },
+    { nome: 'Custos CAAS', key: 'caas', valorMensal: 0 },
+    { nome: 'Custos SAAS', key: 'saas', valorMensal: 0 },
     { nome: 'Custos Education', key: 'education', valorMensal: 0 },
     { nome: 'Custos Customer Success', key: 'cs', valorMensal: 0 },
     { nome: 'Custos Expansão', key: 'expansao', valorMensal: 0 },
     { nome: 'Custos Tax', key: 'tax', valorMensal: 0 },
   ],
   investment: {
-    taxaFranquia: 0,
+    taxaFranquia: 190000,
     capitalGiro: 0,
     implantacao: 0,
     marketingInicial: 0,
     equipamentos: 0,
     outros: 0,
+    cupom: '',
+    cupomAplicado: false,
   },
   belowEbitda: {
     recFinanceiras: 0,
