@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { SectionHeader } from './SectionHeader';
+import { Button } from '@/components/ui/button';
 import { formatCurrency, formatPercent } from '@/lib/formatters';
 import { calculateROI } from '@/lib/financial';
 import { TrendingUp, Target, DollarSign } from 'lucide-react';
@@ -14,15 +16,40 @@ interface Props {
   investment: InvestmentData;
 }
 
+// Custom tooltip for DRE lines chart showing value + % of revenue
+function DRETooltipContent({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  const receitaBruta = payload.find((p: any) => p.dataKey === 'Receita Bruta')?.value || 1;
+  return (
+    <div className="bg-card border border-border rounded-lg p-3 shadow-lg text-xs">
+      <p className="font-semibold mb-1">{label}</p>
+      {payload.map((entry: any) => {
+        const pct = receitaBruta ? (entry.value / receitaBruta) * 100 : 0;
+        return (
+          <p key={entry.dataKey} style={{ color: entry.color }} className="flex justify-between gap-4">
+            <span>{entry.name}:</span>
+            <span className="font-medium">
+              {formatCurrency(entry.value)} ({pct.toFixed(1)}%)
+            </span>
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 export function SectionCharts({ projections, investment }: Props) {
+  const [retornoMetrica, setRetornoMetrica] = useState<'resultadoFinal' | 'receitaBrutaTotal'>('receitaBrutaTotal');
+
   if (projections.length === 0) return null;
 
   const { totalInvestimento, roiTotal, paybackMeses } = calculateROI(investment, projections);
 
-  // 1. Retorno acumulado vs investimento
+  // 1. Retorno acumulado vs investimento (toggle metric)
   let acum = 0;
+  const metricLabel = retornoMetrica === 'receitaBrutaTotal' ? 'Receita Bruta Acum.' : 'Lucro Líquido Acum.';
   const retornoData = projections.map(p => {
-    acum += p.resultadoFinal;
+    acum += p[retornoMetrica];
     return { mes: `M${p.month}`, retornoAcum: acum, investimento: totalInvestimento };
   });
 
@@ -95,7 +122,27 @@ export function SectionCharts({ projections, investment }: Props) {
       {/* Chart 1: Retorno Acumulado vs Investimento */}
       <Card className="mb-6">
         <CardContent className="pt-6">
-          <h4 className="text-sm font-semibold mb-4">Retorno Acumulado vs Investimento Inicial</h4>
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-sm font-semibold">Retorno Acumulado vs Investimento Inicial</h4>
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant={retornoMetrica === 'receitaBrutaTotal' ? 'default' : 'outline'}
+                onClick={() => setRetornoMetrica('receitaBrutaTotal')}
+                className="text-xs h-7 px-3"
+              >
+                Receita Bruta
+              </Button>
+              <Button
+                size="sm"
+                variant={retornoMetrica === 'resultadoFinal' ? 'default' : 'outline'}
+                onClick={() => setRetornoMetrica('resultadoFinal')}
+                className="text-xs h-7 px-3"
+              >
+                Lucro Líquido
+              </Button>
+            </div>
+          </div>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={retornoData}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -103,7 +150,7 @@ export function SectionCharts({ projections, investment }: Props) {
               <YAxis tickFormatter={v => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} />
               <Tooltip formatter={tooltipFormatter} />
               <Legend />
-              <Line type="monotone" dataKey="retornoAcum" name="Retorno Acumulado" stroke="hsl(142, 76%, 36%)" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="retornoAcum" name={metricLabel} stroke="hsl(142, 76%, 36%)" strokeWidth={2} dot={false} />
               <Line type="monotone" dataKey="investimento" name="Investimento" stroke="hsl(0, 84%, 60%)" strokeWidth={2} strokeDasharray="8 4" dot={false} />
               {paybackMeses > 0 && (
                 <ReferenceLine x={`M${Math.ceil(paybackMeses)}`} stroke="hsl(142, 76%, 36%)" strokeWidth={2} strokeDasharray="4 4" label={{ value: `Payback ~${paybackMeses.toFixed(1)}m`, position: 'top', fontSize: 11 }} />
@@ -121,14 +168,14 @@ export function SectionCharts({ projections, investment }: Props) {
             <LineChart data={dreLines}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
-              <YAxis tickFormatter={v => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} />
-              <Tooltip formatter={tooltipFormatter} />
+              <YAxis tickFormatter={v => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} domain={['auto', 'auto']} />
+              <Tooltip content={<DRETooltipContent />} />
               <Legend />
-              <Line type="monotone" dataKey="Receita Bruta" stroke="hsl(200, 80%, 50%)" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="Margem Contribuição" stroke="hsl(142, 76%, 36%)" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="EBITDA" stroke="hsl(45, 93%, 47%)" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="Resultado Líquido" stroke="hsl(280, 60%, 50%)" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="Resultado Final" stroke="hsl(0, 84%, 60%)" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="Receita Bruta" stroke="hsl(200, 80%, 50%)" strokeWidth={2} dot={false} connectNulls />
+              <Line type="monotone" dataKey="Margem Contribuição" stroke="hsl(142, 76%, 36%)" strokeWidth={2} dot={false} connectNulls />
+              <Line type="monotone" dataKey="EBITDA" stroke="hsl(45, 93%, 47%)" strokeWidth={2} dot={false} connectNulls />
+              <Line type="monotone" dataKey="Resultado Líquido" stroke="hsl(280, 60%, 50%)" strokeWidth={2} dot={false} connectNulls />
+              <Line type="monotone" dataKey="Resultado Final" stroke="hsl(0, 84%, 60%)" strokeWidth={2} dot={false} connectNulls />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
