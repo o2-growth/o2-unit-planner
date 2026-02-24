@@ -174,8 +174,8 @@ export function SectionCharts({ projections, investment }: Props) {
               <Line type="monotone" dataKey="Receita Bruta" stroke="hsl(200, 80%, 50%)" strokeWidth={2} dot={false} connectNulls />
               <Line type="monotone" dataKey="Margem Contribuição" stroke="hsl(142, 76%, 36%)" strokeWidth={2} dot={false} connectNulls />
               <Line type="monotone" dataKey="EBITDA" stroke="hsl(45, 93%, 47%)" strokeWidth={2} dot={false} connectNulls />
-              <Line type="monotone" dataKey="Resultado Líquido" stroke="hsl(280, 60%, 50%)" strokeWidth={2} dot={false} connectNulls />
-              <Line type="monotone" dataKey="Resultado Final" stroke="hsl(0, 84%, 60%)" strokeWidth={2} dot={false} connectNulls />
+              <Line type="monotone" dataKey="Resultado Líquido" stroke="hsl(280, 60%, 50%)" strokeWidth={2} dot={false} connectNulls strokeDasharray="6 3" />
+              <Line type="monotone" dataKey="Resultado Final" stroke="hsl(0, 84%, 60%)" strokeWidth={2} dot={false} connectNulls strokeDasharray="2 2" />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
