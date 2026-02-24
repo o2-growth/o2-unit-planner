@@ -72,7 +72,7 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
     const recDiag = mix.diagnostico * tDiag;            // Diagnóstico: pontual
 
     // --- Receita pré-existente (mês 1 only) ---
-    const receitaPreExistente = m === 1 ? state.profile.receitaMensal : 0;
+    const receitaPreExistente = state.profile.receitaMensal;
 
     // --- DRE Revenue Lines ---
     const rbCaas = mrrCaasOwn + mrrMatriz + receitaPreExistente;

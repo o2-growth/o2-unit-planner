@@ -58,7 +58,7 @@ export function SectionProfile({ data, onChange }: Props) {
           </div>
 
           <div>
-            <Label>Qual a receita total mensal hoje?</Label>
+            <Label>Qual a receita total mensal recorrente hoje?</Label>
             <CurrencyInput value={data.receitaMensal} onChange={v => update('receitaMensal', v)} />
           </div>
 
