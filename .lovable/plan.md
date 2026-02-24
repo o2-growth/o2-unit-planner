@@ -1,71 +1,88 @@
 
+# Login Simples e Persistencia de Simulacoes no Banco de Dados
 
-# Melhorias de UX: Revelacao Progressiva e Mensagens Condicionais
+## Resumo
+Criar um sistema de login simplificado (nome + email, sem validacao por email) e salvar as simulacoes do usuario no banco de dados do Lovable Cloud, substituindo o localStorage.
 
-## Problema Principal
-Todas as secoes e mensagens de transicao ("Muito obrigado por suas respostas...", "Excelente. Bora para os numeros.") aparecem imediatamente, antes do usuario preencher qualquer campo. Isso quebra a experiencia de uma jornada guiada e faz o simulador parecer um formulario generico em vez de uma ferramenta profissional de planejamento.
+## Etapas
 
-## Solucao: Revelacao Progressiva
+### 1. Banco de Dados - Criar tabelas
 
-Implementar logica de visibilidade condicional no `Index.tsx` para que cada secao e mensagem de transicao so apareca apos a secao anterior ter dados preenchidos. A identidade visual permanece intacta.
+**Tabela `profiles`:**
+- `id` (UUID, PK, referencia auth.users.id com ON DELETE CASCADE)
+- `nome` (text, not null)
+- `email` (text, not null)
+- `created_at` (timestamp with default now())
 
-### Regras de Visibilidade
+**Tabela `simulations`:**
+- `id` (UUID, PK, default gen_random_uuid())
+- `user_id` (UUID, not null, referencia profiles.id com ON DELETE CASCADE)
+- `nome` (text, default 'Minha Simulacao')
+- `state` (jsonb, not null) -- armazena o SimulatorState completo
+- `created_at` / `updated_at` (timestamps)
 
-```text
-Secao 1 - Perfil              -> Sempre visivel
-  Mensagem "Muito obrigado..." -> Visivel quando Perfil tem nome preenchido
-Secao 2 - Objetivos           -> Visivel quando Perfil tem nome preenchido  
-  Mensagem "Excelente..."     -> Visivel quando Objetivos tem faturamento12m > 0
-Secao 3 - Horizonte           -> Visivel quando Objetivos tem faturamento12m > 0
-Secao 4 - Premissas Comerciais -> Visivel quando Horizonte selecionado (sempre true, default=12)
-Secao 5 - Clientes Matriz     -> Visivel quando mix total > 0
-Secao 6 - Churn               -> Visivel quando secao 5 visivel
-Secao 7 - Impostos            -> Visivel quando secao 6 visivel
-Secao 8 - Regras Comerciais   -> Visivel quando secao 7 visivel
-Premissas Header               -> Visivel quando secao 8 visivel
-Secao 9 - DRE (P&L)           -> Visivel quando secao 8 visivel
-Secao 10 - ROI                -> Visivel quando secao 9 visivel
-Graficos                       -> Visivel quando secao 10 visivel
-Resultados                     -> Visivel quando secao 10 visivel
-```
+**RLS Policies:**
+- profiles: usuarios so leem/atualizam o proprio perfil
+- simulations: usuarios so acessam suas proprias simulacoes
 
-### Barra de Progresso
-Adicionar uma barra de progresso fixa no topo (abaixo do header) mostrando quantas etapas o usuario completou, sem alterar cores ou tipografia.
+**Trigger:** criar perfil automaticamente ao registrar usuario (via trigger on auth.users insert)
 
-### Correcao de Numeracao
-Ajustar a numeracao das secoes para ser sequencial: 1, 2, 3, 4... em vez de 1, 3, 4, 5...
+**Auth config:** habilitar auto-confirm de email (pois o usuario pediu explicitamente "sem validacao por email")
+
+### 2. Tela de Login/Registro
+
+Criar pagina `/auth` com formulario simples:
+- Campo Nome
+- Campo Email
+- Campo Senha (necessario para autenticacao)
+- Botoes "Entrar" e "Criar Conta"
+- Sem validacao por email (auto-confirm habilitado)
+
+### 3. Contexto de Autenticacao
+
+Atualizar `AuthContext.tsx` para usar autenticacao real do banco:
+- `signUp(nome, email, senha)` -- cria conta + perfil
+- `signIn(email, senha)` -- faz login
+- `signOut()` -- faz logout
+- Expor dados do usuario logado (id, nome, email)
+- Listener `onAuthStateChange` para manter sessao
+
+### 4. Roteamento Protegido
+
+- Redirecionar para `/auth` se nao estiver logado
+- Redirecionar para `/` se ja estiver logado (ao acessar `/auth`)
+
+### 5. Persistencia das Simulacoes
+
+Atualizar `ActionButtons.tsx`:
+- "Salvar Simulacao" grava no banco (upsert na tabela simulations)
+- "Carregar Simulacao" busca do banco
+- Manter fallback para localStorage quando offline
+
+Atualizar `Index.tsx`:
+- Carregar simulacao do banco ao montar (se logado)
+- Auto-save no banco ao fazer alteracoes
+
+### 6. Header com Usuario Logado
+
+Substituir o `AdminLogin` no header por informacoes do usuario logado (nome + botao sair).
+
+---
 
 ## Detalhes Tecnicos
 
-### Arquivo: `src/pages/Index.tsx`
-- Criar funcoes helper para verificar completude de cada secao (ex: `isProfileDone`, `isGoalsDone`)
-- Envolver cada secao e mensagem de transicao em renderizacao condicional
-- Adicionar componente de progresso simples (div com barra percentual) entre o header e o conteudo
-- Corrigir prop `number` nos `SectionHeader` para ser sequencial
+### Arquivos novos:
+- `src/pages/Auth.tsx` -- pagina de login/registro
+- `src/components/ProtectedRoute.tsx` -- wrapper de rota protegida
 
-### Arquivo: `src/components/simulator/SectionGoals.tsx`
-- Alterar `number={3}` para `number={2}`
+### Arquivos modificados:
+- `src/contexts/AuthContext.tsx` -- reescrever para usar autenticacao real
+- `src/App.tsx` -- adicionar rota `/auth` e proteger rota `/`
+- `src/components/simulator/ActionButtons.tsx` -- salvar/carregar do banco
+- `src/pages/Index.tsx` -- carregar simulacao do banco ao iniciar, mostrar nome do usuario
 
-### Arquivo: `src/components/simulator/SectionHorizon.tsx`
-- Alterar `number={4}` para `number={3}`
-
-### Arquivo: `src/components/simulator/SectionCommercial.tsx`
-- Alterar `number={5}` para `number={4}`
-
-### Arquivo: `src/components/simulator/SectionMatrixClients.tsx`
-- Alterar `number={6}` para `number={5}`
-
-### Arquivo: `src/components/simulator/SectionChurn.tsx`
-- Alterar `number={7}` para `number={6}`
-
-### Arquivo: `src/components/simulator/SectionTaxes.tsx`
-- Alterar `number={8}` para `number={7}`
-
-### Arquivo: `src/components/simulator/SectionRevenueRules.tsx`
-- Alterar `number={9}` para `number={8}`
-
-### Comportamento
-- Secoes aparecem com transicao suave (CSS transition opacity/transform)
-- Ao carregar simulacao salva com dados, todas as secoes relevantes aparecem imediatamente
-- O botao "Resetar Premissas" volta o formulario ao estado inicial (so secao 1 visivel)
-
+### Migracao SQL:
+1. Criar tabela `profiles` com RLS
+2. Criar tabela `simulations` com RLS
+3. Criar trigger para auto-criar perfil no signup
+4. Configurar auto-confirm de email
