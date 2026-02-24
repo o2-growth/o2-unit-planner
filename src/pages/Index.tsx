@@ -94,17 +94,31 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="o2-gradient py-8 px-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="text-center flex-1">
-            <h1 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-2">
-              Simulador Financeiro
+      <header className="o2-gradient px-4 pt-6 pb-7">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between gap-4">
+            {/* Logo */}
+            <img
+              src="/logo-o2-color.svg"
+              alt="O2 Inc."
+              className="h-8 md:h-10 w-auto flex-shrink-0"
+            />
+            {/* Admin */}
+            <AdminLogin />
+          </div>
+          {/* Title block */}
+          <div className="mt-5 mb-1">
+            <span className="inline-block text-xs font-semibold tracking-[0.18em] uppercase mb-2"
+              style={{ color: 'hsl(100 71% 56%)' }}>
+              Unit Planner
+            </span>
+            <h1 className="text-2xl md:text-3xl font-bold text-white leading-tight">
+              Simulador de Business Plan
             </h1>
-            <p className="text-primary-foreground/80 text-lg">
-              O2 Inc. — Franquias
+            <p className="text-white/55 text-sm mt-1">
+              Monte a projeção financeira da sua unidade franqueada
             </p>
           </div>
-          <AdminLogin />
         </div>
       </header>
 

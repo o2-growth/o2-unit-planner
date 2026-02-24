@@ -5,96 +5,105 @@
 @layer base {
   :root {
     --background: 0 0% 97%;
-    --foreground: 150 10% 10%;
+    --foreground: 0 0% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 150 10% 10%;
+    --card-foreground: 0 0% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 150 10% 10%;
+    --popover-foreground: 0 0% 10%;
 
-    --primary: 145 63% 42%;
+    /* O2 lime green — dark enough for AA contrast on white */
+    --primary: 100 65% 38%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 150 8% 90%;
-    --secondary-foreground: 150 10% 10%;
+    --secondary: 0 0% 90%;
+    --secondary-foreground: 0 0% 10%;
 
-    --muted: 150 8% 93%;
-    --muted-foreground: 150 5% 45%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 44%;
 
-    --accent: 145 63% 95%;
-    --accent-foreground: 145 63% 25%;
+    /* Light lime green tint for accent backgrounds */
+    --accent: 100 60% 94%;
+    --accent-foreground: 100 65% 25%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 150 10% 85%;
-    --input: 150 10% 85%;
-    --ring: 145 63% 42%;
+    --border: 0 0% 87%;
+    --input: 0 0% 87%;
+    --ring: 100 65% 38%;
 
     --radius: 0.5rem;
 
-    --o2-green: 145 63% 42%;
-    --o2-green-dark: 145 63% 30%;
-    --o2-black: 150 10% 8%;
-    --o2-gray: 150 5% 45%;
-    --o2-highlight: 145 70% 48%;
-    --o2-surface: 145 15% 97%;
+    /* ─── O2 Inc. Brand Tokens ─────────────────────────── */
+    /* Vibrant lime green — use for logos, icons, highlights */
+    --o2-green: 100 71% 56%;
+    /* Darker green — used in gradients, hover states */
+    --o2-green-dark: 100 68% 34%;
+    /* Near pure black — brand dark background */
+    --o2-black: 0 0% 7%;
+    /* Dark gray — brand secondary surface */
+    --o2-gray: 0 0% 23%;
+    /* Bright lime — for glowing accents */
+    --o2-highlight: 100 73% 62%;
+    /* Off-white surface with very subtle green tint */
+    --o2-surface: 100 30% 97%;
 
     --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 145 63% 42%;
+    --sidebar-foreground: 0 0% 26%;
+    --sidebar-primary: 100 65% 38%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 145 63% 95%;
-    --sidebar-accent-foreground: 145 63% 25%;
-    --sidebar-border: 150 10% 85%;
-    --sidebar-ring: 145 63% 42%;
+    --sidebar-accent: 100 60% 94%;
+    --sidebar-accent-foreground: 100 65% 25%;
+    --sidebar-border: 0 0% 87%;
+    --sidebar-ring: 100 65% 38%;
   }
 
   .dark {
-    --background: 150 10% 6%;
+    --background: 0 0% 6%;
     --foreground: 0 0% 95%;
 
-    --card: 150 10% 10%;
+    --card: 0 0% 10%;
     --card-foreground: 0 0% 95%;
 
-    --popover: 150 10% 10%;
+    --popover: 0 0% 10%;
     --popover-foreground: 0 0% 95%;
 
-    --primary: 145 63% 42%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 100 65% 48%;
+    --primary-foreground: 0 0% 7%;
 
-    --secondary: 150 8% 18%;
+    --secondary: 0 0% 16%;
     --secondary-foreground: 0 0% 95%;
 
-    --muted: 150 8% 18%;
-    --muted-foreground: 150 5% 60%;
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 60%;
 
-    --accent: 145 40% 15%;
-    --accent-foreground: 145 63% 70%;
+    --accent: 100 40% 14%;
+    --accent-foreground: 100 65% 70%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 95%;
 
-    --border: 150 8% 18%;
-    --input: 150 8% 18%;
-    --ring: 145 63% 42%;
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 100 65% 48%;
 
-    --o2-green: 145 63% 42%;
-    --o2-green-dark: 145 63% 30%;
-    --o2-black: 150 10% 8%;
-    --o2-gray: 150 5% 60%;
-    --o2-highlight: 145 70% 48%;
-    --o2-surface: 150 10% 12%;
+    --o2-green: 100 71% 56%;
+    --o2-green-dark: 100 68% 34%;
+    --o2-black: 0 0% 7%;
+    --o2-gray: 0 0% 23%;
+    --o2-highlight: 100 73% 62%;
+    --o2-surface: 0 0% 11%;
 
-    --sidebar-background: 150 10% 8%;
+    --sidebar-background: 0 0% 8%;
     --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 145 63% 42%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 145 40% 15%;
-    --sidebar-accent-foreground: 145 63% 70%;
-    --sidebar-border: 150 8% 18%;
-    --sidebar-ring: 145 63% 42%;
+    --sidebar-primary: 100 65% 48%;
+    --sidebar-primary-foreground: 0 0% 7%;
+    --sidebar-accent: 100 40% 14%;
+    --sidebar-accent-foreground: 100 65% 70%;
+    --sidebar-border: 0 0% 16%;
+    --sidebar-ring: 100 65% 48%;
   }
 }
 
@@ -111,7 +120,7 @@
 
 @layer utilities {
   .o2-gradient {
-    background: linear-gradient(135deg, hsl(var(--o2-black)) 0%, hsl(var(--o2-green-dark)) 100%);
+    background: linear-gradient(135deg, hsl(var(--o2-black)) 0%, hsl(0 0% 13%) 60%, hsl(var(--o2-green-dark)) 100%);
   }
   .o2-gradient-subtle {
     background: linear-gradient(135deg, hsl(var(--o2-surface)) 0%, hsl(var(--accent)) 100%);

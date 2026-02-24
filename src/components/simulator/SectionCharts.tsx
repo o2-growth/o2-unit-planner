@@ -150,10 +150,10 @@ export function SectionCharts({ projections, investment }: Props) {
               <YAxis tickFormatter={v => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} />
               <Tooltip formatter={tooltipFormatter} />
               <Legend />
-              <Line type="monotone" dataKey="retornoAcum" name={metricLabel} stroke="hsl(142, 76%, 36%)" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="investimento" name="Investimento" stroke="hsl(0, 84%, 60%)" strokeWidth={2} strokeDasharray="8 4" dot={false} />
+              <Line type="monotone" dataKey="retornoAcum" name={metricLabel} stroke="#6EDE40" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="investimento" name="Investimento" stroke="#E05252" strokeWidth={2} strokeDasharray="8 4" dot={false} />
               {paybackMeses > 0 && (
-                <ReferenceLine x={`M${Math.ceil(paybackMeses)}`} stroke="hsl(142, 76%, 36%)" strokeWidth={2} strokeDasharray="4 4" label={{ value: `Payback ~${paybackMeses.toFixed(1)}m`, position: 'top', fontSize: 11 }} />
+                <ReferenceLine x={`M${Math.ceil(paybackMeses)}`} stroke="#6EDE40" strokeWidth={2} strokeDasharray="4 4" label={{ value: `Payback ~${paybackMeses.toFixed(1)}m`, position: 'top', fontSize: 11 }} />
               )}
             </LineChart>
           </ResponsiveContainer>
@@ -171,11 +171,11 @@ export function SectionCharts({ projections, investment }: Props) {
               <YAxis tickFormatter={v => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} domain={['auto', 'auto']} />
               <Tooltip content={<DRETooltipContent />} />
               <Legend />
-              <Line type="monotone" dataKey="Receita Bruta" stroke="hsl(200, 80%, 50%)" strokeWidth={2} dot={false} connectNulls />
-              <Line type="monotone" dataKey="Margem Contribuição" stroke="hsl(142, 76%, 36%)" strokeWidth={2} dot={false} connectNulls />
-              <Line type="monotone" dataKey="EBITDA" stroke="hsl(45, 93%, 47%)" strokeWidth={2} dot={false} connectNulls />
-              <Line type="monotone" dataKey="Resultado Líquido" stroke="hsl(280, 60%, 50%)" strokeWidth={2} dot={false} connectNulls strokeDasharray="6 3" />
-              <Line type="monotone" dataKey="Resultado Final" stroke="hsl(0, 84%, 60%)" strokeWidth={2} dot={false} connectNulls strokeDasharray="2 2" />
+              <Line type="monotone" dataKey="Receita Bruta" stroke="#3BB0D4" strokeWidth={2} dot={false} connectNulls />
+              <Line type="monotone" dataKey="Margem Contribuição" stroke="#6EDE40" strokeWidth={2} dot={false} connectNulls />
+              <Line type="monotone" dataKey="EBITDA" stroke="#F5C842" strokeWidth={2} dot={false} connectNulls />
+              <Line type="monotone" dataKey="Resultado Líquido" stroke="#9B7FE8" strokeWidth={2} dot={false} connectNulls strokeDasharray="6 3" />
+              <Line type="monotone" dataKey="Resultado Final" stroke="#E05252" strokeWidth={2} dot={false} connectNulls strokeDasharray="2 2" />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
@@ -193,7 +193,7 @@ export function SectionCharts({ projections, investment }: Props) {
               <Tooltip formatter={tooltipFormatter} />
               <Bar dataKey="resultado" name="Resultado Final">
                 {resultadoMensal.map((entry, index) => (
-                  <Cell key={index} fill={entry.resultado >= 0 ? 'hsl(142, 76%, 36%)' : 'hsl(0, 84%, 60%)'} />
+                  <Cell key={index} fill={entry.resultado >= 0 ? '#6EDE40' : '#E05252'} />
                 ))}
               </Bar>
             </BarChart>
@@ -212,8 +212,8 @@ export function SectionCharts({ projections, investment }: Props) {
               <YAxis tickFormatter={v => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} />
               <Tooltip formatter={tooltipFormatter} />
               <Legend />
-              <Line type="monotone" dataKey="receita" name="Receita Total" stroke="hsl(142, 76%, 36%)" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="mrr" name="MRR Total" stroke="hsl(200, 80%, 50%)" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="receita" name="Receita Total" stroke="#6EDE40" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="mrr" name="MRR Total" stroke="#3BB0D4" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
@@ -230,10 +230,10 @@ export function SectionCharts({ projections, investment }: Props) {
               <YAxis tickFormatter={v => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} />
               <Tooltip formatter={tooltipFormatter} />
               <Legend />
-              <Area type="monotone" dataKey="CAAS" stackId="1" fill="hsl(142, 76%, 36%)" stroke="hsl(142, 76%, 36%)" fillOpacity={0.7} />
-              <Area type="monotone" dataKey="SAAS" stackId="1" fill="hsl(200, 80%, 50%)" stroke="hsl(200, 80%, 50%)" fillOpacity={0.7} />
-              <Area type="monotone" dataKey="Setup" stackId="1" fill="hsl(45, 93%, 47%)" stroke="hsl(45, 93%, 47%)" fillOpacity={0.7} />
-              <Area type="monotone" dataKey="Diagnóstico/Expansão" stackId="1" fill="hsl(280, 60%, 50%)" stroke="hsl(280, 60%, 50%)" fillOpacity={0.7} />
+              <Area type="monotone" dataKey="CAAS" stackId="1" fill="#6EDE40" stroke="#6EDE40" fillOpacity={0.75} />
+              <Area type="monotone" dataKey="SAAS" stackId="1" fill="#3BB0D4" stroke="#3BB0D4" fillOpacity={0.75} />
+              <Area type="monotone" dataKey="Setup" stackId="1" fill="#F5C842" stroke="#F5C842" fillOpacity={0.75} />
+              <Area type="monotone" dataKey="Diagnóstico/Expansão" stackId="1" fill="#9B7FE8" stroke="#9B7FE8" fillOpacity={0.75} />
             </AreaChart>
           </ResponsiveContainer>
         </CardContent>
