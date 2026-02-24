@@ -1,59 +1,172 @@
 
-# Simulador Financeiro de Franquia O2 Inc.
+# Ajustes do Simulador Financeiro O2 Inc. -- Iteracao 2
 
-Ferramenta web one-page para simulação financeira completa de unidades franqueadas, com branding O2 Inc. (tons de verde e preto), fluxo vertical de cima para baixo e uso comercial com candidatos a franqueados.
+## Resumo das Mudancas
+
+10 ajustes principais: logica do mix de vendas (SETUP automatico), simplificacao do churn, cabecalho editavel no DRE, controle admin para regras sensiveis, padronizacao "SAAS", taxa de franquia com cupom, graficos de resultados, e revisao de consistencia.
 
 ---
 
-## Seção 1 — Perfil do Novo Sócio
-Formulário com campos de identificação: nome, experiência (seleção única), se já possui consultoria, número de clientes ativos, ticket médio (R$), receita mensal (R$), funcionários (condicional), e pró-labore atual (R$). Campos com máscara monetária e validações.
+## 1. Mix de Vendas -- SETUP Automatico
 
-## Seção 2 — Mensagem de Transição
-Card em destaque com a frase: *"Muito obrigado por suas respostas, agora você está apto a montar o BP da sua unidade."*
+**Arquivo:** `src/types/simulator.ts`, `src/components/simulator/SectionCommercial.tsx`, `src/lib/financial.ts`
 
-## Seção 3 — Objetivos do Franqueado
-Campos para metas: faturamento desejado em 12 meses (R$/mês), pró-labore atual desejado, pró-labore em 12 meses, e meta de ROI/payback com seletor de prazo (12, 18, 24, 36, 48, 60 meses). Seguido de mensagem: *"Excelente. Bora para os números."*
+- Remover `setup` do `SalesMix` (fica apenas `caas`, `saas`, `diagnostico`)
+- O campo `compromissoMensal` passa a ser a soma de CAAS + SAAS + Diagnostico
+- Exibir campo calculado read-only: "SETUP gerado automaticamente = CAAS + SAAS"
+- Adicionar aviso visual: "SETUP e obrigatorio na contratacao de CAAS e/ou SAAS e sera calculado automaticamente"
+- Na logica financeira, receita de SETUP = (mix.caas + mix.saas) x ticket de Setup
+- Manter ticket de Setup editavel (ele continua existindo como produto, so nao entra no mix manual)
 
-## Seção 4 — Horizonte de Projeção
-Seletor de prazo (12/18/24/36/48/60 meses) com badges de "curto prazo" e "longo prazo". Toda a modelagem recalcula automaticamente conforme o horizonte selecionado.
+## 2. Churn -- Simplificar Exibicao
 
-## Seção 5 — Premissas Comerciais (Venda Própria)
-- **Compromisso comercial**: slider de 1 a 10 projetos/mês
-- **Tickets por produto**: campos editáveis com valor sugerido e mínimo (Setup, CAAS, SaaS, Diagnóstico Estratégico), com aviso visual se abaixo do mínimo
-- **Mix de vendas**: distribuição das vendas mensais entre os 4 produtos, com validação de soma e indicador visual
+**Arquivo:** `src/components/simulator/SectionChurn.tsx`
 
-## Seção 6 — Clientes Comprados da Matriz
-Seção destacada com campos para: quantidade mensal inicial, tipo de crescimento (fixo, incremental ou percentual), preço por cliente (CAC, padrão R$ 9.000), e receita por cliente comprado (Setup R$ 15.000 + MRR R$ 6.570,10). Projeção mensal automática de quantidade, acumulado, receita e custos.
+- Remover a tabela detalhada de churn (base inicial, churn R$, novo MRR, base final)
+- Manter apenas o campo de input do churn mensal (%) com uma descricao simples
+- A logica de churn continua identica no `financial.ts` -- apenas a exibicao muda
+- Resultado do churn aparece no DRE e nos graficos
 
-## Seção 7 — Churn sobre MRR
-Campo de churn mensal (%) com projeção mês a mês: base MRR inicial, churn em R$, novo MRR, base MRR final. Tabela visível e transparente.
+## 3. Cabecalho Editavel de Premissas no DRE
 
-## Seção 8 — Impostos / Deduções
-Configuração tributária com campos vazios (PIS, COFINS, IRPJ, CSLL, ISSQN, ICMS). Alíquotas editáveis manualmente, com checkboxes para marcar quais impostos se aplicam a quais produtos.
+**Arquivo:** Novo componente `src/components/simulator/PremissasHeader.tsx`, ajuste em `src/pages/Index.tsx`
 
-## Seção 9 — Regras Comerciais / Receita
-- Mapeamento de produtos do formulário para o plano de contas (configurável)
-- Revenue share do SaaS (padrão 30%, editável) — separação visual entre receita total e reconhecida pela franquia
-- Royalties sobre receita bruta (padrão 20%, editável)
+- Criar componente com grid de campos editaveis das premissas-chave:
+  - Horizonte de projecao
+  - Qtd CAAS/mes, SAAS/mes, Diagnostico/mes
+  - Tickets (CAAS, SAAS, Diagnostico, Setup)
+  - Churn MRR (%)
+  - Clientes comprados da Matriz (mes 1) e crescimento
+  - CAC simbolico
+  - Pro-labore alvo
+- Posicionado logo acima da secao P&L/DRE
+- Alteracoes neste cabecalho propagam para o state central e recalculam tudo
 
-## Seção 10 — P&L / DRE Gerencial
-Tabela completa seguindo o plano de contas fornecido (Receita Bruta → Deduções → Receita Líquida → Custos Variáveis → Lucro Bruto → Despesas Fixas → EBITDA → Ajustes → Resultado Líquido → Amortização/Investimentos → Resultado Final). Visão mensal com scroll horizontal, valores em R$ e margens %. Subtotais em destaque com estilo verde/preto da O2.
+## 4. Controle Admin -- Revenue Share e Royalties
 
-## Seção 11 — ROI e Payback
-Campos editáveis de investimento inicial (taxa de franquia, capital de giro, implantação, marketing, equipamentos, outros). Cálculos automáticos de ROI anual (%) e Payback (meses). Comparação com a meta do usuário e status visual (atinge/não atinge).
+**Arquivos:** Novo `src/contexts/AuthContext.tsx`, novo `src/components/simulator/AdminLogin.tsx`, ajustes em `SectionRevenueRules.tsx`
 
-## Seção 12 — Visualização dos Resultados
-Tabs para alternar entre visão Mensal, Consolidada e Anualizada. KPIs em cards destacados: Receita Bruta Total, Receita Líquida, MRR Final Projetado, Churn (%), Lucro Bruto, EBITDA (R$ e %), Resultado Líquido, Resultado Final, ROI (%), Payback (meses).
+- Criar contexto de autenticacao simples (sem Supabase nesta versao):
+  - Estado: `isAdmin: boolean`
+  - Login com senha fixa armazenada em variavel (nao localStorage)
+  - Credencial admin: usuario `admin`, senha `o2admin2024`
+- Botao "Admin" no header da pagina que abre dialog de login
+- Na secao de Regras Comerciais:
+  - Revenue Share SAAS (30%) e Royalties (20%) aparecem como read-only para usuario comum
+  - Se `isAdmin === true`, campos ficam editaveis
+  - Badge "Somente Admin" nos campos travados
 
-## Funcionalidades Transversais
-- **Recálculo automático** ao alterar qualquer premissa
-- **Tooltips** explicativos nos campos
-- **Botão "Resetar Premissas"** para limpar tudo
-- **Salvar simulação** em localStorage (carregar depois)
-- **Exportar PDF** com resultado completo
-- **Exportar Excel** com dados da modelagem
-- **Validações** em tempo real (ticket mínimo, soma do mix, campos obrigatórios)
-- **Branding O2 Inc.** com paleta verde/preto baseada na imagem de referência
+## 5. Padronizacao "SAAS" em Maiusculo
 
-## Abordagem de Implementação
-Tudo frontend, sem backend necessário. Toda a lógica financeira implementada de forma transparente e organizada em funções reutilizáveis. Dados armazenados em localStorage. A implementação será feita em etapas progressivas dada a complexidade (formulários primeiro, depois lógica financeira, depois visualização e exportação).
+**Todos os arquivos** com ocorrencias de "SaaS" ou "saas" em labels/textos visíveis:
+
+- `SectionCommercial.tsx`: label "SAAS"
+- `SectionRevenueRules.tsx`: "SAAS"
+- `SectionPL.tsx`: "SAAS" na DRE
+- `SectionResults.tsx`: labels
+- `SectionChurn.tsx`: se houver
+- `simulator.ts`: nome do ticket "SAAS", labels de custos
+- Manter as keys internas como `saas` (lowercase) para nao quebrar logica
+
+## 6. Taxa de Franquia Padrao + Cupom
+
+**Arquivos:** `src/types/simulator.ts`, `src/components/simulator/SectionROI.tsx`
+
+- Valor padrao de `taxaFranquia` no INITIAL_STATE: `190000`
+- Adicionar campo `cupom` e `cupomAplicado` ao `InvestmentData`
+- Na UI do ROI:
+  - Campo de cupom (texto) + botao "Aplicar Cupom"
+  - Se cupom === "FRANQUIAOURO": taxa = 140.000, feedback verde com check
+  - Se cupom invalido: feedback vermelho, mantem 190.000
+  - Exibir: taxa original, desconto aplicado, taxa final
+- Campo de taxa de franquia read-only para usuario comum (editavel apenas admin, opcional)
+
+## 7. Graficos de Resultados
+
+**Arquivo:** Novo `src/components/simulator/SectionCharts.tsx`, usar Recharts (ja instalado)
+
+5 graficos principais:
+
+1. **Retorno Acumulado vs Investimento Inicial** -- LineChart
+   - Linha: resultado final acumulado mes a mes
+   - Linha horizontal: investimento total
+   - Ponto de cruzamento destacado (payback)
+
+2. **Resultado Mensal** -- BarChart
+   - Barras do resultado final (ou EBITDA) por mes
+   - Cores: verde para positivo, vermelho para negativo
+
+3. **Evolucao Receita e MRR** -- LineChart
+   - Linha receita total
+   - Linha MRR final
+   - (opcional) linha de churn R$ discreta
+
+4. **Composicao de Receita por Produto** -- AreaChart empilhado
+   - CAAS, SAAS, Setup, Diagnostico/Expansao ao longo dos meses
+
+5. **Payback Highlight** -- Card KPI
+   - Mes do payback em destaque
+   - Retorno acumulado no fim do periodo
+   - ROI no horizonte
+
+Posicionados na Secao 12 (Resultados), acima ou abaixo dos KPIs.
+
+## 8. Revisao de Consistencia da Modelagem
+
+**Arquivo:** `src/lib/financial.ts`
+
+- Ajustar calculo de receita Setup: `(mix.caas + mix.saas) * ticketSetup` (automatico)
+- Remover `mix.setup` da logica
+- Garantir que churn reflete corretamente no DRE
+- Revenue share SAAS fixo em 30% (ler do state, mas UI travada)
+- Royalties fixo em 20% (idem)
+- Taxa de franquia padrao 190.000 no calculo de ROI
+- Recalculo completo funciona ao alterar qualquer premissa (ja funciona via useMemo)
+
+## 9. Ordem Visual Ajustada
+
+Manter one-page vertical. Ordem final:
+1. Header + botoes de acao
+2. Perfil do Socio
+3. Mensagem de transicao
+4. Objetivos
+5. Mensagem "Bora para os numeros"
+6. Horizonte
+7. Premissas Comerciais (mix sem setup manual)
+8. Clientes Matriz
+9. Churn (simplificado, so input)
+10. Impostos
+11. Regras Comerciais (admin-only para rev share/royalties)
+12. **Cabecalho de Premissas Editavel** (novo)
+13. P&L / DRE
+14. ROI e Payback (com cupom)
+15. **Graficos** (novo)
+16. Resultados / KPIs
+17. Botoes de acao (rodape)
+
+---
+
+## Detalhes Tecnicos
+
+- **Auth simples:** Context + Dialog, sem backend. Senha hardcoded no codigo (versao MVP). Estrutura preparada para evoluir para Supabase.
+- **Graficos:** Recharts (ja instalado). ResponsiveContainer para responsividade.
+- **Cupom:** Validacao client-side. Cupom valido: "FRANQUIAOURO".
+- **Persistencia:** localStorage continua funcionando com novo schema (backward-compatible com fallback para INITIAL_STATE).
+
+## Arquivos Criados
+- `src/contexts/AuthContext.tsx`
+- `src/components/simulator/AdminLogin.tsx`
+- `src/components/simulator/PremissasHeader.tsx`
+- `src/components/simulator/SectionCharts.tsx`
+
+## Arquivos Modificados
+- `src/types/simulator.ts`
+- `src/lib/financial.ts`
+- `src/pages/Index.tsx`
+- `src/components/simulator/SectionCommercial.tsx`
+- `src/components/simulator/SectionChurn.tsx`
+- `src/components/simulator/SectionRevenueRules.tsx`
+- `src/components/simulator/SectionROI.tsx`
+- `src/components/simulator/SectionPL.tsx`
+- `src/components/simulator/SectionResults.tsx`
+- `src/App.tsx`
