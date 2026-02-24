@@ -1,7 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { SectionHeader } from './SectionHeader';
 import type { TaxesData } from '@/types/simulator';
 
@@ -24,7 +23,7 @@ export function SectionTaxes({ data, onChange }: Props) {
       <SectionHeader
         number={7}
         title="Impostos / Deduções"
-        description="Configure as alíquotas manualmente e marque quais impostos se aplicam a cada produto."
+        description="Defina a alíquota específica de cada imposto por BU. Valor 0 = não se aplica."
       />
       <Card>
         <CardContent className="pt-6">
@@ -58,16 +57,19 @@ export function SectionTaxes({ data, onChange }: Props) {
                     </td>
                     {PRODUCTS.map(p => (
                       <td key={p.key} className="text-center py-2 px-2">
-                        <Checkbox
-                          checked={imp.aplicaA[p.key as keyof typeof imp.aplicaA]}
-                          onCheckedChange={checked => {
+                        <Input
+                          type="number" min={0} max={100} step={0.01}
+                          value={imp.aplicaA[p.key as keyof typeof imp.aplicaA] || ''}
+                          onChange={e => {
                             const newImpostos = [...data.impostos];
                             newImpostos[idx] = {
                               ...imp,
-                              aplicaA: { ...imp.aplicaA, [p.key]: !!checked },
+                              aplicaA: { ...imp.aplicaA, [p.key]: parseFloat(e.target.value) || 0 },
                             };
                             onChange({ ...data, impostos: newImpostos });
                           }}
+                          placeholder="0"
+                          className="w-16 h-8 text-sm text-center"
                         />
                       </td>
                     ))}

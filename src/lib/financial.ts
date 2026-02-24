@@ -89,11 +89,12 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
 
     const calcTaxDed = (key: string): number => {
       const cfg = getTaxConfig(key);
-      if (!cfg || cfg.aliquota <= 0) return 0;
+      if (!cfg) return 0;
       let total = 0;
       for (const [prod, receita] of Object.entries(revenueByProduct)) {
-        if (cfg.aplicaA[prod as keyof typeof cfg.aplicaA]) {
-          total += receita * (cfg.aliquota / 100);
+        const rate = cfg.aplicaA[prod as keyof typeof cfg.aplicaA] || 0;
+        if (rate > 0) {
+          total += receita * (rate / 100);
         }
       }
       return total;
