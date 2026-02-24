@@ -21,7 +21,7 @@ export function SectionCommercial({ data, onChange }: Props) {
   return (
     <section>
       <SectionHeader
-        number={5}
+        number={4}
         title="Premissas Comerciais (Venda Própria)"
         tooltip="Defina seu compromisso de vendas mensais usando seus próprios relacionamentos, sem considerar demandas da Matriz."
       />

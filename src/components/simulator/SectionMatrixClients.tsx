@@ -18,7 +18,7 @@ export function SectionMatrixClients({ data, onChange }: Props) {
   return (
     <section>
       <SectionHeader
-        number={6}
+        number={5}
         title="Clientes Comprados da Matriz"
         description="Tese de crescimento via compra de clientes da Matriz"
         tooltip="Cada cliente comprado gera receita de Setup (one-off) + MRR recorrente, com custo de aquisição (CAC)."

@@ -15,6 +15,7 @@ import { ActionButtons } from '@/components/simulator/ActionButtons';
 import { PremissasHeader } from '@/components/simulator/PremissasHeader';
 import { AdminLogin } from '@/components/simulator/AdminLogin';
 import { Card, CardContent } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { calculateProjections } from '@/lib/financial';
 import { INITIAL_STATE, type SimulatorState } from '@/types/simulator';
 
@@ -45,6 +46,35 @@ function migrateState(parsed: any): SimulatorState {
     parsed.goals = { ...INITIAL_STATE.goals, ...parsed.goals };
   }
   return parsed;
+}
+
+// Visibility helpers
+function isProfileDone(state: SimulatorState) {
+  return state.profile.nome.trim().length > 0;
+}
+function isGoalsDone(state: SimulatorState) {
+  return state.goals.faturamento12m > 0;
+}
+function isMixDone(state: SimulatorState) {
+  const mix = state.commercial.mix;
+  return (mix.caas + mix.saas + mix.diagnostico) > 0;
+}
+
+function getProgress(state: SimulatorState) {
+  const steps = [
+    isProfileDone(state),
+    isGoalsDone(state),
+    true, // horizonte always has default
+    isMixDone(state),
+    isMixDone(state), // matrix visible when mix done
+    isMixDone(state), // churn
+    isMixDone(state), // taxes
+    isMixDone(state), // revenue rules
+    isMixDone(state), // P&L
+    isMixDone(state), // ROI
+  ];
+  const done = steps.filter(Boolean).length;
+  return Math.round((done / steps.length) * 100);
 }
 
 const Index = () => {
@@ -91,22 +121,25 @@ const Index = () => {
     }));
   }, []);
 
+  // Visibility flags
+  const profileDone = isProfileDone(state);
+  const goalsDone = isGoalsDone(state);
+  const mixDone = isMixDone(state);
+  const progress = getProgress(state);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="o2-gradient px-4 pt-6 pb-7">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between gap-4">
-            {/* Logo */}
             <img
               src="/logo-o2-color.svg"
               alt="O2 Inc."
               className="h-8 md:h-10 w-auto flex-shrink-0"
             />
-            {/* Admin */}
             <AdminLogin />
           </div>
-          {/* Title block */}
           <div className="mt-5 mb-1">
             <span className="inline-block text-xs font-semibold tracking-[0.18em] uppercase mb-2"
               style={{ color: 'hsl(100 71% 56%)' }}>
@@ -122,6 +155,16 @@ const Index = () => {
         </div>
       </header>
 
+      {/* Progress bar */}
+      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b">
+        <div className="max-w-4xl mx-auto px-4 py-2">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">{progress}% completo</span>
+            <Progress value={progress} className="h-2" />
+          </div>
+        </div>
+      </div>
+
       {/* Action buttons top */}
       <div className="max-w-4xl mx-auto px-4">
         <ActionButtons state={state} projections={projections} onReset={handleReset} onLoad={setState} />
@@ -132,81 +175,134 @@ const Index = () => {
         {/* Section 1 - Profile */}
         <SectionProfile data={state.profile} onChange={v => update('profile', v)} />
 
-        {/* Transition */}
-        <Card className="border-primary bg-accent/50">
-          <CardContent className="py-8 text-center">
-            <p className="text-lg font-semibold text-primary italic">
-              "Muito obrigado por suas respostas, agora você está apto a montar o BP da sua unidade."
-            </p>
-          </CardContent>
-        </Card>
+        {/* Transition after profile */}
+        {profileDone && (
+          <div className="animate-fade-in">
+            <Card className="border-primary bg-accent/50">
+              <CardContent className="py-8 text-center">
+                <p className="text-lg font-semibold text-primary italic">
+                  "Muito obrigado por suas respostas, agora você está apto a montar o BP da sua unidade."
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-        {/* Section 3 - Goals */}
-        <SectionGoals data={state.goals} onChange={v => update('goals', v)} />
+        {/* Section 2 - Goals */}
+        {profileDone && (
+          <div className="animate-fade-in">
+            <SectionGoals data={state.goals} onChange={v => update('goals', v)} />
+          </div>
+        )}
 
-        {/* Transition */}
-        <Card className="border-primary bg-accent/50">
-          <CardContent className="py-6 text-center">
-            <p className="text-lg font-semibold text-primary italic">
-              "Excelente. Bora para os números."
-            </p>
-          </CardContent>
-        </Card>
+        {/* Transition after goals */}
+        {goalsDone && (
+          <div className="animate-fade-in">
+            <Card className="border-primary bg-accent/50">
+              <CardContent className="py-6 text-center">
+                <p className="text-lg font-semibold text-primary italic">
+                  "Excelente. Bora para os números."
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-        {/* Section 4 - Horizon */}
-        <SectionHorizon value={state.horizonte} onChange={v => update('horizonte', v)} />
+        {/* Section 3 - Horizon */}
+        {goalsDone && (
+          <div className="animate-fade-in">
+            <SectionHorizon value={state.horizonte} onChange={v => update('horizonte', v)} />
+          </div>
+        )}
 
-        {/* Section 5 - Commercial */}
-        <SectionCommercial data={state.commercial} onChange={v => update('commercial', v)} />
+        {/* Section 4 - Commercial */}
+        {goalsDone && (
+          <div className="animate-fade-in">
+            <SectionCommercial data={state.commercial} onChange={v => update('commercial', v)} />
+          </div>
+        )}
 
-        {/* Section 6 - Matrix Clients */}
-        <SectionMatrixClients data={state.matrixClients} onChange={v => update('matrixClients', v)} />
+        {/* Section 5 - Matrix Clients */}
+        {mixDone && (
+          <div className="animate-fade-in">
+            <SectionMatrixClients data={state.matrixClients} onChange={v => update('matrixClients', v)} />
+          </div>
+        )}
 
-        {/* Section 7 - Churn */}
-        <SectionChurn
-          churnMensal={state.churn.churnMensal}
-          onChangeChurn={v => update('churn', { churnMensal: v })}
-        />
+        {/* Section 6 - Churn */}
+        {mixDone && (
+          <div className="animate-fade-in">
+            <SectionChurn churnMensal={state.churn.churnMensal} onChangeChurn={v => update('churn', { churnMensal: v })} />
+          </div>
+        )}
 
-        {/* Section 8 - Taxes */}
-        <SectionTaxes data={state.taxes} onChange={v => update('taxes', v)} />
+        {/* Section 7 - Taxes */}
+        {mixDone && (
+          <div className="animate-fade-in">
+            <SectionTaxes data={state.taxes} onChange={v => update('taxes', v)} />
+          </div>
+        )}
 
-        {/* Section 9 - Revenue Rules */}
-        <SectionRevenueRules data={state.revenueRules} onChange={v => update('revenueRules', v)} />
+        {/* Section 8 - Revenue Rules */}
+        {mixDone && (
+          <div className="animate-fade-in">
+            <SectionRevenueRules data={state.revenueRules} onChange={v => update('revenueRules', v)} />
+          </div>
+        )}
 
         {/* Premissas Header */}
-        <PremissasHeader state={state} onUpdate={update} onResetPremissas={handleResetPremissas} />
+        {mixDone && (
+          <div className="animate-fade-in">
+            <PremissasHeader state={state} onUpdate={update} onResetPremissas={handleResetPremissas} />
+          </div>
+        )}
 
-        {/* Section 10 - P&L */}
-        <SectionPL
-          projections={projections}
-          fixedCosts={state.fixedCosts}
-          variableCostRates={state.variableCostRates}
-          belowEbitda={state.belowEbitda}
-          goals={state.goals}
-          onFixedCostsChange={v => update('fixedCosts', v)}
-          onVariableCostsChange={v => update('variableCostRates', v)}
-          onBelowEbitdaChange={v => update('belowEbitda', v)}
-        />
+        {/* Section 9 - P&L */}
+        {mixDone && (
+          <div className="animate-fade-in">
+            <SectionPL
+              projections={projections}
+              fixedCosts={state.fixedCosts}
+              variableCostRates={state.variableCostRates}
+              belowEbitda={state.belowEbitda}
+              goals={state.goals}
+              onFixedCostsChange={v => update('fixedCosts', v)}
+              onVariableCostsChange={v => update('variableCostRates', v)}
+              onBelowEbitdaChange={v => update('belowEbitda', v)}
+            />
+          </div>
+        )}
 
-        {/* Section 11 - ROI */}
-        <SectionROI
-          data={state.investment}
-          onChange={v => update('investment', v)}
-          projections={projections}
-          metaROIMeses={state.goals.metaROIMeses}
-        />
+        {/* Section 10 - ROI */}
+        {mixDone && (
+          <div className="animate-fade-in">
+            <SectionROI
+              data={state.investment}
+              onChange={v => update('investment', v)}
+              projections={projections}
+              metaROIMeses={state.goals.metaROIMeses}
+            />
+          </div>
+        )}
 
-        {/* Section 13 - Charts */}
-        <SectionCharts projections={projections} investment={state.investment} />
+        {/* Charts */}
+        {mixDone && (
+          <div className="animate-fade-in">
+            <SectionCharts projections={projections} investment={state.investment} />
+          </div>
+        )}
 
-        {/* Section 14 - Results */}
-        <SectionResults
-          projections={projections}
-          investment={state.investment}
-          metaROIMeses={state.goals.metaROIMeses}
-          churnMensal={state.churn.churnMensal}
-        />
+        {/* Results */}
+        {mixDone && (
+          <div className="animate-fade-in">
+            <SectionResults
+              projections={projections}
+              investment={state.investment}
+              metaROIMeses={state.goals.metaROIMeses}
+              churnMensal={state.churn.churnMensal}
+            />
+          </div>
+        )}
 
         {/* Bottom actions */}
         <ActionButtons state={state} projections={projections} onReset={handleReset} onLoad={setState} />
