@@ -115,9 +115,9 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
       <Card className="mb-4">
         <CardContent className="pt-4">
           <Label className="text-base font-semibold mb-3 block">Ajustes Abaixo do EBITDA</Label>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 items-stretch">
             {/* Receitas Financeiras (%) */}
-            <div>
+            <div className="flex flex-col">
               <Label className="text-xs">Receitas Financeiras (% s/ receita)</Label>
               <div className="flex items-center gap-1">
                 <Input
@@ -131,7 +131,7 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
             </div>
 
             {/* Despesas Financeiras (%) */}
-            <div>
+            <div className="flex flex-col">
               <Label className="text-xs">Despesas Financeiras (% s/ receita)</Label>
               <div className="flex items-center gap-1">
                 <Input
@@ -149,7 +149,7 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
             </div>
 
             {/* PMT Empréstimo */}
-            <div>
+            <div className="flex flex-col">
               <Label className="text-xs">PMT Empréstimo (parcela mensal)</Label>
               <CurrencyInput
                 value={belowEbitda.amortizacaoPMT}
@@ -162,7 +162,7 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
             </div>
 
             {/* Investimentos */}
-            <div>
+            <div className="flex flex-col">
               <Label className="text-xs">Investimentos</Label>
               <CurrencyInput
                 value={belowEbitda.investimentosMensal}
