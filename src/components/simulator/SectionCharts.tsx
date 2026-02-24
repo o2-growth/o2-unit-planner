@@ -17,7 +17,7 @@ interface Props {
 export function SectionCharts({ projections, investment }: Props) {
   if (projections.length === 0) return null;
 
-  const { totalInvestimento, roiAnual, paybackMeses } = calculateROI(investment, projections);
+  const { totalInvestimento, roiTotal, paybackMeses } = calculateROI(investment, projections);
 
   // 1. Retorno acumulado vs investimento
   let acum = 0;
@@ -36,19 +36,28 @@ export function SectionCharts({ projections, investment }: Props) {
   const receitaMrr = projections.map(p => ({
     mes: `M${p.month}`,
     receita: p.receitaBrutaTotal,
-    mrr: p.mrrFinal,
+    mrr: p.mrrTotal,
   }));
 
   // 4. Composição de receita
   const composicao = projections.map(p => ({
     mes: `M${p.month}`,
     CAAS: p.receitaBrutaCaas,
-    SAAS: p.receitaBrutaSaas,
-    Setup: p.receitaBrutaSetup,
-    'Diagnóstico/Expansão': p.receitaBrutaExpansao + p.receitaBrutaEducation,
+    SAAS: p.receitaBrutaSaas - p.receitaSetupPontual,
+    Setup: p.receitaSetupPontual,
+    'Diagnóstico/Expansão': p.receitaBrutaExpansao,
   }));
 
-  const last = projections[projections.length - 1];
+  // 5. DRE Line Chart
+  const dreLines = projections.map(p => ({
+    mes: `M${p.month}`,
+    'Receita Bruta': p.receitaBrutaTotal,
+    'Margem Contribuição': p.lucroBruto,
+    EBITDA: p.ebitda,
+    'Resultado Líquido': p.resultadoLiquido,
+    'Resultado Final': p.resultadoFinal,
+  }));
+
   let retornoFinal = 0;
   projections.forEach(p => retornoFinal += p.resultadoFinal);
 
@@ -64,7 +73,7 @@ export function SectionCharts({ projections, investment }: Props) {
           <CardContent className="p-4 text-center">
             <Target className="w-8 h-8 mx-auto text-primary mb-2" />
             <p className="text-xs text-muted-foreground">Payback Projetado</p>
-            <p className="text-2xl font-bold text-primary">{paybackMeses > 0 ? `${paybackMeses} meses` : '—'}</p>
+            <p className="text-2xl font-bold text-primary">{paybackMeses > 0 ? `${paybackMeses.toFixed(2)} meses` : '—'}</p>
           </CardContent>
         </Card>
         <Card>
@@ -77,8 +86,8 @@ export function SectionCharts({ projections, investment }: Props) {
         <Card>
           <CardContent className="p-4 text-center">
             <TrendingUp className="w-8 h-8 mx-auto text-primary mb-2" />
-            <p className="text-xs text-muted-foreground">ROI no Horizonte</p>
-            <p className="text-2xl font-bold">{formatPercent(roiAnual)}</p>
+            <p className="text-xs text-muted-foreground">ROI Total no Horizonte</p>
+            <p className="text-2xl font-bold">{formatPercent(roiTotal)}</p>
           </CardContent>
         </Card>
       </div>
@@ -97,8 +106,29 @@ export function SectionCharts({ projections, investment }: Props) {
               <Line type="monotone" dataKey="retornoAcum" name="Retorno Acumulado" stroke="hsl(142, 76%, 36%)" strokeWidth={2} dot={false} />
               <Line type="monotone" dataKey="investimento" name="Investimento" stroke="hsl(0, 84%, 60%)" strokeWidth={2} strokeDasharray="8 4" dot={false} />
               {paybackMeses > 0 && (
-                <ReferenceLine x={`M${paybackMeses}`} stroke="hsl(142, 76%, 36%)" strokeWidth={2} strokeDasharray="4 4" label={{ value: 'Payback', position: 'top', fontSize: 11 }} />
+                <ReferenceLine x={`M${Math.ceil(paybackMeses)}`} stroke="hsl(142, 76%, 36%)" strokeWidth={2} strokeDasharray="4 4" label={{ value: `Payback ~${paybackMeses.toFixed(1)}m`, position: 'top', fontSize: 11 }} />
               )}
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Chart 5: DRE Lines */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <h4 className="text-sm font-semibold mb-4">Evolução das Linhas do DRE</h4>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={dreLines}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
+              <YAxis tickFormatter={v => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} />
+              <Tooltip formatter={tooltipFormatter} />
+              <Legend />
+              <Line type="monotone" dataKey="Receita Bruta" stroke="hsl(200, 80%, 50%)" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="Margem Contribuição" stroke="hsl(142, 76%, 36%)" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="EBITDA" stroke="hsl(45, 93%, 47%)" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="Resultado Líquido" stroke="hsl(280, 60%, 50%)" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="Resultado Final" stroke="hsl(0, 84%, 60%)" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
@@ -136,7 +166,7 @@ export function SectionCharts({ projections, investment }: Props) {
               <Tooltip formatter={tooltipFormatter} />
               <Legend />
               <Line type="monotone" dataKey="receita" name="Receita Total" stroke="hsl(142, 76%, 36%)" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="mrr" name="MRR" stroke="hsl(200, 80%, 50%)" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="mrr" name="MRR Total" stroke="hsl(200, 80%, 50%)" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>

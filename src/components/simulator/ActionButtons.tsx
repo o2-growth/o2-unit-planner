@@ -46,7 +46,7 @@ export function ActionButtons({ state, projections, onReset, onLoad }: Props) {
       formatCurrency(p.lucroBruto),
       formatCurrency(p.ebitda),
       formatCurrency(p.resultadoFinal),
-      formatCurrency(p.mrrFinal),
+      formatCurrency(p.mrrTotal),
     ]);
 
     doc.autoTable({
@@ -70,7 +70,7 @@ export function ActionButtons({ state, projections, onReset, onLoad }: Props) {
       'Lucro Bruto': p.lucroBruto,
       'EBITDA': p.ebitda,
       'Resultado Final': p.resultadoFinal,
-      'MRR Final': p.mrrFinal,
+      'MRR Final': p.mrrTotal,
       'Churn R$': p.churnValor,
       'Clientes Comprados': p.clientesCompradosMes,
       'Clientes Acum.': p.clientesCompradosAcum,

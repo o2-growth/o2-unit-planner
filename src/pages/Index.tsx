@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { SectionProfile } from '@/components/simulator/SectionProfile';
 import { SectionGoals } from '@/components/simulator/SectionGoals';
 import { SectionHorizon } from '@/components/simulator/SectionHorizon';
@@ -18,25 +18,48 @@ import { Card, CardContent } from '@/components/ui/card';
 import { calculateProjections } from '@/lib/financial';
 import { INITIAL_STATE, type SimulatorState } from '@/types/simulator';
 
+function migrateState(parsed: any): SimulatorState {
+  // Migrate from valorMensal to percentual in cost lines
+  if (parsed.fixedCosts?.[0]?.valorMensal !== undefined) {
+    parsed.fixedCosts = INITIAL_STATE.fixedCosts.map(c => ({ ...c }));
+  }
+  if (parsed.variableCostRates?.[0]?.valorMensal !== undefined) {
+    parsed.variableCostRates = INITIAL_STATE.variableCostRates.map(c => ({ ...c }));
+  }
+  // Remove old belowEbitda fields
+  if (parsed.belowEbitda?.outrasReceitas !== undefined) {
+    const { outrasReceitas, despNaoOperacionais, provisaoIRCSLL, ...rest } = parsed.belowEbitda;
+    parsed.belowEbitda = { ...INITIAL_STATE.belowEbitda, ...rest };
+  }
+  // Ensure investment fields
+  if (!parsed.investment?.cupom && parsed.investment?.cupom !== '') {
+    parsed.investment = { ...INITIAL_STATE.investment, ...parsed.investment };
+  }
+  // Remove setup from mix
+  if (parsed.commercial?.mix?.setup !== undefined) {
+    const { setup, ...rest } = parsed.commercial.mix;
+    parsed.commercial.mix = rest;
+  }
+  // Ensure goals fields
+  if (!parsed.goals?.proLaboreDesejado && parsed.goals?.proLaboreDesejado !== 0) {
+    parsed.goals = { ...INITIAL_STATE.goals, ...parsed.goals };
+  }
+  return parsed;
+}
+
 const Index = () => {
   const [state, setState] = useState<SimulatorState>(() => {
     const saved = localStorage.getItem('o2-simulator');
     if (saved) {
       try {
-        const parsed = JSON.parse(saved);
-        // Backward compat: ensure new fields exist
-        if (!parsed.investment?.cupom) {
-          parsed.investment = { ...INITIAL_STATE.investment, ...parsed.investment };
-        }
-        if (parsed.commercial?.mix?.setup !== undefined) {
-          const { setup, ...rest } = parsed.commercial.mix;
-          parsed.commercial.mix = rest;
-        }
-        return parsed;
+        return migrateState(JSON.parse(saved));
       } catch { /* ignore */ }
     }
     return { ...INITIAL_STATE };
   });
+
+  // Snapshot for "Restaurar Respostas Oficiais"
+  const initialSnapshot = useRef<SimulatorState>(JSON.parse(JSON.stringify(state)));
 
   const projections = useMemo(() => calculateProjections(state), [state]);
 
@@ -54,6 +77,18 @@ const Index = () => {
       belowEbitda: { ...INITIAL_STATE.belowEbitda },
       investment: { ...INITIAL_STATE.investment },
     });
+  }, []);
+
+  const handleResetPremissas = useCallback(() => {
+    const snap = initialSnapshot.current;
+    setState(prev => ({
+      ...prev,
+      horizonte: snap.horizonte,
+      commercial: JSON.parse(JSON.stringify(snap.commercial)),
+      matrixClients: JSON.parse(JSON.stringify(snap.matrixClients)),
+      churn: { ...snap.churn },
+      goals: { ...snap.goals },
+    }));
   }, []);
 
   return (
@@ -83,7 +118,7 @@ const Index = () => {
         {/* Section 1 - Profile */}
         <SectionProfile data={state.profile} onChange={v => update('profile', v)} />
 
-        {/* Section 2 - Transition */}
+        {/* Transition */}
         <Card className="border-primary bg-accent/50">
           <CardContent className="py-8 text-center">
             <p className="text-lg font-semibold text-primary italic">
@@ -95,7 +130,7 @@ const Index = () => {
         {/* Section 3 - Goals */}
         <SectionGoals data={state.goals} onChange={v => update('goals', v)} />
 
-        {/* Transition message */}
+        {/* Transition */}
         <Card className="border-primary bg-accent/50">
           <CardContent className="py-6 text-center">
             <p className="text-lg font-semibold text-primary italic">
@@ -113,7 +148,7 @@ const Index = () => {
         {/* Section 6 - Matrix Clients */}
         <SectionMatrixClients data={state.matrixClients} onChange={v => update('matrixClients', v)} />
 
-        {/* Section 7 - Churn (simplified) */}
+        {/* Section 7 - Churn */}
         <SectionChurn
           churnMensal={state.churn.churnMensal}
           onChangeChurn={v => update('churn', { churnMensal: v })}
@@ -122,11 +157,11 @@ const Index = () => {
         {/* Section 8 - Taxes */}
         <SectionTaxes data={state.taxes} onChange={v => update('taxes', v)} />
 
-        {/* Section 9 - Revenue Rules (admin-locked) */}
+        {/* Section 9 - Revenue Rules */}
         <SectionRevenueRules data={state.revenueRules} onChange={v => update('revenueRules', v)} />
 
-        {/* Premissas Header (editable quick-access) */}
-        <PremissasHeader state={state} onUpdate={update} />
+        {/* Premissas Header */}
+        <PremissasHeader state={state} onUpdate={update} onResetPremissas={handleResetPremissas} />
 
         {/* Section 10 - P&L */}
         <SectionPL
@@ -134,6 +169,7 @@ const Index = () => {
           fixedCosts={state.fixedCosts}
           variableCostRates={state.variableCostRates}
           belowEbitda={state.belowEbitda}
+          goals={state.goals}
           onFixedCostsChange={v => update('fixedCosts', v)}
           onVariableCostsChange={v => update('variableCostRates', v)}
           onBelowEbitdaChange={v => update('belowEbitda', v)}

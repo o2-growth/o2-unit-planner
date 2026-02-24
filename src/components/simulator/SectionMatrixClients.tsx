@@ -65,6 +65,7 @@ export function SectionMatrixClients({ data, onChange }: Props) {
           <div>
             <Label>Preço por cliente comprado (CAC simbólico)</Label>
             <CurrencyInput value={data.cacPorCliente} onChange={v => update('cacPorCliente', v)} />
+            <p className="text-xs text-muted-foreground mt-1">Custo de aquisição do cliente comprado da Matriz. Irá para a linha de CAC no DRE.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -77,6 +78,9 @@ export function SectionMatrixClients({ data, onChange }: Props) {
               <CurrencyInput value={data.mrrPorCliente} onChange={v => update('mrrPorCliente', v)} />
             </div>
           </div>
+          <p className="text-xs text-muted-foreground mt-1 italic">
+            Este ticket está mais relacionado ao mínimo da matriz do que ao potencial da franquia, pois nascerá do inbound sales da matriz.
+          </p>
         </CardContent>
       </Card>
     </section>

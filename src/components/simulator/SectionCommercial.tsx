@@ -82,6 +82,13 @@ export function SectionCommercial({ data, onChange }: Props) {
               <span className={`text-sm font-medium flex items-center gap-1 ${mixValid ? 'text-primary' : 'text-destructive'}`}>
                 {mixValid ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
                 {mixTotal} de {data.compromissoMensal}
+                {!mixValid && (
+                  <span className="ml-1">
+                    {mixTotal > data.compromissoMensal
+                      ? `(Excedeu ${mixTotal - data.compromissoMensal} projetos)`
+                      : `(Faltam ${data.compromissoMensal - mixTotal} projetos)`}
+                  </span>
+                )}
               </span>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
