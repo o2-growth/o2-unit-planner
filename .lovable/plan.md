@@ -1,88 +1,42 @@
 
-# Login Simples e Persistencia de Simulacoes no Banco de Dados
+
+# Remover Barra de Progresso e Corrigir Numeracao das Secoes
 
 ## Resumo
-Criar um sistema de login simplificado (nome + email, sem validacao por email) e salvar as simulacoes do usuario no banco de dados do Lovable Cloud, substituindo o localStorage.
+Remover completamente a barra de progresso do header sticky e corrigir a numeracao das secoes que atualmente pula os numeros 9 e 12.
 
-## Etapas
+## Mudancas
 
-### 1. Banco de Dados - Criar tabelas
+### 1. Remover barra de progresso
+- Remover o bloco sticky com `Progress` do `Index.tsx` (linhas 179-187)
+- Remover a importacao do componente `Progress`
+- Remover a funcao `getProgress()` que ja nao sera usada
 
-**Tabela `profiles`:**
-- `id` (UUID, PK, referencia auth.users.id com ON DELETE CASCADE)
-- `nome` (text, not null)
-- `email` (text, not null)
-- `created_at` (timestamp with default now())
+### 2. Corrigir numeracao das secoes
+Renumerar sequencialmente de 1 a 12:
 
-**Tabela `simulations`:**
-- `id` (UUID, PK, default gen_random_uuid())
-- `user_id` (UUID, not null, referencia profiles.id com ON DELETE CASCADE)
-- `nome` (text, default 'Minha Simulacao')
-- `state` (jsonb, not null) -- armazena o SimulatorState completo
-- `created_at` / `updated_at` (timestamps)
+| Atual | Novo | Secao |
+|-------|------|-------|
+| 1 | 1 | Perfil do Novo Socio |
+| 2 | 2 | Objetivos do Franqueado |
+| 3 | 3 | Horizonte de Projecao |
+| 4 | 4 | Premissas Comerciais |
+| 5 | 5 | Clientes Comprados da Matriz |
+| 6 | 6 | Churn sobre MRR |
+| 7 | 7 | Impostos/Deducoes |
+| 8 | 8 | Regras Comerciais/Receita |
+| 10 | 9 | DRE Gerencial |
+| 11 | 10 | ROI e Payback |
+| 13 | 11 | Graficos de Resultados |
+| 14 | 12 | Resultados da Simulacao |
 
-**RLS Policies:**
-- profiles: usuarios so leem/atualizam o proprio perfil
-- simulations: usuarios so acessam suas proprias simulacoes
+### Arquivos modificados
 
-**Trigger:** criar perfil automaticamente ao registrar usuario (via trigger on auth.users insert)
+- `src/pages/Index.tsx` - Remover barra de progresso, funcao `getProgress`, importacao de `Progress`
+- `src/components/simulator/SectionPL.tsx` - Mudar number de 10 para 9
+- `src/components/simulator/SectionROI.tsx` - Mudar number de 11 para 10
+- `src/components/simulator/SectionCharts.tsx` - Mudar number de 13 para 11
+- `src/components/simulator/SectionResults.tsx` - Mudar number de 14 para 12
 
-**Auth config:** habilitar auto-confirm de email (pois o usuario pediu explicitamente "sem validacao por email")
+Secoes 1-8 permanecem inalteradas.
 
-### 2. Tela de Login/Registro
-
-Criar pagina `/auth` com formulario simples:
-- Campo Nome
-- Campo Email
-- Campo Senha (necessario para autenticacao)
-- Botoes "Entrar" e "Criar Conta"
-- Sem validacao por email (auto-confirm habilitado)
-
-### 3. Contexto de Autenticacao
-
-Atualizar `AuthContext.tsx` para usar autenticacao real do banco:
-- `signUp(nome, email, senha)` -- cria conta + perfil
-- `signIn(email, senha)` -- faz login
-- `signOut()` -- faz logout
-- Expor dados do usuario logado (id, nome, email)
-- Listener `onAuthStateChange` para manter sessao
-
-### 4. Roteamento Protegido
-
-- Redirecionar para `/auth` se nao estiver logado
-- Redirecionar para `/` se ja estiver logado (ao acessar `/auth`)
-
-### 5. Persistencia das Simulacoes
-
-Atualizar `ActionButtons.tsx`:
-- "Salvar Simulacao" grava no banco (upsert na tabela simulations)
-- "Carregar Simulacao" busca do banco
-- Manter fallback para localStorage quando offline
-
-Atualizar `Index.tsx`:
-- Carregar simulacao do banco ao montar (se logado)
-- Auto-save no banco ao fazer alteracoes
-
-### 6. Header com Usuario Logado
-
-Substituir o `AdminLogin` no header por informacoes do usuario logado (nome + botao sair).
-
----
-
-## Detalhes Tecnicos
-
-### Arquivos novos:
-- `src/pages/Auth.tsx` -- pagina de login/registro
-- `src/components/ProtectedRoute.tsx` -- wrapper de rota protegida
-
-### Arquivos modificados:
-- `src/contexts/AuthContext.tsx` -- reescrever para usar autenticacao real
-- `src/App.tsx` -- adicionar rota `/auth` e proteger rota `/`
-- `src/components/simulator/ActionButtons.tsx` -- salvar/carregar do banco
-- `src/pages/Index.tsx` -- carregar simulacao do banco ao iniciar, mostrar nome do usuario
-
-### Migracao SQL:
-1. Criar tabela `profiles` com RLS
-2. Criar tabela `simulations` com RLS
-3. Criar trigger para auto-criar perfil no signup
-4. Configurar auto-confirm de email
