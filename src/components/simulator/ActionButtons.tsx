@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { SimulatorState, MonthlyProjection } from '@/types/simulator';
 import { formatCurrency } from '@/lib/formatters';
 import { exportPDF } from '@/lib/exportPdf';
+import { exportExcel } from '@/lib/exportExcel';
 
 interface Props {
   state: SimulatorState;
@@ -81,23 +82,8 @@ export function ActionButtons({ state, projections, onReset, onLoad }: Props) {
   };
 
   const handleExportExcel = async () => {
-    const XLSX = await import('xlsx');
-    const ws = XLSX.utils.json_to_sheet(projections.map(p => ({
-      Mês: p.month,
-      'Receita Bruta': p.receitaBrutaTotal,
-      'Receita Líquida': p.receitaLiquida,
-      'Lucro Bruto': p.lucroBruto,
-      'EBITDA': p.ebitda,
-      'Resultado Final': p.resultadoFinal,
-      'MRR Final': p.mrrTotal,
-      'Churn R$': p.churnValor,
-      'Clientes Comprados': p.clientesCompradosMes,
-      'Clientes Acum.': p.clientesCompradosAcum,
-    })));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Projeção');
-    XLSX.writeFile(wb, 'simulacao-o2.xlsx');
-    toast({ title: 'Excel exportado!' });
+    await exportExcel(state, projections);
+    toast({ title: 'Excel exportado!', description: '3 abas: DRE, MRR e ROI.' });
   };
 
   return (

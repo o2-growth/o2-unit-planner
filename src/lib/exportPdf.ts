@@ -1,5 +1,5 @@
 import type { SimulatorState, MonthlyProjection } from '@/types/simulator';
-import { formatCurrency, formatPercent } from '@/lib/formatters';
+import { formatPercent, formatCurrencyCompact } from '@/lib/formatters';
 import { calculateROI, calculateCapitalGiro } from '@/lib/financial';
 
 // ─── Colors ───
@@ -13,6 +13,63 @@ const RESULT_BG: [number, number, number] = [200, 235, 210];
 const CARD_BG: [number, number, number] = [240, 250, 242];
 const CARD_RED_BG: [number, number, number] = [255, 235, 235];
 const MUTED: [number, number, number] = [120, 120, 120];
+
+// ─── Grouping Logic ───
+
+interface GroupedData {
+  headers: string[];
+  /** Each group is an array of MonthlyProjection to be aggregated */
+  groups: MonthlyProjection[][];
+}
+
+function groupProjections(projections: MonthlyProjection[], horizonte: number): GroupedData {
+  if (horizonte <= 12) {
+    return {
+      headers: projections.map(p => `Mês ${p.month}`),
+      groups: projections.map(p => [p]),
+    };
+  }
+
+  let groupSize: number;
+  let prefix: string;
+
+  if (horizonte <= 24) {
+    groupSize = 3;
+    prefix = 'Tri';
+  } else if (horizonte <= 48) {
+    groupSize = 6;
+    prefix = 'Sem';
+  } else {
+    groupSize = 12;
+    prefix = 'Ano';
+  }
+
+  const groups: MonthlyProjection[][] = [];
+  const headers: string[] = [];
+
+  for (let i = 0; i < projections.length; i += groupSize) {
+    const chunk = projections.slice(i, i + groupSize);
+    groups.push(chunk);
+    headers.push(`${prefix} ${groups.length}`);
+  }
+
+  return { headers, groups };
+}
+
+/** Sum a numeric field across a group of projections */
+function sumField(projections: MonthlyProjection[], field: keyof MonthlyProjection): number {
+  return projections.reduce((s, p) => s + (p[field] as number), 0);
+}
+
+function avgField(projections: MonthlyProjection[], field: keyof MonthlyProjection): number {
+  if (projections.length === 0) return 0;
+  return sumField(projections, field) / projections.length;
+}
+
+/** Get the last value of a field in a group (for stock-like metrics: MRR, clients acum) */
+function lastField(projections: MonthlyProjection[], field: keyof MonthlyProjection): number {
+  return projections.length > 0 ? (projections[projections.length - 1][field] as number) : 0;
+}
 
 // ─── Helpers ───
 async function loadLogoAsDataUrl(): Promise<string | null> {
@@ -43,25 +100,16 @@ async function loadLogoAsDataUrl(): Promise<string | null> {
   }
 }
 
-function sumField(projections: MonthlyProjection[], field: keyof MonthlyProjection): number {
-  return projections.reduce((s, p) => s + (p[field] as number), 0);
-}
-
-function avgField(projections: MonthlyProjection[], field: keyof MonthlyProjection): number {
-  if (projections.length === 0) return 0;
-  return sumField(projections, field) / projections.length;
-}
-
 type RowStyle = 'header' | 'subtotal' | 'result' | 'detail' | 'percent';
 interface DRERow { label: string; values: (string | number)[]; style: RowStyle; }
 
-function buildDRERows(projections: MonthlyProjection[], state: SimulatorState): DRERow[] {
-  const fc = formatCurrency;
+function buildDRERows(groups: MonthlyProjection[][], allProjections: MonthlyProjection[], state: SimulatorState): DRERow[] {
+  const fc = formatCurrencyCompact;
   const fp = formatPercent;
 
   const row = (label: string, field: keyof MonthlyProjection, style: RowStyle = 'detail', isPercent = false): DRERow => {
-    const vals = projections.map(p => isPercent ? fp(p[field] as number) : fc(p[field] as number));
-    const total = isPercent ? fp(avgField(projections, field)) : fc(sumField(projections, field));
+    const vals = groups.map(g => isPercent ? fp(avgField(g, field)) : fc(sumField(g, field)));
+    const total = isPercent ? fp(avgField(allProjections, field)) : fc(sumField(allProjections, field));
     return { label, values: [...vals, total], style };
   };
 
@@ -76,17 +124,17 @@ function buildDRERows(projections: MonthlyProjection[], state: SimulatorState): 
   rows.push(row('   Diagnóstico (pontual)', 'receitaDiagPontual'));
   rows.push(row('   Receita Pré-existente', 'receitaPreExistente'));
 
-  rows.push({ label: '(-) DEDUÇÕES', values: projections.map(p => fc(p.deducoesTotal)).concat(fc(sumField(projections, 'deducoesTotal'))), style: 'subtotal' });
+  rows.push({ label: '(-) DEDUÇÕES', values: groups.map(g => fc(sumField(g, 'deducoesTotal'))).concat(fc(sumField(allProjections, 'deducoesTotal'))), style: 'subtotal' });
   rows.push(row('   PIS', 'deducaoPIS'));
   rows.push(row('   COFINS', 'deducaoCOFINS'));
   rows.push(row('   ISSQN', 'deducaoISSQN'));
   rows.push(row('   ICMS', 'deducaoICMS'));
 
-  rows.push({ label: `(-) Royalties (${state.revenueRules.royalties}%)`, values: projections.map(p => fc(p.royaltiesValor)).concat(fc(sumField(projections, 'royaltiesValor'))), style: 'subtotal' });
+  rows.push({ label: `(-) Royalties (${state.revenueRules.royalties}%)`, values: groups.map(g => fc(sumField(g, 'royaltiesValor'))).concat(fc(sumField(allProjections, 'royaltiesValor'))), style: 'subtotal' });
   rows.push(row('   Carga Total %', 'cargaTotalPercent', 'percent', true));
   rows.push(row('= RECEITA LÍQUIDA', 'receitaLiquida', 'result'));
 
-  rows.push({ label: '(-) CUSTOS VARIÁVEIS', values: projections.map(p => fc(p.custosVariaveisTotal)).concat(fc(sumField(projections, 'custosVariaveisTotal'))), style: 'subtotal' });
+  rows.push({ label: '(-) CUSTOS VARIÁVEIS', values: groups.map(g => fc(sumField(g, 'custosVariaveisTotal'))).concat(fc(sumField(allProjections, 'custosVariaveisTotal'))), style: 'subtotal' });
   rows.push(row('   Custos CAAS', 'custosCaas'));
   rows.push(row('   Custos SAAS', 'custosSaas'));
   rows.push(row('   Custos Education', 'custosEducation'));
@@ -98,7 +146,7 @@ function buildDRERows(projections: MonthlyProjection[], state: SimulatorState): 
   rows.push(row('= MARGEM DE CONTRIBUIÇÃO', 'lucroBruto', 'result'));
   rows.push(row('   Margem Bruta %', 'margemBruta', 'percent', true));
 
-  rows.push({ label: '(-) DESPESAS FIXAS', values: projections.map(p => fc(p.despFixasTotal)).concat(fc(sumField(projections, 'despFixasTotal'))), style: 'subtotal' });
+  rows.push({ label: '(-) DESPESAS FIXAS', values: groups.map(g => fc(sumField(g, 'despFixasTotal'))).concat(fc(sumField(allProjections, 'despFixasTotal'))), style: 'subtotal' });
   rows.push(row('   Marketing', 'despMarketing'));
   rows.push(row('   Comerciais', 'despComerciais'));
   rows.push(row('   Pessoal / Pró-labore', 'despPessoal'));
@@ -125,48 +173,39 @@ function drawCoverPage(doc: any, state: SimulatorState, logo: string | null) {
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
 
-  // Dark background
   doc.setFillColor(...DARK_BG);
   doc.rect(0, 0, pageW, pageH, 'F');
 
-  // Green accent bar on the left
   doc.setFillColor(...GREEN);
   doc.rect(0, 0, 6, pageH, 'F');
 
-  // Green decorative line at top
   doc.setDrawColor(...GREEN);
   doc.setLineWidth(1.2);
   doc.line(20, 40, pageW - 20, 40);
 
-  // Logo centered
   if (logo) {
     const logoW = 80;
     const logoH = 32.4;
     doc.addImage(logo, 'PNG', (pageW - logoW) / 2, 55, logoW, logoH);
   }
 
-  // Title
   doc.setFontSize(32);
   doc.setTextColor(...WHITE);
   doc.text('Plano Financeiro', pageW / 2, 110, { align: 'center' });
 
-  // Subtitle - client name
   doc.setFontSize(20);
   doc.setTextColor(...GREEN);
   doc.text(state.profile.nome || 'Simulação Financeira', pageW / 2, 125, { align: 'center' });
 
-  // Horizontal separator
   doc.setDrawColor(...GREEN);
   doc.setLineWidth(0.6);
   doc.line(pageW / 2 - 60, 135, pageW / 2 + 60, 135);
 
-  // Info block at bottom
   doc.setFontSize(10);
   doc.setTextColor(180, 180, 180);
   doc.text(`Horizonte de projeção: ${state.horizonte} meses`, pageW / 2, pageH - 40, { align: 'center' });
   doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, pageW / 2, pageH - 32, { align: 'center' });
 
-  // Bottom green line
   doc.setDrawColor(...GREEN);
   doc.setLineWidth(0.8);
   doc.line(20, pageH - 22, pageW - 20, pageH - 22);
@@ -179,7 +218,6 @@ function drawCoverPage(doc: any, state: SimulatorState, logo: string | null) {
 function drawPageHeader(doc: any, logo: string | null, title: string) {
   const pageW = doc.internal.pageSize.getWidth();
 
-  // Small green accent bar at top
   doc.setFillColor(...GREEN);
   doc.rect(0, 0, pageW, 3, 'F');
 
@@ -203,20 +241,16 @@ function drawKPICard(doc: any, x: number, y: number, w: number, h: number, label
   const bg = isNegative ? CARD_RED_BG : CARD_BG;
   const accentColor = isNegative ? [200, 50, 50] as [number, number, number] : GREEN_DARK;
 
-  // Card background with rounded corners
   doc.setFillColor(...bg);
   doc.roundedRect(x, y, w, h, 3, 3, 'F');
 
-  // Left accent bar
   doc.setFillColor(...accentColor);
   doc.rect(x, y + 3, 2.5, h - 6, 'F');
 
-  // Value
   doc.setFontSize(14);
   doc.setTextColor(...(isNegative ? [180, 30, 30] as [number, number, number] : GREEN_DARK));
   doc.text(value, x + w / 2, y + h / 2 - 1, { align: 'center' });
 
-  // Label
   doc.setFontSize(7);
   doc.setTextColor(...MUTED);
   doc.text(label, x + w / 2, y + h / 2 + 7, { align: 'center' });
@@ -226,7 +260,7 @@ function drawExecutiveSummary(doc: any, state: SimulatorState, projections: Mont
   doc.addPage('landscape');
   let y = drawPageHeader(doc, logo, 'Resumo Executivo');
   const pageW = doc.internal.pageSize.getWidth();
-  const fc = formatCurrency;
+  const fc = formatCurrencyCompact;
 
   const roi = calculateROI(state.investment, projections);
   const receitaTotal = sumField(projections, 'receitaBrutaTotal');
@@ -234,7 +268,6 @@ function drawExecutiveSummary(doc: any, state: SimulatorState, projections: Mont
   const ebitdaTotal = sumField(projections, 'ebitda');
   const resultadoTotal = sumField(projections, 'resultadoFinal');
 
-  // KPI Cards - 3 columns x 2 rows
   const cardW = 82;
   const cardH = 28;
   const gap = 10;
@@ -259,7 +292,6 @@ function drawExecutiveSummary(doc: any, state: SimulatorState, projections: Mont
 
   y += 2 * (cardH + gap) + 8;
 
-  // Premissas Section
   doc.setFillColor(245, 248, 245);
   doc.roundedRect(14, y, pageW - 28, 52, 3, 3, 'F');
 
@@ -282,7 +314,6 @@ function drawExecutiveSummary(doc: any, state: SimulatorState, projections: Mont
   doc.setTextColor(...DARK);
   let py = y + 18;
   premissas.forEach(([left, right]) => {
-    // Green bullet
     doc.setFillColor(...GREEN);
     doc.circle(24, py - 1.2, 1.2, 'F');
     doc.text(left, 28, py);
@@ -293,7 +324,6 @@ function drawExecutiveSummary(doc: any, state: SimulatorState, projections: Mont
     py += 7;
   });
 
-  // Payback progress bar
   y = py + 8;
   doc.setFontSize(9);
   doc.setTextColor(...GREEN_DARK);
@@ -304,24 +334,20 @@ function drawExecutiveSummary(doc: any, state: SimulatorState, projections: Mont
   const barH = 8;
   const barX = 22;
 
-  // Background bar
   doc.setFillColor(220, 225, 220);
   doc.roundedRect(barX, y, barW, barH, 2, 2, 'F');
 
-  // Fill bar
   const maxMonths = state.horizonte;
   const paybackFrac = roi.paybackMeses >= 0 ? Math.min(roi.paybackMeses / maxMonths, 1) : 1;
   const fillColor = roi.paybackMeses >= 0 ? GREEN : [200, 50, 50] as [number, number, number];
   doc.setFillColor(...fillColor);
   doc.roundedRect(barX, y, barW * paybackFrac, barH, 2, 2, 'F');
 
-  // Label on bar
   doc.setFontSize(7);
   doc.setTextColor(...WHITE);
   const paybackLabel = roi.paybackMeses >= 0 ? `${roi.paybackMeses} meses` : 'Não atingido no horizonte';
   doc.text(paybackLabel, barX + barW * paybackFrac / 2, y + 5.5, { align: 'center' });
 
-  // End label
   doc.setTextColor(...MUTED);
   doc.text(`${maxMonths} meses`, barX + barW + 3, y + 5.5);
 }
@@ -330,20 +356,31 @@ function drawDREPage(doc: any, state: SimulatorState, projections: MonthlyProjec
   doc.addPage('landscape');
   const y = drawPageHeader(doc, logo, 'DRE Gerencial');
 
-  const dreRows = buildDRERows(projections, state);
-  const monthHeaders = projections.map(p => `Mês ${p.month}`);
-  const headers = ['', ...monthHeaders, 'Total'];
+  const { headers: groupHeaders, groups } = groupProjections(projections, state.horizonte);
+  const dreRows = buildDRERows(groups, projections, state);
+  const headers = ['', ...groupHeaders, 'Total'];
   const body = dreRows.map(r => [r.label, ...r.values]);
 
+  const numCols = headers.length;
+  const fontSize = numCols <= 14 ? 5.5 : 5;
+  const cellPadding = numCols <= 14 ? 1.2 : 0.8;
+  const labelWidth = numCols <= 14 ? 38 : 34;
+
   const { default: autoTable } = (window as any).__autoTableModule;
+
+  // Grouping footnote
+  let groupNote = '';
+  if (state.horizonte > 12 && state.horizonte <= 24) groupNote = 'Dados agrupados trimestralmente';
+  else if (state.horizonte > 24 && state.horizonte <= 48) groupNote = 'Dados agrupados semestralmente';
+  else if (state.horizonte > 48) groupNote = 'Dados agrupados anualmente';
 
   autoTable(doc, {
     startY: y,
     head: [headers],
     body,
-    styles: { fontSize: 5.5, cellPadding: 1.2, textColor: DARK },
-    headStyles: { fillColor: GREEN_DARK, textColor: WHITE, fontSize: 6, fontStyle: 'bold', halign: 'center' },
-    columnStyles: { 0: { cellWidth: 38, fontStyle: 'normal', halign: 'left' } },
+    styles: { fontSize, cellPadding, textColor: DARK, overflow: 'ellipsize' },
+    headStyles: { fillColor: GREEN_DARK, textColor: WHITE, fontSize: fontSize + 0.5, fontStyle: 'bold', halign: 'center' },
+    columnStyles: { 0: { cellWidth: labelWidth, fontStyle: 'normal', halign: 'left' } },
     didParseCell: (data: any) => {
       if (data.section !== 'body') return;
       const dreRow = dreRows[data.row.index];
@@ -352,12 +389,12 @@ function drawDREPage(doc: any, state: SimulatorState, projections: MonthlyProjec
       if (dreRow.style === 'subtotal') {
         data.cell.styles.fillColor = SUBTOTAL_BG;
         data.cell.styles.fontStyle = 'bold';
-        data.cell.styles.fontSize = 5.8;
+        data.cell.styles.fontSize = fontSize + 0.3;
       }
       if (dreRow.style === 'result') {
         data.cell.styles.fillColor = RESULT_BG;
         data.cell.styles.fontStyle = 'bold';
-        data.cell.styles.fontSize = 6;
+        data.cell.styles.fontSize = fontSize + 0.5;
       }
       if (dreRow.style === 'percent') {
         data.cell.styles.fontStyle = 'italic';
@@ -375,39 +412,74 @@ function drawDREPage(doc: any, state: SimulatorState, projections: MonthlyProjec
         data.cell.styles.halign = 'right';
       }
     },
-    margin: { left: 14, right: 14 },
+    margin: { left: 10, right: 10 },
     tableWidth: 'auto',
   });
+
+  if (groupNote) {
+    const pageW = doc.internal.pageSize.getWidth();
+    const tableEndY = (doc as any).lastAutoTable?.finalY || 180;
+    doc.setFontSize(7);
+    doc.setTextColor(...MUTED);
+    doc.text(`* ${groupNote}. Valores monetários somados; percentuais são médias do período.`, pageW / 2, tableEndY + 5, { align: 'center' });
+  }
 }
 
-function drawMRRPage(doc: any, projections: MonthlyProjection[], logo: string | null) {
+function drawMRRPage(doc: any, state: SimulatorState, projections: MonthlyProjection[], logo: string | null) {
   doc.addPage('landscape');
   const y = drawPageHeader(doc, logo, 'Evolução MRR e Base de Clientes');
 
   const { default: autoTable } = (window as any).__autoTableModule;
+  const { headers: groupHeaders, groups } = groupProjections(projections, state.horizonte);
 
-  const mrrHeaders = ['Mês', 'MRR CAAS', 'MRR SAAS', 'MRR Matriz', 'MRR Total', 'Churn R$', 'Clientes Mês', 'Clientes Acum.', 'Setup Matriz'];
-  const mrrBody = projections.map(p => [
-    `Mês ${p.month}`,
-    formatCurrency(p.mrrCaasOwn),
-    formatCurrency(p.mrrSaasOwn),
-    formatCurrency(p.mrrMatriz),
-    formatCurrency(p.mrrTotal),
-    formatCurrency(p.churnValor),
-    p.clientesCompradosMes,
-    p.clientesCompradosAcum,
-    formatCurrency(p.setupMatriz),
+  const fc = formatCurrencyCompact;
+  const mrrHeaders = ['', 'MRR CAAS', 'MRR SAAS', 'MRR Matriz', 'MRR Total', 'Churn R$', 'Clientes Mês', 'Clientes Acum.', 'Setup Matriz'];
+
+  const mrrBody = groups.map((g, i) => [
+    groupHeaders[i],
+    fc(lastField(g, 'mrrCaasOwn')),
+    fc(lastField(g, 'mrrSaasOwn')),
+    fc(lastField(g, 'mrrMatriz')),
+    fc(lastField(g, 'mrrTotal')),
+    fc(sumField(g, 'churnValor')),
+    sumField(g, 'clientesCompradosMes'),
+    lastField(g, 'clientesCompradosAcum'),
+    fc(sumField(g, 'setupMatriz')),
   ]);
+
+  // Add total row
+  const lastP = projections[projections.length - 1];
+  mrrBody.push([
+    'Total',
+    fc(lastP.mrrCaasOwn),
+    fc(lastP.mrrSaasOwn),
+    fc(lastP.mrrMatriz),
+    fc(lastP.mrrTotal),
+    fc(sumField(projections, 'churnValor')),
+    sumField(projections, 'clientesCompradosMes'),
+    lastP.clientesCompradosAcum,
+    fc(sumField(projections, 'setupMatriz')),
+  ]);
+
+  const numRows = mrrBody.length;
+  const fontSize = groups.length <= 12 ? 7 : 6;
 
   autoTable(doc, {
     startY: y,
     head: [mrrHeaders],
     body: mrrBody,
-    styles: { fontSize: 7, cellPadding: 1.5, textColor: DARK },
-    headStyles: { fillColor: GREEN_DARK, textColor: WHITE, fontSize: 7.5, fontStyle: 'bold', halign: 'center' },
+    styles: { fontSize, cellPadding: 1.5, textColor: DARK, overflow: 'ellipsize' },
+    headStyles: { fillColor: GREEN_DARK, textColor: WHITE, fontSize: fontSize + 0.5, fontStyle: 'bold', halign: 'center' },
     columnStyles: { 0: { fontStyle: 'bold' } },
     alternateRowStyles: { fillColor: [245, 250, 245] },
-    margin: { left: 14, right: 14 },
+    didParseCell: (data: any) => {
+      // Style total row
+      if (data.section === 'body' && data.row.index === numRows - 1) {
+        data.cell.styles.fillColor = RESULT_BG;
+        data.cell.styles.fontStyle = 'bold';
+      }
+    },
+    margin: { left: 10, right: 10 },
   });
 }
 
@@ -415,16 +487,14 @@ function drawROIPage(doc: any, state: SimulatorState, projections: MonthlyProjec
   doc.addPage('landscape');
   let y = drawPageHeader(doc, logo, 'Análise de Retorno do Investimento');
   const pageW = doc.internal.pageSize.getWidth();
-  const fc = formatCurrency;
+  const fc = formatCurrencyCompact;
 
   const roi = calculateROI(state.investment, projections);
   const inv = state.investment;
 
-  // ── Left: Investment Detail ──
   const leftW = (pageW - 42) / 2;
   const rightX = 14 + leftW + 14;
 
-  // Investment card
   doc.setFillColor(245, 248, 245);
   doc.roundedRect(14, y, leftW, 80, 3, 3, 'F');
 
@@ -454,7 +524,6 @@ function drawROIPage(doc: any, state: SimulatorState, projections: MonthlyProjec
     iy += 7;
   });
 
-  // Total line
   doc.setDrawColor(...GREEN_DARK);
   doc.setLineWidth(0.5);
   doc.line(22, iy, 14 + leftW - 10, iy);
@@ -464,7 +533,6 @@ function drawROIPage(doc: any, state: SimulatorState, projections: MonthlyProjec
   doc.text('INVESTIMENTO TOTAL', 24, iy);
   doc.text(fc(roi.totalInvestimento), 14 + leftW - 12, iy, { align: 'right' });
 
-  // ── Right: Return Analysis ──
   doc.setFillColor(245, 248, 245);
   doc.roundedRect(rightX, y, leftW, 80, 3, 3, 'F');
 
@@ -475,24 +543,18 @@ function drawROIPage(doc: any, state: SimulatorState, projections: MonthlyProjec
   doc.setLineWidth(0.3);
   doc.line(rightX + 8, y + 13, rightX + leftW - 10, y + 13);
 
-  // ROI Direct
   const roiCardY = y + 20;
   const roiCardW = (leftW - 20) / 2;
 
-  // ROI Direto card
   drawROIIndicator(doc, rightX + 5, roiCardY, roiCardW, 25, 'ROI Direto', `${roi.roiDireto.toFixed(1)}%`, roi.roiDireto >= 0);
-
-  // ROI Total card
   drawROIIndicator(doc, rightX + 10 + roiCardW, roiCardY, roiCardW, 25, 'ROI Total', `${roi.roiTotal.toFixed(1)}%`, roi.roiTotal >= 0);
 
-  // Payback indicator
   const pbY = roiCardY + 32;
   doc.setFontSize(9);
   doc.setTextColor(...DARK);
   doc.text('Payback', rightX + 8, pbY);
 
   const paybackOk = roi.paybackMeses >= 0;
-  // Status circle
   doc.setFillColor(...(paybackOk ? GREEN : [200, 50, 50] as [number, number, number]));
   doc.circle(rightX + leftW - 15, pbY - 2, 4, 'F');
   doc.setFontSize(7);
@@ -503,7 +565,6 @@ function drawROIPage(doc: any, state: SimulatorState, projections: MonthlyProjec
   doc.setTextColor(...(paybackOk ? GREEN_DARK : [180, 30, 30] as [number, number, number]));
   doc.text(paybackOk ? `${roi.paybackMeses} meses` : 'Não atingido', rightX + 8, pbY + 10);
 
-  // ── Bottom: Disclaimer ──
   const bottomY = y + 90;
   doc.setDrawColor(...GREEN);
   doc.setLineWidth(0.3);
@@ -536,10 +597,9 @@ function addFooter(doc: any) {
   const pageH = doc.internal.pageSize.getHeight();
   const pageCount = doc.internal.getNumberOfPages();
 
-  for (let i = 2; i <= pageCount; i++) {  // skip cover page
+  for (let i = 2; i <= pageCount; i++) {
     doc.setPage(i);
 
-    // Green line above footer
     doc.setDrawColor(...GREEN);
     doc.setLineWidth(0.3);
     doc.line(14, pageH - 12, pageW - 14, pageH - 12);
@@ -555,31 +615,18 @@ function addFooter(doc: any) {
 export async function exportPDF(state: SimulatorState, projections: MonthlyProjection[]) {
   const { default: jsPDF } = await import('jspdf');
   const autoTableModule = await import('jspdf-autotable');
-  // Store autoTable in window for helper functions
   (window as any).__autoTableModule = autoTableModule;
 
   const doc = new jsPDF('landscape', 'mm', 'a4');
   const logo = await loadLogoAsDataUrl();
 
-  // Page 1: Cover
   drawCoverPage(doc, state, logo);
-
-  // Page 2: Executive Summary
   drawExecutiveSummary(doc, state, projections, logo);
-
-  // Page 3: DRE
   drawDREPage(doc, state, projections, logo);
-
-  // Page 4: MRR & Clients
-  drawMRRPage(doc, projections, logo);
-
-  // Page 5: ROI & Payback
+  drawMRRPage(doc, state, projections, logo);
   drawROIPage(doc, state, projections, logo);
-
-  // Footer on all pages (except cover)
   addFooter(doc);
 
-  // Clean up
   delete (window as any).__autoTableModule;
 
   doc.save('simulacao-o2.pdf');

@@ -16,3 +16,10 @@ export function formatCurrencyInput(value: number): string {
   if (value === 0) return '';
   return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+
+export function formatCurrencyCompact(value: number): string {
+  if (Math.abs(value) >= 10000) {
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
