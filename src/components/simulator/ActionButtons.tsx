@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { SimulatorState, MonthlyProjection } from '@/types/simulator';
 import { formatCurrency } from '@/lib/formatters';
+import { exportPDF } from '@/lib/exportPdf';
 
 interface Props {
   state: SimulatorState;
@@ -75,36 +76,7 @@ export function ActionButtons({ state, projections, onReset, onLoad }: Props) {
   };
 
   const handleExportPDF = async () => {
-    const { default: jsPDF } = await import('jspdf');
-    const { default: autoTable } = await import('jspdf-autotable');
-    
-    const doc = new jsPDF('landscape', 'mm', 'a4');
-    doc.setFontSize(18);
-    doc.text('Simulador Financeiro - O2 Inc.', 14, 20);
-    doc.setFontSize(10);
-    doc.text(`Nome: ${state.profile.nome}`, 14, 30);
-    doc.text(`Horizonte: ${state.horizonte} meses`, 14, 36);
-
-    const headers = ['Mês', 'Rec. Bruta', 'Rec. Líquida', 'Lucro Bruto', 'EBITDA', 'Res. Final', 'MRR Final'];
-    const rows = projections.map(p => [
-      p.month,
-      formatCurrency(p.receitaBrutaTotal),
-      formatCurrency(p.receitaLiquida),
-      formatCurrency(p.lucroBruto),
-      formatCurrency(p.ebitda),
-      formatCurrency(p.resultadoFinal),
-      formatCurrency(p.mrrTotal),
-    ]);
-
-    autoTable(doc, {
-      startY: 42,
-      head: [headers],
-      body: rows,
-      styles: { fontSize: 7 },
-      headStyles: { fillColor: [30, 120, 60] },
-    });
-
-    doc.save('simulacao-o2.pdf');
+    await exportPDF(state, projections);
     toast({ title: 'PDF exportado!' });
   };
 
