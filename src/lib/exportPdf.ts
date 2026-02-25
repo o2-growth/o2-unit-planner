@@ -217,7 +217,7 @@ export async function exportPDF(state: SimulatorState, projections: MonthlyProje
       }
       // Highlight Total column
       if (data.column.index === headers.length - 1 && data.column.index > 0) {
-        const bg = data.cell.styles.fillColor || [255, 255, 255];
+        const bg = Array.isArray(data.cell.styles.fillColor) ? data.cell.styles.fillColor : [255, 255, 255];
         data.cell.styles.fillColor = [Math.max(bg[0] - 10, 200), Math.max(bg[1] - 5, 220), Math.max(bg[2] - 10, 200)];
       }
       // Red for negative values
