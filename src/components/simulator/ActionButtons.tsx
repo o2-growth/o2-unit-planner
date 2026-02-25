@@ -76,9 +76,9 @@ export function ActionButtons({ state, projections, onReset, onLoad }: Props) {
 
   const handleExportPDF = async () => {
     const { default: jsPDF } = await import('jspdf');
-    await import('jspdf-autotable');
+    const { default: autoTable } = await import('jspdf-autotable');
     
-    const doc = new jsPDF('landscape', 'mm', 'a4') as any;
+    const doc = new jsPDF('landscape', 'mm', 'a4');
     doc.setFontSize(18);
     doc.text('Simulador Financeiro - O2 Inc.', 14, 20);
     doc.setFontSize(10);
@@ -96,7 +96,7 @@ export function ActionButtons({ state, projections, onReset, onLoad }: Props) {
       formatCurrency(p.mrrTotal),
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: 42,
       head: [headers],
       body: rows,
