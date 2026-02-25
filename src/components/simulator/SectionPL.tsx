@@ -7,6 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { CurrencyInput } from './CurrencyInput';
 import { formatCurrency, formatPercent } from '@/lib/formatters';
 import { ChevronRight, Info } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import type { MonthlyProjection, CostLine, GoalsData } from '@/types/simulator';
 
 type BelowEbitdaData = {
@@ -22,12 +24,14 @@ interface Props {
   variableCostRates: CostLine[];
   belowEbitda: BelowEbitdaData;
   goals: GoalsData;
+  proLaboreMode: 'custo_fixo' | 'distribuicao';
+  onProLaboreModeChange: (mode: 'custo_fixo' | 'distribuicao') => void;
   onFixedCostsChange: (costs: CostLine[]) => void;
   onVariableCostsChange: (costs: CostLine[]) => void;
   onBelowEbitdaChange: (data: BelowEbitdaData) => void;
 }
 
-export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbitda, goals, onFixedCostsChange, onVariableCostsChange, onBelowEbitdaChange }: Props) {
+export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbitda, goals, proLaboreMode, onProLaboreModeChange, onFixedCostsChange, onVariableCostsChange, onBelowEbitdaChange }: Props) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     receita: false,
     deducoes: false,
@@ -95,11 +99,23 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
                 </div>
               </div>
             ))}
-            <div className="mt-2 space-y-1">
+            <div className="mt-2 space-y-2">
               <div className="flex items-center gap-2 text-xs">
                 <Label className="flex-1">Pessoal (pró-labore)</Label>
                 <span className="text-xs font-medium text-primary">
                   {formatCurrency(goals.proLaboreDesejado)} → {formatCurrency(goals.proLabore12m)} (13°+)
+                </span>
+              </div>
+              {/* Pro-labore toggle */}
+              <div className="flex items-center gap-2 p-2 rounded-md border border-border bg-muted/30">
+                <Switch
+                  checked={proLaboreMode === 'distribuicao'}
+                  onCheckedChange={(checked) => onProLaboreModeChange(checked ? 'distribuicao' : 'custo_fixo')}
+                />
+                <span className="text-xs text-muted-foreground">
+                  {proLaboreMode === 'custo_fixo'
+                    ? 'Pró-labore incluso como custo fixo no DRE'
+                    : 'Pró-labore retirado apenas após lucro (distribuição)'}
                 </span>
               </div>
               <div className="flex items-start gap-1 text-xs text-muted-foreground">
@@ -114,7 +130,7 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
       {/* Below EBITDA */}
       <Card className="mb-4">
         <CardContent className="pt-4">
-          <Label className="text-base font-semibold mb-3 block">Ajustes Abaixo do EBITDA</Label>
+          <Label className="text-base font-semibold mb-3 block">Ajustes Abaixo do Resultado Operacional</Label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 items-stretch">
             {/* Receitas Financeiras (%) */}
             <div className="flex flex-col">
@@ -217,7 +233,30 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
                 </>
               )}
 
-              <DRERow label="= RECEITA LÍQUIDA" values={projections.map(p => p.receitaLiquida)} highlight />
+              {/* ROYALTIES */}
+              <DRERow label="(-) Royalties (20%)" values={projections.map(p => -p.royaltiesValor)} negative />
+
+              {/* RECEITA LÍQUIDA with carga total badge */}
+              <TableRow className="bg-muted font-semibold">
+                <TableCell className="sticky left-0 z-10 whitespace-nowrap min-w-[220px] w-[220px] bg-muted">
+                  <span className="flex items-center gap-2">
+                    = RECEITA LÍQUIDA
+                    {projections[0] && (
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                        Carga: {projections[projections.length - 1].cargaTotalPercent.toFixed(1)}%
+                      </Badge>
+                    )}
+                  </span>
+                </TableCell>
+                {projections.map((p, i) => (
+                  <TableCell key={i} className={`text-right ${p.receitaLiquida < 0 ? 'text-destructive' : ''}`}>
+                    {formatCurrency(Math.abs(p.receitaLiquida))}
+                  </TableCell>
+                ))}
+                <TableCell className="text-right font-bold bg-primary/5">
+                  {formatCurrency(Math.abs(projections.reduce((s, p) => s + p.receitaLiquida, 0)))}
+                </TableCell>
+              </TableRow>
 
               {/* CUSTOS VARIÁVEIS */}
               <GroupRow label="(-) Custos Variáveis" values={projections.map(p => -p.custosVariaveisTotal)} expanded={expanded.custos} onToggle={() => toggle('custos')} negative />
@@ -229,12 +268,11 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
                   <DRERow label="  Custos CS" values={projections.map(p => -p.custosCS)} negative />
                   <DRERow label="  Custos Expansão" values={projections.map(p => -p.custosExpansao)} negative />
                   <DRERow label="  Custos Tax" values={projections.map(p => -p.custosTax)} negative />
-                  <DRERow label="  Royalties (20%)" values={projections.map(p => -p.royaltiesValor)} negative />
                   <DRERow label="  CAC Matriz" values={projections.map(p => -p.cacTotal)} negative />
                 </>
               )}
 
-              <DRERow label="= LUCRO BRUTO (Margem Contribuição)" values={projections.map(p => p.lucroBruto)} highlight />
+              <DRERow label="= MARGEM DE CONTRIBUIÇÃO" values={projections.map(p => p.lucroBruto)} highlight />
               <DRERow label="  Margem Bruta" values={projections.map(p => p.margemBruta)} percent />
 
               {/* DESPESAS FIXAS */}
@@ -248,11 +286,11 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
                 </>
               )}
 
-              <DRERow label="= EBITDA" values={projections.map(p => p.ebitda)} highlight />
-              <DRERow label="  Margem EBITDA" values={projections.map(p => p.margemEbitda)} percent />
+              <DRERow label="= RESULTADO OPERACIONAL" values={projections.map(p => p.ebitda)} highlight />
+              <DRERow label="  Margem Operacional" values={projections.map(p => p.margemEbitda)} percent />
 
-              {/* ABAIXO DO EBITDA */}
-              <GroupRow label="Abaixo do EBITDA" values={projections.map(p => p.recFinanceiras - p.despFinanceiras - p.irpjCsll)} expanded={expanded.abaixo} onToggle={() => toggle('abaixo')} />
+              {/* ABAIXO DO RESULTADO OPERACIONAL */}
+              <GroupRow label="Abaixo do Resultado Operacional" values={projections.map(p => p.recFinanceiras - p.despFinanceiras - p.irpjCsll)} expanded={expanded.abaixo} onToggle={() => toggle('abaixo')} />
               {expanded.abaixo && (
                 <>
                   <DRERow label="  + Receitas Financeiras" values={projections.map(p => p.recFinanceiras)} />

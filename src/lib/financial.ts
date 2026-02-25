@@ -106,9 +106,12 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
     const deducaoICMS = calcTaxDed('icms');
     const deducoesTotal = deducaoPIS + deducaoCOFINS + deducaoISSQN + deducaoICMS;
 
-    const receitaLiquida = receitaBrutaTotal - deducoesTotal;
+    // Royalties as deduction from gross revenue (before receita líquida)
+    const royaltiesValor = receitaBrutaTotal * royaltiesRate;
+    const cargaTotalPercent = receitaBrutaTotal > 0 ? ((deducoesTotal + royaltiesValor) / receitaBrutaTotal) * 100 : 0;
+    const receitaLiquida = receitaBrutaTotal - deducoesTotal - royaltiesValor;
 
-    // --- Variable costs (% based) ---
+    // --- Variable costs (% based) - Royalties NOT included here ---
     const custosCaas = rbCaas * custoCaasRate;
     const custosSaas = rbSaas * custoSaasRate;
     const custosEducation = rbEducation * custoEdRate;
@@ -116,8 +119,7 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
     const custosCS = receitaBrutaTotal * csEffective;
     const custosExpansao = rbExpansao * custoExpRate;
     const custosTax = rbTax * custoTaxRate;
-    const royaltiesValor = receitaBrutaTotal * royaltiesRate;
-    const custosVariaveisTotal = custosCaas + custosSaas + custosEducation + custosCS + custosExpansao + custosTax + royaltiesValor + cacTotal;
+    const custosVariaveisTotal = custosCaas + custosSaas + custosEducation + custosCS + custosExpansao + custosTax + cacTotal;
 
     const lucroBruto = receitaLiquida - custosVariaveisTotal;
     const margemBruta = receitaBrutaTotal > 0 ? (lucroBruto / receitaBrutaTotal) * 100 : 0;
@@ -125,7 +127,8 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
     // --- Fixed expenses ---
     const despMarketing = receitaBrutaTotal * mktRate;
     const despComerciais = receitaBrutaTotal * comRate;
-    const despPessoal = m <= 12 ? (state.goals.proLaboreDesejado || 0) : (state.goals.proLabore12m || 0);
+    const proLaboreValue = m <= 12 ? (state.goals.proLaboreDesejado || 0) : (state.goals.proLabore12m || 0);
+    const despPessoal = state.proLaboreMode === 'distribuicao' ? 0 : proLaboreValue;
     const despAdm = receitaBrutaTotal < 100000 ? 6000 : receitaBrutaTotal * admRate;
     const despFixasTotal = despMarketing + despComerciais + despPessoal + despAdm;
 
@@ -144,7 +147,12 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
     const amortizacaoMes = belowEbitda.amortizacaoPMT;
 
     const resultadoLiquido = ebitda + recFinanceiras - despFinanceiras - irpjCsll;
-    const resultadoFinal = resultadoLiquido - amortizacaoMes - belowEbitda.investimentosMensal;
+    let resultadoFinal = resultadoLiquido - amortizacaoMes - belowEbitda.investimentosMensal;
+
+    // Pro-labore as distribution: deduct only when result is positive
+    if (state.proLaboreMode === 'distribuicao' && resultadoFinal > 0) {
+      resultadoFinal -= proLaboreValue;
+    }
 
     months.push({
       month: m,
@@ -159,9 +167,11 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
       receitaDiagPontual: recDiag,
       deducaoPIS, deducaoCOFINS, deducaoISSQN, deducaoICMS,
       deducoesTotal,
+      royaltiesValor,
+      cargaTotalPercent,
       receitaLiquida,
       custosCaas, custosSaas, custosEducation, custosCS, custosExpansao, custosTax,
-      royaltiesValor, cacTotal, custosVariaveisTotal,
+      cacTotal, custosVariaveisTotal,
       lucroBruto, margemBruta,
       despMarketing, despComerciais, despPessoal, despAdm, despFixasTotal,
       ebitda, margemEbitda,
@@ -211,7 +221,7 @@ export function calculateROI(investment: InvestmentData, projections: MonthlyPro
 
   // Payback fracionado (2 decimais)
   let acum = 0;
-  let paybackMeses = 0;
+  let paybackMeses = -1; // -1 = not reached within horizon
   for (let i = 0; i < projections.length; i++) {
     const prev = acum;
     acum += projections[i].resultadoFinal;

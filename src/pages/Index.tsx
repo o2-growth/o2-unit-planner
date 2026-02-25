@@ -266,6 +266,8 @@ const Index = () => {
               variableCostRates={state.variableCostRates}
               belowEbitda={state.belowEbitda}
               goals={state.goals}
+              proLaboreMode={state.proLaboreMode ?? 'custo_fixo'}
+              onProLaboreModeChange={v => update('proLaboreMode', v)}
               onFixedCostsChange={v => update('fixedCosts', v)}
               onVariableCostsChange={v => update('variableCostRates', v)}
               onBelowEbitdaChange={v => update('belowEbitda', v)}
