@@ -195,7 +195,8 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
 
       {/* DRE Table */}
       <Card>
-        <CardContent className="pt-4">
+        <CardContent className="pt-4 p-0 sm:p-4">
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-primary text-primary-foreground">
@@ -305,6 +306,7 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
               <DRERow label="= RESULTADO FINAL" values={projections.map(p => p.resultadoFinal)} highlight primary />
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
     </section>
