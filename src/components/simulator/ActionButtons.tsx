@@ -87,22 +87,26 @@ export function ActionButtons({ state, projections, onReset, onLoad }: Props) {
   };
 
   return (
-    <div className="flex flex-wrap gap-3 justify-center py-6">
-      <Button onClick={handleSave} variant="outline">
-        <Save className="mr-2 h-4 w-4" /> Salvar Simulação
-      </Button>
-      <Button onClick={handleLoad} variant="outline">
-        <Download className="mr-2 h-4 w-4" /> Carregar Simulação
-      </Button>
-      <Button onClick={onReset} variant="outline">
-        <RotateCcw className="mr-2 h-4 w-4" /> Resetar Premissas
-      </Button>
-      <Button onClick={handleExportPDF} className="bg-primary">
-        <FileText className="mr-2 h-4 w-4" /> Exportar PDF
-      </Button>
-      <Button onClick={handleExportExcel} className="bg-primary">
-        <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar Excel
-      </Button>
+    <div className="flex flex-col items-center gap-3 py-6">
+      <div className="flex flex-wrap gap-3 justify-center">
+        <Button onClick={handleSave} variant="outline">
+          <Save className="mr-2 h-4 w-4" /> Salvar Simulação
+        </Button>
+        <Button onClick={handleLoad} variant="outline">
+          <Download className="mr-2 h-4 w-4" /> Carregar Simulação
+        </Button>
+        <Button onClick={onReset} variant="outline">
+          <RotateCcw className="mr-2 h-4 w-4" /> Resetar Premissas
+        </Button>
+      </div>
+      <div className="flex flex-wrap gap-3 justify-center">
+        <Button onClick={handleExportPDF} className="bg-primary">
+          <FileText className="mr-2 h-4 w-4" /> Exportar PDF
+        </Button>
+        <Button onClick={handleExportExcel} className="bg-primary">
+          <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar Excel
+        </Button>
+      </div>
     </div>
   );
 }
