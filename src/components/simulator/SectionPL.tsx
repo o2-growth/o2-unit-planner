@@ -324,7 +324,7 @@ function GroupRow({ label, values, expanded, onToggle, highlight, negative }: {
   const total = values.reduce((s, v) => s + v, 0);
   return (
     <TableRow className={`cursor-pointer hover:bg-muted/50 ${highlight ? 'bg-muted font-semibold' : ''}`} onClick={onToggle}>
-      <TableCell className={`sticky left-0 z-10 whitespace-nowrap min-w-[220px] w-[220px] ${highlight ? 'bg-muted' : 'bg-card'}`}>
+      <TableCell className={`sticky left-0 z-10 whitespace-nowrap min-w-[220px] w-[220px] ${highlight ? 'bg-muted' : 'bg-white dark:bg-gray-950'}`}>
         <span className="flex items-center gap-1">
           <ChevronRight className={`w-4 h-4 transition-transform ${expanded ? 'rotate-90' : ''}`} />
           {label}
@@ -354,7 +354,7 @@ function DRERow({ label, values, highlight, primary, negative, percent }: {
   const displayTotal = percent ? total / (values.length || 1) : total;
   return (
     <TableRow className={highlight ? (primary ? 'bg-primary/10 font-bold' : 'bg-muted font-semibold') : ''}>
-      <TableCell className={`sticky left-0 z-10 whitespace-nowrap min-w-[220px] w-[220px] ${highlight ? (primary ? 'bg-primary/10' : 'bg-muted') : 'bg-card'}`}>
+      <TableCell className={`sticky left-0 z-10 whitespace-nowrap min-w-[220px] w-[220px] ${highlight ? (primary ? 'bg-green-100 dark:bg-green-950' : 'bg-muted') : 'bg-white dark:bg-gray-950'}`}>
         {label}
       </TableCell>
       {values.map((v, i) => (
