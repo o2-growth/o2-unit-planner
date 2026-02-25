@@ -182,8 +182,8 @@ export const DEFAULT_TICKETS: ProductTicket[] = [
 ];
 
 export const DEFAULT_TAXES: TaxConfig[] = [
-  { nome: 'PIS', key: 'pis', aliquota: 0, aplicaA: { caas: 0.65, saas: 0.65, setup: 0, education: 0.65, expansao: 0.65, tax: 0.65 } },
-  { nome: 'COFINS', key: 'cofins', aliquota: 0, aplicaA: { caas: 3.00, saas: 3.00, setup: 0, education: 3.00, expansao: 3.00, tax: 3.00 } },
+  { nome: 'PIS', key: 'pis', aliquota: 0, aplicaA: { caas: 0.65, saas: 0.65, setup: 0.65, education: 0.65, expansao: 0.65, tax: 0.65 } },
+  { nome: 'COFINS', key: 'cofins', aliquota: 0, aplicaA: { caas: 3.00, saas: 3.00, setup: 3.00, education: 3.00, expansao: 3.00, tax: 3.00 } },
   { nome: 'IRPJ', key: 'irpj', aliquota: 0, aplicaA: { caas: 5.70, saas: 5.70, setup: 2.10, education: 5.70, expansao: 5.70, tax: 5.70 } },
   { nome: 'CSLL', key: 'csll', aliquota: 0, aplicaA: { caas: 2.88, saas: 2.88, setup: 1.08, education: 2.88, expansao: 2.88, tax: 2.88 } },
   { nome: 'ISSQN', key: 'issqn', aliquota: 0, aplicaA: { caas: 2.90, saas: 2.90, setup: 0, education: 2.00, expansao: 5.00, tax: 2.00 } },
