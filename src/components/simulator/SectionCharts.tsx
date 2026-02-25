@@ -8,7 +8,7 @@ import { TrendingUp, Target, DollarSign } from 'lucide-react';
 import type { MonthlyProjection, InvestmentData } from '@/types/simulator';
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, AreaChart, Area,
-  XAxis, YAxis, Tooltip, Legend, CartesianGrid, ReferenceLine, Cell,
+  XAxis, YAxis, Tooltip, Legend, CartesianGrid, ReferenceLine, ReferenceDot, Cell,
 } from 'recharts';
 
 interface Props {
@@ -47,9 +47,15 @@ export function SectionCharts({ projections, investment }: Props) {
 
   // 1. Retorno acumulado vs investimento (toggle metric)
   let acum = 0;
+  let crossingIndex = -1;
+  let crossingValue = 0;
   const metricLabel = retornoMetrica === 'receitaBrutaTotal' ? 'Receita Bruta Acum.' : 'Lucro Líquido Acum.';
-  const retornoData = projections.map(p => {
+  const retornoData = projections.map((p, i) => {
     acum += p[retornoMetrica];
+    if (crossingIndex === -1 && acum >= totalInvestimento) {
+      crossingIndex = i;
+      crossingValue = acum;
+    }
     return { mes: `M${p.month}`, retornoAcum: acum, investimento: totalInvestimento };
   });
 
@@ -80,7 +86,7 @@ export function SectionCharts({ projections, investment }: Props) {
     mes: `M${p.month}`,
     'Receita Bruta': p.receitaBrutaTotal,
     'Margem Contribuição': p.lucroBruto,
-    EBITDA: p.ebitda,
+    'Resultado Operacional': p.ebitda,
     'Resultado Líquido': p.resultadoLiquido,
     'Resultado Final': p.resultadoFinal,
   }));
@@ -155,6 +161,9 @@ export function SectionCharts({ projections, investment }: Props) {
               {paybackMeses > 0 && (
                 <ReferenceLine x={`M${Math.ceil(paybackMeses)}`} stroke="#6EDE40" strokeWidth={2} strokeDasharray="4 4" label={{ value: `Payback ~${paybackMeses.toFixed(1)}m`, position: 'top', fontSize: 11 }} />
               )}
+              {crossingIndex >= 0 && (
+                <ReferenceDot x={`M${crossingIndex + 1}`} y={crossingValue} r={8} fill="#6EDE40" stroke="#fff" strokeWidth={2} />
+              )}
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
@@ -173,7 +182,7 @@ export function SectionCharts({ projections, investment }: Props) {
               <Legend />
               <Line type="monotone" dataKey="Receita Bruta" stroke="#3BB0D4" strokeWidth={2} dot={false} connectNulls />
               <Line type="monotone" dataKey="Margem Contribuição" stroke="#6EDE40" strokeWidth={2} dot={false} connectNulls />
-              <Line type="monotone" dataKey="EBITDA" stroke="#F5C842" strokeWidth={2} dot={false} connectNulls />
+              <Line type="monotone" dataKey="Resultado Operacional" stroke="#F5C842" strokeWidth={2} dot={false} connectNulls />
               <Line type="monotone" dataKey="Resultado Líquido" stroke="#9B7FE8" strokeWidth={2} dot={false} connectNulls strokeDasharray="6 3" />
               <Line type="monotone" dataKey="Resultado Final" stroke="#E05252" strokeWidth={2} dot={false} connectNulls strokeDasharray="2 2" />
             </LineChart>

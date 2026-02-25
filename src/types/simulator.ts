@@ -104,12 +104,14 @@ export interface MonthlyProjection {
   receitaBrutaTotal: number;
   receitaSetupPontual: number;
   receitaDiagPontual: number;
-  // Deductions (per tax, excluding IRPJ/CSLL)
+  // Deductions (per tax, excluding IRPJ/CSLL) + Royalties
   deducaoPIS: number;
   deducaoCOFINS: number;
   deducaoISSQN: number;
   deducaoICMS: number;
   deducoesTotal: number;
+  royaltiesValor: number;
+  cargaTotalPercent: number;
   receitaLiquida: number;
   // Variable costs
   custosCaas: number;
@@ -118,7 +120,6 @@ export interface MonthlyProjection {
   custosCS: number;
   custosExpansao: number;
   custosTax: number;
-  royaltiesValor: number;
   cacTotal: number;
   custosVariaveisTotal: number;
   lucroBruto: number;
@@ -156,6 +157,7 @@ export interface SimulatorState {
   profile: ProfileData;
   goals: GoalsData;
   horizonte: number;
+  proLaboreMode: 'custo_fixo' | 'distribuicao';
   commercial: CommercialData;
   matrixClients: MatrixClientsData;
   churn: ChurnData;
@@ -207,6 +209,7 @@ export const INITIAL_STATE: SimulatorState = {
     metaROIMeses: 24,
   },
   horizonte: 12,
+  proLaboreMode: 'custo_fixo',
   commercial: {
     compromissoMensal: 3,
     tickets: DEFAULT_TICKETS.map(t => ({ ...t })),

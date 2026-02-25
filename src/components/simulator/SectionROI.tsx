@@ -66,6 +66,7 @@ export function SectionROI({ data, onChange, projections, metaROIMeses }: Props)
 
   const { totalInvestimento, capitalGiro, roiDireto, roiTotal, paybackMeses, taxaFinal } = calculateROI(data, projections);
   const atingeMeta = paybackMeses > 0 && paybackMeses <= metaROIMeses;
+  const investimentoPreenchido = data.taxaFranquia > 0;
 
   return (
     <section>
@@ -166,9 +167,13 @@ export function SectionROI({ data, onChange, projections, metaROIMeses }: Props)
                 <XCircle className="w-16 h-16 mx-auto text-destructive mb-2" />
               )}
               <p className={`text-lg font-bold ${atingeMeta ? 'text-primary' : 'text-destructive'}`}>
-                {paybackMeses > 0
-                  ? atingeMeta ? 'Atinge a meta de ROI/Payback!' : 'Não atinge a meta de ROI/Payback'
-                  : 'Preencha os investimentos'}
+                {!investimentoPreenchido
+                  ? 'Preencha os investimentos'
+                  : paybackMeses === -1
+                    ? 'Payback excede o horizonte'
+                    : atingeMeta
+                      ? 'Atinge a meta de ROI/Payback!'
+                      : 'Não atinge a meta de ROI/Payback'}
               </p>
             </div>
 
