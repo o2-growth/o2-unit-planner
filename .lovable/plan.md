@@ -1,24 +1,35 @@
 
 
-# Fix: Sticky column still showing overlapping text
+# Fix: PDF export not working
 
 ## Problem
-The `overflow-x-auto` wrapper was added but the overlapping persists. The root cause is that sticky cells use **semi-transparent backgrounds** like `bg-primary/10` and `bg-card` (which may resolve to a transparent/variable color). When scrolling horizontally, the content behind bleeds through.
+The code uses `doc.autoTable(...)` (line 99 of ActionButtons.tsx), which was the jspdf-autotable **v3** API. In **v5** (currently installed: 5.0.7), `autoTable` is no longer patched onto the jsPDF instance via a side-effect import. Instead, it's exported as a standalone function: `autoTable(doc, options)`.
+
+The `await import('jspdf-autotable')` on line 79 imports the module but doesn't attach anything to the jsPDF instance, so `doc.autoTable` is `undefined` and the call silently fails.
 
 ## Fix
 
-**`src/components/simulator/SectionPL.tsx`**:
+**`src/components/simulator/ActionButtons.tsx`** (lines 78-105):
 
-1. **DRERow component** (line 357): Replace `bg-primary/10` with `bg-green-50` (or similar solid color) for the primary highlight sticky cell, and replace `bg-card` with `bg-white dark:bg-gray-950` (solid fallback).
+Change from:
+```ts
+const { default: jsPDF } = await import('jspdf');
+await import('jspdf-autotable');
 
-2. **GroupRow component** (line 327): Same fix — replace `bg-card` with `bg-white dark:bg-gray-950`.
+const doc = new jsPDF('landscape', 'mm', 'a4') as any;
+// ...
+doc.autoTable({ ... });
+```
 
-3. **Receita Líquida inline row** (around line 247): The sticky cell uses `bg-muted` which should be solid, but verify.
+To:
+```ts
+const { default: jsPDF } = await import('jspdf');
+const { default: autoTable } = await import('jspdf-autotable');
 
-All sticky `<TableCell>` elements must have a fully opaque background so scrolling content doesn't show through.
+const doc = new jsPDF('landscape', 'mm', 'a4');
+// ...
+autoTable(doc, { ... });
+```
 
-### Specific changes:
-- Line 327: `bg-card` → `bg-white dark:bg-gray-950`
-- Line 357: `bg-card` → `bg-white dark:bg-gray-950`, `bg-primary/10` → `bg-green-100 dark:bg-green-950`
-- Line 247 (Receita Líquida sticky cell): ensure `bg-muted` is present (already is)
+This is a single-line semantic change: import `autoTable` as a named default, then call `autoTable(doc, options)` instead of `doc.autoTable(options)`.
 
