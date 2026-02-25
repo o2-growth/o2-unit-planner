@@ -1,35 +1,73 @@
 
 
-# Fix: PDF export not working
+# Melhorar PDF Exportado com DRE Completa e Design O2
 
-## Problem
-The code uses `doc.autoTable(...)` (line 99 of ActionButtons.tsx), which was the jspdf-autotable **v3** API. In **v5** (currently installed: 5.0.7), `autoTable` is no longer patched onto the jsPDF instance via a side-effect import. Instead, it's exported as a standalone function: `autoTable(doc, options)`.
+## Resumo
+Reescrever a função `handleExportPDF` em `ActionButtons.tsx` para gerar um PDF profissional com logotipo da O2, design com a paleta verde/preto da marca, e a DRE gerencial completa (espelhando a tabela da seção 9).
 
-The `await import('jspdf-autotable')` on line 79 imports the module but doesn't attach anything to the jsPDF instance, so `doc.autoTable` is `undefined` and the call silently fails.
+## Mudanças Técnicas
 
-## Fix
+### `src/components/simulator/ActionButtons.tsx` - função `handleExportPDF`
 
-**`src/components/simulator/ActionButtons.tsx`** (lines 78-105):
+**1. Header com logotipo e branding**
+- Carregar o SVG `/logo-o2-color.svg` como imagem (fetch + conversão para base64 data URL)
+- Posicionar o logo no canto superior esquerdo (aprox. 30x15mm)
+- Título "Simulador Financeiro - O2 Inc." ao lado do logo com fonte maior
+- Subtítulo com nome do franqueado, data de geração, e horizonte
+- Linha separadora verde abaixo do header
 
-Change from:
-```ts
-const { default: jsPDF } = await import('jspdf');
-await import('jspdf-autotable');
+**2. Premissas resumidas (mini-seção antes da tabela)**
+- Bloco com informações-chave: compromisso mensal de vendas, churn, pró-labore, tickets, royalties, regime tributário
+- Exibido em 2 colunas de texto compacto
 
-const doc = new jsPDF('landscape', 'mm', 'a4') as any;
-// ...
-doc.autoTable({ ... });
-```
+**3. Tabela DRE completa (substituindo a tabela resumida atual)**
+A tabela terá todas as linhas do DRE gerencial, replicando a estrutura da seção 9:
 
-To:
-```ts
-const { default: jsPDF } = await import('jspdf');
-const { default: autoTable } = await import('jspdf-autotable');
+| Linha | Mês 1 | Mês 2 | ... | Total |
+|---|---|---|---|---|
+| = RECEITA BRUTA | | | | |
+|   CAAS | | | | |
+|   SAAS + Setup | | | | |
+|   Education | | | | |
+|   Expansão | | | | |
+|   Tax | | | | |
+| (-) Deduções | | | | |
+|   PIS / COFINS / ISSQN / ICMS | | | | |
+| (-) Royalties (20%) | | | | |
+| = RECEITA LÍQUIDA | | | | |
+| (-) Custos Variáveis | | | | |
+|   (detalhamento) | | | | |
+| = MARGEM DE CONTRIBUIÇÃO | | | | |
+|   Margem Bruta % | | | | |
+| (-) Despesas Fixas | | | | |
+|   (detalhamento) | | | | |
+| = RESULTADO OPERACIONAL | | | | |
+|   Margem Operacional % | | | | |
+| + Rec. Financeiras | | | | |
+| - Desp. Financeiras | | | | |
+| - IRPJ/CSLL | | | | |
+| = RESULTADO LÍQUIDO | | | | |
+| (-) Amortização | | | | |
+| (-) Investimentos | | | | |
+| = RESULTADO FINAL | | | | |
 
-const doc = new jsPDF('landscape', 'mm', 'a4');
-// ...
-autoTable(doc, { ... });
-```
+**4. Estilo da tabela**
+- Header verde escuro (`[30, 120, 60]`) com texto branco
+- Linhas de subtotal (Receita Bruta, Receita Líquida, Margem, EBITDA, Resultado Final) com fundo cinza claro e negrito
+- Linhas de detalhe com fonte menor e indentação
+- Valores negativos em vermelho
+- Coluna "Total" com fundo levemente destacado
+- Percentuais formatados com `formatPercent`
 
-This is a single-line semantic change: import `autoTable` as a named default, then call `autoTable(doc, options)` instead of `doc.autoTable(options)`.
+**5. Rodapé**
+- Texto "Gerado por O2 Inc. Simulador Financeiro" + data/hora
+- Número da página
+
+**6. Segunda página: tabela de MRR e Clientes**
+- Tabela adicional com colunas: Mês, MRR CAAS, MRR SAAS, MRR Matriz, MRR Total, Churn R$, Clientes Comprados, Clientes Acumulados
+
+### Conversão do logo SVG
+- Usar `fetch('/logo-o2-color.svg')` para obter o SVG
+- Converter para data URL via `URL.createObjectURL` ou inline como SVG string
+- jsPDF suporta SVG via `doc.addSvgAsImage()` ou converter para PNG via canvas; usaremos canvas para compatibilidade
 
