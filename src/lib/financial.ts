@@ -75,15 +75,15 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
 
     // --- DRE Revenue Lines ---
     const rbCaas = mrrCaasOwn + mrrMatriz + mrrPreExistente;
-    const rbSaas = mrrSaasOwn + setupOwn;  // SAAS + Setup own na mesma linha
+    const rbSaas = mrrSaasOwn + setupOwn + setupMatriz;  // SAAS OXY+GENIO + Setup (own + matriz)
     const rbEducation = 0;
-    const rbExpansao = recDiag + setupMatriz;
+    const rbExpansao = recDiag;
     const rbTax = 0;
     const receitaBrutaTotal = rbCaas + rbSaas + rbEducation + rbExpansao + rbTax;
 
     // --- Deductions per tax (excluding IRPJ/CSLL → post-EBITDA) ---
     const revenueByProduct: Record<string, number> = {
-      caas: rbCaas, saas: rbSaas, setup: setupOwn, education: rbEducation, expansao: rbExpansao, tax: rbTax,
+      caas: rbCaas, saas: mrrSaasOwn, setup: setupOwn + setupMatriz, education: rbEducation, expansao: rbExpansao, tax: rbTax,
     };
 
     const calcTaxDed = (key: string): number => {
@@ -169,6 +169,8 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
       receitaBrutaTotal,
       receitaSetupPontual: setupOwn,
       receitaDiagPontual: recDiag,
+      receitaSaasOxyGenio: mrrSaasOwn,
+      receitaSetupTotal: setupOwn + setupMatriz,
       deducaoPIS, deducaoCOFINS, deducaoISSQN, deducaoICMS,
       deducoesTotal,
       royaltiesValor,

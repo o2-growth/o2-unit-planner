@@ -101,6 +101,8 @@ const DRE_ROWS: DRERow[] = [
   { label: '= RECEITA BRUTA', field: 'receitaBrutaTotal', type: 'subtotal' },
   { label: '   CAAS', field: 'receitaBrutaCaas', type: 'detail' },
   { label: '   SAAS', field: 'receitaBrutaSaas', type: 'detail' },
+  { label: '      OXY+GENIO (recorrente)', field: 'receitaSaasOxyGenio', type: 'detail' },
+  { label: '      SETUP (pontual)', field: 'receitaSetupTotal', type: 'detail' },
   { label: '   Education', field: 'receitaBrutaEducation', type: 'detail' },
   { label: '   Expansão', field: 'receitaBrutaExpansao', type: 'detail' },
   { label: '   Tax', field: 'receitaBrutaTax', type: 'detail' },

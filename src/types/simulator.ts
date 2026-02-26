@@ -105,6 +105,8 @@ export interface MonthlyProjection {
   receitaBrutaTotal: number;
   receitaSetupPontual: number;
   receitaDiagPontual: number;
+  receitaSaasOxyGenio: number;
+  receitaSetupTotal: number;
   // Deductions (per tax, excluding IRPJ/CSLL) + Royalties
   deducaoPIS: number;
   deducaoCOFINS: number;
