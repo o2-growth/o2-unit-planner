@@ -135,9 +135,11 @@ const DRE_ROWS: DRERow[] = [
   { label: '(+) Receitas Financeiras', field: 'recFinanceiras', type: 'detail' },
   { label: '(-) Despesas Financeiras', field: 'despFinanceiras', type: 'detail' },
   { label: '= RESULTADO LÍQUIDO', field: 'resultadoLiquido', type: 'subtotal' },
+  { label: '   Margem Líquida %', field: 'margemLiquida', type: 'percent', isPercent: true },
   { label: '(-) Amortização', field: 'amortizacao', type: 'detail' },
   { label: '(-) Investimentos', field: 'investimentos', type: 'detail' },
   { label: '= RESULTADO FINAL', field: 'resultadoFinal', type: 'result' },
+  { label: '   Margem Final %', field: 'margemFinal', type: 'percent', isPercent: true },
 ];
 
 function buildDRESheet(wb: ExcelJS.Workbook, projections: MonthlyProjection[], state: SimulatorState) {
