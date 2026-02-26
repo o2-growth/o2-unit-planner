@@ -1,29 +1,33 @@
 
 
-# Diagnóstico: Seções 2, 3, 4 sumiram
+# Explicação de cada mudança proposta
 
-## Causa raiz
+## O que será REMOVIDO
 
-O auto-save para o banco de dados (adicionado na última alteração) possui uma **condição de corrida**: ele pode salvar o estado vazio/inicial no banco ANTES de o carregamento do banco completar, sobrescrevendo os dados reais.
+### 1. Funções de verificação: `isProfileDone`, `isGoalsDone`, `isMixDone`
+**O que fazem:** Verificam se o usuário preencheu dados suficientes em cada etapa (nome preenchido, faturamento > 0, mix > 0).
+**Impacto de remover:** Sem essas funções, nenhuma seção depende de preenchimento anterior para aparecer. Todas ficam visíveis desde o início.
 
-Fluxo do problema:
-```text
-1. Página carrega → state = INITIAL_STATE (nome='', faturamento12m=0)
-2. DB auto-save inicia timer de 3s com estado vazio
-3. DB load começa (async)
-4. Se DB load demora > 3s → auto-save grava INITIAL_STATE no banco!
-5. Próximo reload carrega estado vazio do banco → seções somem
-```
+### 2. Variáveis `profileDone`, `goalsDone`, `mixDone`
+**O que fazem:** Guardam o resultado das verificações acima para uso nas condições de renderização.
+**Impacto de remover:** Apenas consequência do item 1 — sem as funções, não precisa das variáveis.
 
-Como `profileDone` exige `nome.trim().length > 0` e `goalsDone` exige `faturamento12m > 0`, o estado zerado esconde as seções 2 (Goals), 3 (Horizon) e 4 (Commercial).
+### 3. Condições `{profileDone && ...}`, `{goalsDone && ...}`, `{mixDone && ...}`
+**O que fazem:** Escondem as seções 2-12 até que a etapa anterior esteja completa. É isso que causa o sumiço das seções quando os dados são perdidos.
+**Impacto de remover:** Todas as 12 seções renderizam sempre, na ordem correta, sem pré-requisitos.
 
-## Correção
+## O que será MANTIDO
 
-**`src/pages/Index.tsx`**:
+### 4. Cards de transição ("Muito obrigado..." e "Excelente. Bora para os números.")
+**Situação atual:** Esses cards têm condições `{profileDone &&` e `{goalsDone &&`. 
+**Opções:**
+- **Manter com condição** — eles aparecem/desaparecem conforme preenchimento (comportamento atual, mas sem esconder seções)
+- **Manter sempre visíveis** — ficam fixos entre as seções
+- **Remover** — simplifica a interface
 
-1. Adicionar um `useRef` `dbLoaded` que começa `false` e é setado para `true` após o DB load completar
-2. No efeito de auto-save para DB, verificar `if (!dbLoaded.current) return;` antes de agendar o upsert
-3. Fazer o mesmo para o auto-save de localStorage: usar um segundo ref `stateReady` que só fica true após o DB load (ou imediatamente se não há user)
+### 5. Auto-save (localStorage + banco de dados)
+Continua funcionando exatamente como está, com o guard `dataReady` para evitar a condição de corrida.
 
-Isso garante que nenhum auto-save ocorra antes dos dados reais serem carregados do banco.
+### 6. Lógica de migração de estado (`migrateState`)
+Continua intacta — garante compatibilidade com dados antigos salvos.
 
