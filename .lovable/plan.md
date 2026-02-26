@@ -1,28 +1,32 @@
 
+Objetivo: corrigir o caso em que o auto-save falha quando o usuário digita e dá F5 sem clicar fora do campo.
 
-# Diagnóstico: Por que o auto-save não funciona
+Plano de implementação:
 
-## Causa raiz encontrada
+1) Corrigir origem do problema no `CurrencyInput`
+- Arquivo: `src/components/simulator/CurrencyInput.tsx`
+- Ajustar `handleChange` para também chamar `onChange(parseCurrencyInput(raw))` a cada digitação (não só no `onBlur`).
+- Manter `onBlur` apenas para normalizar/formatar exibição (`formatCurrencyInput`).
+- Garantir sincronização do `display` com `value` externo quando não estiver focado (evita UI “presa” em valor antigo).
 
-A tabela `simulations` **não tem constraint UNIQUE na coluna `user_id`**. O código usa `upsert(..., { onConflict: 'user_id' })`, que exige uma constraint UNIQUE para funcionar. Sem ela, o upsert **falha silenciosamente** — não salva, não dá erro visível.
+2) Corrigir parse monetário para formato BR
+- Arquivo: `src/lib/formatters.ts`
+- Melhorar `parseCurrencyInput` para tratar milhares e decimais corretamente:
+  - remover separador de milhar `.`
+  - converter decimal `,` para `.`
+  - parse final numérico confiável.
+- Isso evita interpretações inconsistentes (ex.: “20.000,00” virar 20 em cenários específicos).
 
-Além disso, quando você dá F5, o cleanup do `useEffect` cancela os timers pendentes antes que eles executem, e não há nenhum mecanismo para salvar antes da página descarregar.
+3) Preservar auto-save atual (sem mudança de backend)
+- Manter debounce local (1s), debounce no banco (3s) e flush no `beforeunload`.
+- Não mexer em esquema/tabelas/políticas, pois o envio automático já aparece com status 200 nas requisições recentes.
 
-## Correções
+4) Validação funcional (foco no bug reportado)
+- Teste A (sem blur): editar nome + valor monetário e pressionar F5 diretamente.
+- Teste B (com espera): editar, aguardar >5s, F5.
+- Teste C (comparação): repetir fluxo e comparar com botão “Salvar Simulação”.
+- Critério de aceite: dados persistem nos 3 cenários e recarregam corretamente após refresh.
 
-### 1. Migration: adicionar UNIQUE em `simulations.user_id`
-```sql
-ALTER TABLE public.simulations ADD CONSTRAINT simulations_user_id_unique UNIQUE (user_id);
-```
-Isso faz o `upsert` funcionar corretamente — encontra o registro existente e atualiza em vez de tentar inserir outro.
-
-### 2. `src/pages/Index.tsx` — Adicionar flush no `beforeunload`
-- Criar `stateRef` que sempre aponta para o `state` mais recente
-- Registrar `window.addEventListener('beforeunload', flush)` que:
-  - Salva imediatamente no `localStorage`
-  - Se logado, envia ao banco via `navigator.sendBeacon()` (sobrevive ao unload)
-- Remover listener no cleanup
-
-### 3. `src/pages/Index.tsx` — Adicionar tratamento de erro no upsert
-- Adicionar `.then(({ error }) => { if (error) console.error(...) })` ao upsert do auto-save para que erros apareçam no console em vez de serem engolidos silenciosamente.
-
+Detalhes técnicos (resumo):
+- Causa raiz observada: campos monetários só propagam valor para `state` no `onBlur`; se usuário recarrega com foco no input, o `state` global não recebe a última edição e o auto-save grava valor anterior.
+- Correção principal: tornar atualização de estado “on type” no `CurrencyInput`, mantendo formatação final no blur.
