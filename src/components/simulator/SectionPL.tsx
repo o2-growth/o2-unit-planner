@@ -99,6 +99,7 @@ function LabelWithTooltip({ label, tooltip }: { label: string; tooltip?: string 
 export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbitda, goals, proLaboreMode, onProLaboreModeChange, onFixedCostsChange, onVariableCostsChange, onBelowEbitdaChange }: Props) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     receita: false,
+    saas: false,
     deducoes: false,
     custos: false,
     despesas: false,
@@ -273,7 +274,13 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
               {expanded.receita && (
                 <>
                   <DRERow label="  CAAS" tooltip={LINE_TOOLTIPS['CAAS']} values={projections.map(p => p.receitaBrutaCaas)} />
-                  <DRERow label="  SAAS + Setup" tooltip={LINE_TOOLTIPS['SAAS']} values={projections.map(p => p.receitaBrutaSaas)} />
+                  <GroupRow label="  SAAS" tooltip={LINE_TOOLTIPS['SAAS']} values={projections.map(p => p.receitaBrutaSaas)} expanded={expanded.saas} onToggle={() => toggle('saas')} />
+                  {expanded.saas && (
+                    <>
+                      <DRERow label="    OXY+GENIO (recorrente)" values={projections.map(p => p.receitaSaasOxyGenio)} />
+                      <DRERow label="    SETUP (pontual)" values={projections.map(p => p.receitaSetupTotal)} />
+                    </>
+                  )}
                   <DRERow label="  Education" tooltip={LINE_TOOLTIPS['Education']} values={projections.map(p => p.receitaBrutaEducation)} />
                   <DRERow label="  Expansão / Diagnóstico" tooltip={LINE_TOOLTIPS['Expansão']} values={projections.map(p => p.receitaBrutaExpansao)} />
                   <DRERow label="  Tax" tooltip={LINE_TOOLTIPS['Tax']} values={projections.map(p => p.receitaBrutaTax)} />

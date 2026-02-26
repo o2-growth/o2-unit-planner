@@ -117,6 +117,8 @@ function buildDRERows(groups: MonthlyProjection[][], allProjections: MonthlyProj
   rows.push(row('= RECEITA BRUTA', 'receitaBrutaTotal', 'subtotal'));
   rows.push(row('   CAAS', 'receitaBrutaCaas'));
   rows.push(row('   SAAS', 'receitaBrutaSaas'));
+  rows.push(row('      OXY+GENIO (recorrente)', 'receitaSaasOxyGenio'));
+  rows.push(row('      SETUP (pontual)', 'receitaSetupTotal'));
   rows.push(row('   Education', 'receitaBrutaEducation'));
   rows.push(row('   Expansão', 'receitaBrutaExpansao'));
   rows.push(row('   Tax', 'receitaBrutaTax'));

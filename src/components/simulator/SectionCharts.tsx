@@ -76,8 +76,8 @@ export function SectionCharts({ projections, investment }: Props) {
   const composicao = projections.map(p => ({
     mes: `M${p.month}`,
     CAAS: p.receitaBrutaCaas,
-    SAAS: p.receitaBrutaSaas - p.receitaSetupPontual,
-    Setup: p.receitaSetupPontual,
+    'SAAS OXY+GENIO': p.receitaSaasOxyGenio,
+    Setup: p.receitaSetupTotal,
     'Diagnóstico/Expansão': p.receitaBrutaExpansao,
   }));
 
@@ -240,7 +240,7 @@ export function SectionCharts({ projections, investment }: Props) {
               <Tooltip formatter={tooltipFormatter} />
               <Legend />
               <Area type="monotone" dataKey="CAAS" stackId="1" fill="#6EDE40" stroke="#6EDE40" fillOpacity={0.75} />
-              <Area type="monotone" dataKey="SAAS" stackId="1" fill="#3BB0D4" stroke="#3BB0D4" fillOpacity={0.75} />
+              <Area type="monotone" dataKey="SAAS OXY+GENIO" stackId="1" fill="#3BB0D4" stroke="#3BB0D4" fillOpacity={0.75} />
               <Area type="monotone" dataKey="Setup" stackId="1" fill="#F5C842" stroke="#F5C842" fillOpacity={0.75} />
               <Area type="monotone" dataKey="Diagnóstico/Expansão" stackId="1" fill="#9B7FE8" stroke="#9B7FE8" fillOpacity={0.75} />
             </AreaChart>
