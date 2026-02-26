@@ -82,9 +82,14 @@ const Index = () => {
     return { ...INITIAL_STATE };
   });
 
+  const dataReady = useRef(false);
+
   // Load from DB on mount
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      dataReady.current = true;
+      return;
+    }
     supabase
       .from('simulations')
       .select('state')
@@ -96,6 +101,7 @@ const Index = () => {
         if (data?.state) {
           setState(migrateState(data.state as any));
         }
+        dataReady.current = true;
       });
   }, [user]);
 
@@ -113,6 +119,7 @@ const Index = () => {
       isFirstRender.current = false;
       return;
     }
+    if (!dataReady.current) return;
     clearTimeout(localTimer.current);
     localTimer.current = setTimeout(() => {
       localStorage.setItem('o2-simulator', JSON.stringify(state));
@@ -122,7 +129,7 @@ const Index = () => {
 
   // Auto-save to DB (3s debounce, logged-in only)
   useEffect(() => {
-    if (!user) return;
+    if (!user || !dataReady.current) return;
     clearTimeout(dbTimer.current);
     dbTimer.current = setTimeout(() => {
       supabase
