@@ -41,8 +41,8 @@ export function PremissasHeader({ state, onUpdate, onResetPremissas }: Props) {
           <Info className="w-3 h-3 mt-0.5 shrink-0" />
           <span>Os números abaixo foram puxados das suas respostas anteriores, mas podem ser alterados diretamente aqui para fins de projeção do DRE.</span>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          {/* Horizonte */}
+        {/* Campos Globais */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
           <div>
             <Label className="text-xs">Horizonte (meses)</Label>
             <Select value={String(state.horizonte)} onValueChange={v => onUpdate('horizonte', Number(v))}>
@@ -54,59 +54,73 @@ export function PremissasHeader({ state, onUpdate, onResetPremissas }: Props) {
               </SelectContent>
             </Select>
           </div>
-
-          {/* Mix */}
-          <div>
-            <Label className="text-xs">CAAS/mês</Label>
-            <Input type="number" min={0} value={commercial.mix.caas} onChange={e => updateMix('caas', parseInt(e.target.value) || 0)} className="mt-1 h-9 text-xs" />
-          </div>
-          <div>
-            <Label className="text-xs">SAAS/mês</Label>
-            <Input type="number" min={0} value={commercial.mix.saas} onChange={e => updateMix('saas', parseInt(e.target.value) || 0)} className="mt-1 h-9 text-xs" />
-          </div>
-          <div>
-            <Label className="text-xs">Diagnóstico/mês</Label>
-            <Input type="number" min={0} value={commercial.mix.diagnostico} onChange={e => updateMix('diagnostico', parseInt(e.target.value) || 0)} className="mt-1 h-9 text-xs" />
-          </div>
-
-          {/* Tickets */}
-          <div>
-            <Label className="text-xs">Ticket CAAS</Label>
-            <CurrencyInput value={commercial.tickets.find(t => t.key === 'caas')?.valor || 0} onChange={v => updateTicket('caas', v)} className="h-9 text-xs" />
-          </div>
-          <div>
-            <Label className="text-xs">Ticket SAAS</Label>
-            <CurrencyInput value={commercial.tickets.find(t => t.key === 'saas')?.valor || 0} onChange={v => updateTicket('saas', v)} className="h-9 text-xs" />
-          </div>
-          <div>
-            <Label className="text-xs">Ticket Diagnóstico</Label>
-            <CurrencyInput value={commercial.tickets.find(t => t.key === 'diagnostico')?.valor || 0} onChange={v => updateTicket('diagnostico', v)} className="h-9 text-xs" />
-          </div>
-          <div>
-            <Label className="text-xs">Ticket Setup (auto)</Label>
-            <CurrencyInput value={commercial.tickets.find(t => t.key === 'setup')?.valor || 0} onChange={v => updateTicket('setup', v)} className="h-9 text-xs" />
-          </div>
-
-          {/* Churn */}
           <div>
             <Label className="text-xs">Churn MRR (%)</Label>
             <Input type="number" min={0} max={100} step={0.1} value={churn.churnMensal || ''} onChange={e => onUpdate('churn', { churnMensal: parseFloat(e.target.value) || 0 })} className="mt-1 h-9 text-xs" />
           </div>
-
-          {/* Matrix */}
-          <div>
-            <Label className="text-xs">Clientes Matriz (mês 1)</Label>
-            <Input type="number" min={0} value={matrixClients.qtdMensalInicial} onChange={e => onUpdate('matrixClients', { ...matrixClients, qtdMensalInicial: parseInt(e.target.value) || 0 })} className="mt-1 h-9 text-xs" />
-          </div>
-          <div>
-            <Label className="text-xs">CAC/cliente</Label>
-            <CurrencyInput value={matrixClients.cacPorCliente} onChange={v => onUpdate('matrixClients', { ...matrixClients, cacPorCliente: v })} className="h-9 text-xs" />
-          </div>
-
-          {/* Pro-labore */}
           <div>
             <Label className="text-xs">Pró-labore alvo</Label>
             <CurrencyInput value={goals.proLabore12m} onChange={v => onUpdate('goals', { ...goals, proLabore12m: v })} className="h-9 text-xs" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Bloco Venda Própria (Seção 4) */}
+          <div className="border border-primary/20 rounded-lg p-3">
+            <p className="text-xs font-semibold text-primary mb-2">📊 Venda Própria (Seção 4)</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <Label className="text-xs">CAAS/mês</Label>
+                <Input type="number" min={0} value={commercial.mix.caas} onChange={e => updateMix('caas', parseInt(e.target.value) || 0)} className="mt-1 h-9 text-xs" />
+              </div>
+              <div>
+                <Label className="text-xs">SAAS/mês</Label>
+                <Input type="number" min={0} value={commercial.mix.saas} onChange={e => updateMix('saas', parseInt(e.target.value) || 0)} className="mt-1 h-9 text-xs" />
+              </div>
+              <div>
+                <Label className="text-xs">Diagnóstico/mês</Label>
+                <Input type="number" min={0} value={commercial.mix.diagnostico} onChange={e => updateMix('diagnostico', parseInt(e.target.value) || 0)} className="mt-1 h-9 text-xs" />
+              </div>
+              <div>
+                <Label className="text-xs">Ticket CAAS</Label>
+                <CurrencyInput value={commercial.tickets.find(t => t.key === 'caas')?.valor || 0} onChange={v => updateTicket('caas', v)} className="h-9 text-xs" />
+              </div>
+              <div>
+                <Label className="text-xs">Ticket SAAS</Label>
+                <CurrencyInput value={commercial.tickets.find(t => t.key === 'saas')?.valor || 0} onChange={v => updateTicket('saas', v)} className="h-9 text-xs" />
+              </div>
+              <div>
+                <Label className="text-xs">Ticket Diagnóstico</Label>
+                <CurrencyInput value={commercial.tickets.find(t => t.key === 'diagnostico')?.valor || 0} onChange={v => updateTicket('diagnostico', v)} className="h-9 text-xs" />
+              </div>
+              <div>
+                <Label className="text-xs">Ticket Setup (auto)</Label>
+                <CurrencyInput value={commercial.tickets.find(t => t.key === 'setup')?.valor || 0} onChange={v => updateTicket('setup', v)} className="h-9 text-xs" />
+              </div>
+            </div>
+          </div>
+
+          {/* Bloco Clientes Matriz (Seção 5) */}
+          <div className="border border-primary/20 rounded-lg p-3">
+            <p className="text-xs font-semibold text-primary mb-2">🏢 Clientes Matriz (Seção 5)</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <Label className="text-xs">Clientes/mês (mês 1)</Label>
+                <Input type="number" min={0} value={matrixClients.qtdMensalInicial} onChange={e => onUpdate('matrixClients', { ...matrixClients, qtdMensalInicial: parseInt(e.target.value) || 0 })} className="mt-1 h-9 text-xs" />
+              </div>
+              <div>
+                <Label className="text-xs">CAC/cliente</Label>
+                <CurrencyInput value={matrixClients.cacPorCliente} onChange={v => onUpdate('matrixClients', { ...matrixClients, cacPorCliente: v })} className="h-9 text-xs" />
+              </div>
+              <div>
+                <Label className="text-xs">Setup/cliente</Label>
+                <CurrencyInput value={matrixClients.setupPorCliente} onChange={v => onUpdate('matrixClients', { ...matrixClients, setupPorCliente: v })} className="h-9 text-xs" />
+              </div>
+              <div>
+                <Label className="text-xs">MRR/cliente</Label>
+                <CurrencyInput value={matrixClients.mrrPorCliente} onChange={v => onUpdate('matrixClients', { ...matrixClients, mrrPorCliente: v })} className="h-9 text-xs" />
+              </div>
+            </div>
           </div>
         </div>
       </CardContent>
