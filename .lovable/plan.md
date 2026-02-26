@@ -1,71 +1,25 @@
 
 
-# Adicionar Tooltips Explicativos em Todas as Linhas do DRE
+## Plano: Aplicar churn sobre receita pré-existente
 
-## Escopo
+### O que muda
 
-Adicionar tooltips com a base de cálculo em **todas** as linhas do DRE — tanto nas linhas principais (GroupRow) quanto nas linhas de drilldown (DRERow) — explicando de onde vem cada número e como é calculado.
+Atualmente, `receitaPreExistente` é um valor fixo lido de `state.profile.receitaMensal` e somado todo mês sem sofrer churn. A mudança é transformá-la em uma variável acumulada (como `mrrCaasOwn`) que sofre churn mês a mês.
 
-## Alterações: `src/components/simulator/SectionPL.tsx`
+### Alteração em `src/lib/financial.ts`
 
-### 1. Atualizar `GroupRow` para aceitar `tooltip`
-- Adicionar prop `tooltip?: string` ao `GroupRow`
-- Renderizar `LabelWithTooltip` quando tooltip existir
+1. **Criar variável acumulada** `mrrPreExistente` inicializada com `state.profile.receitaMensal` antes do loop (ao lado de `mrrCaasOwn`, `mrrSaasOwn`, `mrrMatriz`).
 
-### 2. Expandir `CATEGORY_TOOLTIPS` para um mapa completo de todas as linhas
+2. **Incluir `mrrPreExistente` no bloco de churn** — aplicar `mrrPreExistente *= factor` junto com os demais MRRs. Incluir no cálculo de `totalMrrBefore` e `churnValor`.
 
-**Linhas principais (GroupRow):**
-- `= RECEITA BRUTA` → "Soma de todas as fontes: CAAS + SAAS/Setup + Education + Expansão + Tax"
-- `(-) Deduções de Vendas` → "PIS + COFINS + ISSQN + ICMS aplicados conforme alíquota por produto (Seção 8)"
-- `(-) Custos Variáveis` → "Soma dos custos variáveis (% sobre receita de cada produto, configurados na Seção 9)"
-- `(-) Despesas Fixas` → "Marketing + Comerciais + Pessoal + Administrativas (% sobre receita bruta)"
-- `Abaixo do Resultado Operacional` → "Receitas Financeiras - Despesas Financeiras - IRPJ/CSLL"
+3. **Remover a constante `receitaPreExistente`** de dentro do loop e usar `mrrPreExistente` no lugar:
+   - `rbCaas = mrrCaasOwn + mrrMatriz + mrrPreExistente` (em vez de `+ receitaPreExistente`)
 
-**Linhas de drilldown (DRERow) — Receita:**
-- `CAAS` → já tem tooltip, manter
-- `SAAS + Setup` → já tem, manter
-- `Education`, `Expansão`, `Tax` → já têm, manter
+4. **No objeto `months.push`**, atualizar `receitaPreExistente` para usar o valor corrente de `mrrPreExistente` (que diminui ao longo do tempo) e incluí-lo no `mrrTotal`.
 
-**Drilldown — Deduções:**
-- `PIS` → "Alíquota de PIS aplicada sobre receita de cada produto conforme configuração da Seção 8"
-- `COFINS` → idem para COFINS
-- `ISSQN` → idem para ISSQN
-- `ICMS` → idem para ICMS
+### Impacto
 
-**Drilldown — Custos Variáveis:**
-- `Custos CAAS` → "25% sobre receita bruta de CAAS"
-- `Custos SAAS` → "% configurado sobre receita bruta de SAAS"
-- `Custos Education` → "% sobre receita de Education"
-- `Custos CS` → "% sobre receita bruta total (mínimo 2% quando receita > R$500k)"
-- `Custos Expansão` → "% sobre receita de Expansão"
-- `Custos Tax` → "% sobre receita de Tax"
-
-**Drilldown — Despesas Fixas:**
-- `Marketing` → "7,5% sobre receita bruta ou CAC total da Matriz (o maior valor)"
-- `Comerciais` → "7,5% sobre receita bruta total"
-- `Pessoal` → "Pró-labore definido na Seção 3 (valor mês 1-12 / após 12)"
-- `Administrativas` → "R$6.000 fixo até R$100k de receita, depois % sobre receita bruta"
-
-**Linhas de resultado e margens:**
-- `(-) Royalties` → "20% sobre receita bruta total — repasse obrigatório à franqueadora"
-- `= RECEITA LÍQUIDA` → "Receita Bruta - Deduções (impostos) - Royalties"
-- `= MARGEM DE CONTRIBUIÇÃO` → "Receita Líquida - Custos Variáveis"
-- `Margem Bruta` → "Margem de Contribuição ÷ Receita Bruta × 100"
-- `= RESULTADO OPERACIONAL` → "Margem de Contribuição - Despesas Fixas"
-- `Margem Operacional` → "Resultado Operacional ÷ Receita Bruta × 100"
-- `+ Receitas Financeiras` → "% sobre receita bruta (configurado na Seção 9)"
-- `- Despesas Financeiras` → "% sobre receita bruta (configurado na Seção 9)"
-- `- IRPJ/CSLL` → "Calculado sobre receita por produto quando resultado operacional > 0"
-- `= RESULTADO LÍQUIDO` → "Resultado Operacional + Rec. Financeiras - Desp. Financeiras - IRPJ/CSLL"
-- `Margem Líquida` → "Resultado Líquido ÷ Receita Bruta × 100"
-- `(-) Amortização` → "Parcela mensal fixa de empréstimo (PMT configurado na Seção 9)"
-- `(-) Investimentos` → "Investimentos mensais em ativos (configurado na Seção 9)"
-- `= RESULTADO FINAL` → "Resultado Líquido - Amortização - Investimentos (- Pró-labore se modo distribuição)"
-- `Margem Final` → "Resultado Final ÷ Receita Bruta × 100"
-
-### 3. Implementação técnica
-- Criar um dicionário `LINE_TOOLTIPS` com todas as tooltips acima
-- Passar `tooltip` para cada `DRERow` e `GroupRow` usando o dicionário
-- Adicionar tooltip à linha de RECEITA LÍQUIDA (que é um `TableRow` customizado)
-- O componente `LabelWithTooltip` já existe e será reutilizado
+- A receita pré-existente será corroída pelo churn mês a mês, refletindo perda natural de clientes da base original.
+- Mês 1: valor cheio. Mês 2 em diante: reduzido por `(1 - churnRate)` cumulativamente.
+- Todos os cálculos downstream (receita bruta, impostos, DRE) são afetados automaticamente pois dependem de `rbCaas`.
 
