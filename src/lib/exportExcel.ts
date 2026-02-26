@@ -122,7 +122,6 @@ const DRE_ROWS: DRERow[] = [
   { label: '   Custos CS', field: 'custosCS', type: 'detail' },
   { label: '   Custos Expansão', field: 'custosExpansao', type: 'detail' },
   { label: '   Custos Tax', field: 'custosTax', type: 'detail' },
-  { label: '   CAC Total', field: 'cacTotal', type: 'detail' },
   { label: '= MARGEM DE CONTRIBUIÇÃO', field: 'lucroBruto', type: 'result' },
   { label: '   Margem Bruta %', field: 'margemBruta', type: 'percent', isPercent: true },
   { label: '(-) DESPESAS FIXAS', field: 'despFixasTotal', type: 'subtotal' },

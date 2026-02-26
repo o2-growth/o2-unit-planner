@@ -69,10 +69,16 @@ export function SectionProfile({ data, onChange }: Props) {
           </div>
 
           {data.possuiFuncionarios && (
-            <div>
-              <Label>Se sim, quantos?</Label>
-              <Input type="number" min={0} value={data.quantosFuncionarios || ''} onChange={e => update('quantosFuncionarios', parseInt(e.target.value) || 0)} className="mt-1" />
-            </div>
+            <>
+              <div>
+                <Label>Se sim, quantos?</Label>
+                <Input type="number" min={0} value={data.quantosFuncionarios || ''} onChange={e => update('quantosFuncionarios', parseInt(e.target.value) || 0)} className="mt-1" />
+              </div>
+              <div>
+                <Label>Qual o CUSTO TOTAL MENSAL destes funcionários?</Label>
+                <CurrencyInput value={data.custoFuncionarios} onChange={v => update('custoFuncionarios', v)} />
+              </div>
+            </>
           )}
 
           <div>
