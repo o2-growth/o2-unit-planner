@@ -1,33 +1,28 @@
 
 
-# Explicação de cada mudança proposta
+# Diagnóstico: Por que o auto-save não funciona
 
-## O que será REMOVIDO
+## Causa raiz encontrada
 
-### 1. Funções de verificação: `isProfileDone`, `isGoalsDone`, `isMixDone`
-**O que fazem:** Verificam se o usuário preencheu dados suficientes em cada etapa (nome preenchido, faturamento > 0, mix > 0).
-**Impacto de remover:** Sem essas funções, nenhuma seção depende de preenchimento anterior para aparecer. Todas ficam visíveis desde o início.
+A tabela `simulations` **não tem constraint UNIQUE na coluna `user_id`**. O código usa `upsert(..., { onConflict: 'user_id' })`, que exige uma constraint UNIQUE para funcionar. Sem ela, o upsert **falha silenciosamente** — não salva, não dá erro visível.
 
-### 2. Variáveis `profileDone`, `goalsDone`, `mixDone`
-**O que fazem:** Guardam o resultado das verificações acima para uso nas condições de renderização.
-**Impacto de remover:** Apenas consequência do item 1 — sem as funções, não precisa das variáveis.
+Além disso, quando você dá F5, o cleanup do `useEffect` cancela os timers pendentes antes que eles executem, e não há nenhum mecanismo para salvar antes da página descarregar.
 
-### 3. Condições `{profileDone && ...}`, `{goalsDone && ...}`, `{mixDone && ...}`
-**O que fazem:** Escondem as seções 2-12 até que a etapa anterior esteja completa. É isso que causa o sumiço das seções quando os dados são perdidos.
-**Impacto de remover:** Todas as 12 seções renderizam sempre, na ordem correta, sem pré-requisitos.
+## Correções
 
-## O que será MANTIDO
+### 1. Migration: adicionar UNIQUE em `simulations.user_id`
+```sql
+ALTER TABLE public.simulations ADD CONSTRAINT simulations_user_id_unique UNIQUE (user_id);
+```
+Isso faz o `upsert` funcionar corretamente — encontra o registro existente e atualiza em vez de tentar inserir outro.
 
-### 4. Cards de transição ("Muito obrigado..." e "Excelente. Bora para os números.")
-**Situação atual:** Esses cards têm condições `{profileDone &&` e `{goalsDone &&`. 
-**Opções:**
-- **Manter com condição** — eles aparecem/desaparecem conforme preenchimento (comportamento atual, mas sem esconder seções)
-- **Manter sempre visíveis** — ficam fixos entre as seções
-- **Remover** — simplifica a interface
+### 2. `src/pages/Index.tsx` — Adicionar flush no `beforeunload`
+- Criar `stateRef` que sempre aponta para o `state` mais recente
+- Registrar `window.addEventListener('beforeunload', flush)` que:
+  - Salva imediatamente no `localStorage`
+  - Se logado, envia ao banco via `navigator.sendBeacon()` (sobrevive ao unload)
+- Remover listener no cleanup
 
-### 5. Auto-save (localStorage + banco de dados)
-Continua funcionando exatamente como está, com o guard `dataReady` para evitar a condição de corrida.
-
-### 6. Lógica de migração de estado (`migrateState`)
-Continua intacta — garante compatibilidade com dados antigos salvos.
+### 3. `src/pages/Index.tsx` — Adicionar tratamento de erro no upsert
+- Adicionar `.then(({ error }) => { if (error) console.error(...) })` ao upsert do auto-save para que erros apareçam no console em vez de serem engolidos silenciosamente.
 
