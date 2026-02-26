@@ -35,6 +35,7 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
   let mrrCaasOwn = 0;
   let mrrSaasOwn = 0;
   let mrrMatriz = 0;
+  let mrrPreExistente = state.profile.receitaMensal;
   let clientesAcum = 0;
 
   for (let m = 1; m <= state.horizonte; m++) {
@@ -53,13 +54,14 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
     const cacTotal = clientesMes * matrixClients.cacPorCliente;
 
     // --- Apply churn to accumulated MRR ---
-    const totalMrrBefore = mrrCaasOwn + mrrSaasOwn + mrrMatriz;
+    const totalMrrBefore = mrrCaasOwn + mrrSaasOwn + mrrMatriz + mrrPreExistente;
     const churnValor = totalMrrBefore * churnRate;
     if (totalMrrBefore > 0) {
       const factor = 1 - churnRate;
       mrrCaasOwn *= factor;
       mrrSaasOwn *= factor;
       mrrMatriz *= factor;
+      mrrPreExistente *= factor;
     }
 
     // --- Add new recurring MRR ---
@@ -71,11 +73,8 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
     const setupOwn = (mix.caas + mix.saas) * tSetup;  // Setup: pontual
     const recDiag = mix.diagnostico * tDiag;            // Diagnóstico: pontual
 
-    // --- Receita pré-existente (mês 1 only) ---
-    const receitaPreExistente = state.profile.receitaMensal;
-
     // --- DRE Revenue Lines ---
-    const rbCaas = mrrCaasOwn + mrrMatriz + receitaPreExistente;
+    const rbCaas = mrrCaasOwn + mrrMatriz + mrrPreExistente;
     const rbSaas = mrrSaasOwn + setupOwn;  // SAAS + Setup own na mesma linha
     const rbEducation = 0;
     const rbExpansao = recDiag + setupMatriz;
@@ -161,7 +160,7 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
 
     months.push({
       month: m,
-      receitaPreExistente,
+      receitaPreExistente: mrrPreExistente,
       receitaBrutaCaas: rbCaas,
       receitaBrutaSaas: rbSaas,
       receitaBrutaEducation: rbEducation,
@@ -190,7 +189,7 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
       resultadoFinal,
       margemFinal,
       mrrCaasOwn, mrrSaasOwn, mrrMatriz,
-      mrrTotal: mrrCaasOwn + mrrSaasOwn + mrrMatriz,
+      mrrTotal: mrrCaasOwn + mrrSaasOwn + mrrMatriz + mrrPreExistente,
       churnValor,
       clientesCompradosMes: clientesMes,
       clientesCompradosAcum: clientesAcum,
