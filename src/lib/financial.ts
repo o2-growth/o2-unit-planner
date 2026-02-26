@@ -119,13 +119,15 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
     const custosCS = receitaBrutaTotal * csEffective;
     const custosExpansao = rbExpansao * custoExpRate;
     const custosTax = rbTax * custoTaxRate;
-    const custosVariaveisTotal = custosCaas + custosSaas + custosEducation + custosCS + custosExpansao + custosTax + cacTotal;
+    const custosVariaveisTotal = custosCaas + custosSaas + custosEducation + custosCS + custosExpansao + custosTax;
 
     const lucroBruto = receitaLiquida - custosVariaveisTotal;
     const margemBruta = receitaBrutaTotal > 0 ? (lucroBruto / receitaBrutaTotal) * 100 : 0;
 
     // --- Fixed expenses ---
-    const despMarketing = receitaBrutaTotal * mktRate;
+    const mktBase = receitaBrutaTotal * mktRate;
+    const cacAbsorvido = cacTotal > mktBase;
+    const despMarketing = Math.max(mktBase, cacTotal);
     const despComerciais = receitaBrutaTotal * comRate;
     const proLaboreValue = m <= 12 ? (state.goals.proLaboreDesejado || 0) : (state.goals.proLabore12m || 0);
     const despPessoal = state.proLaboreMode === 'distribuicao' ? 0 : proLaboreValue;
@@ -171,7 +173,7 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
       cargaTotalPercent,
       receitaLiquida,
       custosCaas, custosSaas, custosEducation, custosCS, custosExpansao, custosTax,
-      cacTotal, custosVariaveisTotal,
+      cacTotal, cacAbsorvido, custosVariaveisTotal,
       lucroBruto, margemBruta,
       despMarketing, despComerciais, despPessoal, despAdm, despFixasTotal,
       ebitda, margemEbitda,

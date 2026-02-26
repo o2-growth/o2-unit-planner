@@ -29,7 +29,7 @@ export function SectionCommercial({ data, onChange }: Props) {
         <CardContent className="pt-6 space-y-6">
           {/* Commitment slider */}
           <div>
-            <Label>Compromisso comercial mensal — quantos projetos por mês?</Label>
+            <Label>Compromisso comercial mensal — quantos NOVOS CLIENTES por mês?</Label>
             <p className="text-xs text-muted-foreground mb-3">Sem considerar demandas da Matriz, somente seus relacionamentos e outbound.</p>
             <div className="flex items-center gap-4">
               <Slider
@@ -85,8 +85,8 @@ export function SectionCommercial({ data, onChange }: Props) {
                 {!mixValid && (
                   <span className="ml-1">
                     {mixTotal > data.compromissoMensal
-                      ? `(Excedeu ${mixTotal - data.compromissoMensal} projetos)`
-                      : `(Faltam ${data.compromissoMensal - mixTotal} projetos)`}
+                      ? `(Excedeu ${mixTotal - data.compromissoMensal} NOVOS CLIENTES)`
+                      : `(Faltam ${data.compromissoMensal - mixTotal} NOVOS CLIENTES)`}
                   </span>
                 )}
               </span>

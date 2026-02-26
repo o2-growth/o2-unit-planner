@@ -5,10 +5,11 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CurrencyInput } from './CurrencyInput';
-import { formatCurrency, formatPercent } from '@/lib/formatters';
+import { formatCurrency, formatPercent, formatCurrencySigned } from '@/lib/formatters';
 import { ChevronRight, Info } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { MonthlyProjection, CostLine, GoalsData } from '@/types/simulator';
 
 type BelowEbitdaData = {
@@ -29,6 +30,31 @@ interface Props {
   onFixedCostsChange: (costs: CostLine[]) => void;
   onVariableCostsChange: (costs: CostLine[]) => void;
   onBelowEbitdaChange: (data: BelowEbitdaData) => void;
+}
+
+const CATEGORY_TOOLTIPS: Record<string, string> = {
+  'CAAS': 'CFO as a Service',
+  'SAAS': 'Plataforma OXY + GENIO — 30% de revenue share recorrente acumulando com churn',
+  'SETUP': 'Produto pontual — vendas × ticket, não acumula',
+  'Education': 'Cursos e formações que a franquia pode revender',
+  'Expansão': 'Venda de Micro-Franquia',
+  'Tax': 'Consultoria e Assessoria Tributária da Matriz — revenue share para o franqueado',
+};
+
+function LabelWithTooltip({ label, tooltip }: { label: string; tooltip?: string }) {
+  if (!tooltip) return <span>{label}</span>;
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex items-center gap-1 cursor-help">
+            {label} <Info className="w-3 h-3 text-muted-foreground" />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent><p className="max-w-[250px] text-xs">{tooltip}</p></TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbitda, goals, proLaboreMode, onProLaboreModeChange, onFixedCostsChange, onVariableCostsChange, onBelowEbitdaChange }: Props) {
@@ -52,6 +78,8 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
     n[idx] = { ...n[idx], percentual: val };
     onFixedCostsChange(n);
   };
+
+  const hasCacAbsorvido = projections.some(p => p.cacAbsorvido);
 
   return (
     <section>
@@ -132,7 +160,6 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
         <CardContent className="pt-4">
           <Label className="text-base font-semibold mb-3 block">Ajustes Abaixo do Resultado Operacional</Label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 items-stretch">
-            {/* Receitas Financeiras (%) */}
             <div className="flex flex-col">
               <Label className="text-xs">Receitas Financeiras (% s/ receita)</Label>
               <div className="flex items-center gap-1">
@@ -145,8 +172,6 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
                 <span className="text-xs text-muted-foreground">%</span>
               </div>
             </div>
-
-            {/* Despesas Financeiras (%) */}
             <div className="flex flex-col">
               <Label className="text-xs">Despesas Financeiras (% s/ receita)</Label>
               <div className="flex items-center gap-1">
@@ -163,8 +188,6 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
                 <span>Padrão de 1% sobre receita bruta. Pode ser alterado conforme a operação.</span>
               </div>
             </div>
-
-            {/* PMT Empréstimo */}
             <div className="flex flex-col">
               <Label className="text-xs">PMT Empréstimo (parcela mensal)</Label>
               <CurrencyInput
@@ -176,8 +199,6 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
                 <span>Pagamento mensal de empréstimo bancário/mútuo para início da operação.</span>
               </div>
             </div>
-
-            {/* Investimentos */}
             <div className="flex flex-col">
               <Label className="text-xs">Investimentos</Label>
               <CurrencyInput
@@ -212,11 +233,11 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
               <GroupRow label="= RECEITA BRUTA" values={projections.map(p => p.receitaBrutaTotal)} expanded={expanded.receita} onToggle={() => toggle('receita')} highlight />
               {expanded.receita && (
                 <>
-                  <DRERow label="  CAAS" values={projections.map(p => p.receitaBrutaCaas)} />
-                  <DRERow label="  SAAS + Setup" values={projections.map(p => p.receitaBrutaSaas)} />
-                  <DRERow label="  Education" values={projections.map(p => p.receitaBrutaEducation)} />
-                  <DRERow label="  Expansão / Diagnóstico" values={projections.map(p => p.receitaBrutaExpansao)} />
-                  <DRERow label="  Tax" values={projections.map(p => p.receitaBrutaTax)} />
+                  <DRERow label="  CAAS" tooltip={CATEGORY_TOOLTIPS['CAAS']} values={projections.map(p => p.receitaBrutaCaas)} />
+                  <DRERow label="  SAAS + Setup" tooltip={CATEGORY_TOOLTIPS['SAAS']} values={projections.map(p => p.receitaBrutaSaas)} />
+                  <DRERow label="  Education" tooltip={CATEGORY_TOOLTIPS['Education']} values={projections.map(p => p.receitaBrutaEducation)} />
+                  <DRERow label="  Expansão / Diagnóstico" tooltip={CATEGORY_TOOLTIPS['Expansão']} values={projections.map(p => p.receitaBrutaExpansao)} />
+                  <DRERow label="  Tax" tooltip={CATEGORY_TOOLTIPS['Tax']} values={projections.map(p => p.receitaBrutaTax)} />
                   {projections[0]?.receitaPreExistente > 0 && (
                     <DRERow label="  Receita Pré-existente (M1)" values={projections.map(p => p.receitaPreExistente)} />
                   )}
@@ -251,11 +272,11 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
                 </TableCell>
                 {projections.map((p, i) => (
                   <TableCell key={i} className={`text-right ${p.receitaLiquida < 0 ? 'text-destructive' : ''}`}>
-                    {formatCurrency(Math.abs(p.receitaLiquida))}
+                    {formatCurrencySigned(p.receitaLiquida)}
                   </TableCell>
                 ))}
                 <TableCell className="text-right font-bold bg-primary/5">
-                  {formatCurrency(Math.abs(projections.reduce((s, p) => s + p.receitaLiquida, 0)))}
+                  {formatCurrencySigned(projections.reduce((s, p) => s + p.receitaLiquida, 0))}
                 </TableCell>
               </TableRow>
 
@@ -269,25 +290,24 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
                   <DRERow label="  Custos CS" values={projections.map(p => -p.custosCS)} negative />
                   <DRERow label="  Custos Expansão" values={projections.map(p => -p.custosExpansao)} negative />
                   <DRERow label="  Custos Tax" values={projections.map(p => -p.custosTax)} negative />
-                  <DRERow label="  CAC Matriz" values={projections.map(p => -p.cacTotal)} negative />
                 </>
               )}
 
-              <DRERow label="= MARGEM DE CONTRIBUIÇÃO" values={projections.map(p => p.lucroBruto)} highlight />
+              <DRERow label="= MARGEM DE CONTRIBUIÇÃO" values={projections.map(p => p.lucroBruto)} highlight signed />
               <DRERow label="  Margem Bruta" values={projections.map(p => p.margemBruta)} percent />
 
               {/* DESPESAS FIXAS */}
               <GroupRow label="(-) Despesas Fixas" values={projections.map(p => -p.despFixasTotal)} expanded={expanded.despesas} onToggle={() => toggle('despesas')} negative />
               {expanded.despesas && (
                 <>
-                  <DRERow label="  Marketing (7,5%)" values={projections.map(p => -p.despMarketing)} negative />
+                  <DRERow label={hasCacAbsorvido ? "  Marketing (inclui CAC)" : "  Marketing (7,5%)"} values={projections.map(p => -p.despMarketing)} negative />
                   <DRERow label="  Comerciais (7,5%)" values={projections.map(p => -p.despComerciais)} negative />
                   <DRERow label="  Pessoal (pró-labore)" values={projections.map(p => -p.despPessoal)} negative />
                   <DRERow label="  Administrativas" values={projections.map(p => -p.despAdm)} negative />
                 </>
               )}
 
-              <DRERow label="= RESULTADO OPERACIONAL" values={projections.map(p => p.ebitda)} highlight />
+              <DRERow label="= RESULTADO OPERACIONAL" values={projections.map(p => p.ebitda)} highlight signed />
               <DRERow label="  Margem Operacional" values={projections.map(p => p.margemEbitda)} percent />
 
               {/* ABAIXO DO RESULTADO OPERACIONAL */}
@@ -300,10 +320,10 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
                 </>
               )}
 
-              <DRERow label="= RESULTADO LÍQUIDO" values={projections.map(p => p.resultadoLiquido)} highlight />
+              <DRERow label="= RESULTADO LÍQUIDO" values={projections.map(p => p.resultadoLiquido)} highlight signed />
               <DRERow label="(-) Amortização da Dívida" values={projections.map(p => -p.amortizacao)} negative />
               <DRERow label="(-) Investimentos" values={projections.map(p => -p.investimentos)} negative />
-              <DRERow label="= RESULTADO FINAL" values={projections.map(p => p.resultadoFinal)} highlight primary />
+              <DRERow label="= RESULTADO FINAL" values={projections.map(p => p.resultadoFinal)} highlight primary signed />
             </TableBody>
           </Table>
           </div>
@@ -332,38 +352,41 @@ function GroupRow({ label, values, expanded, onToggle, highlight, negative }: {
       </TableCell>
       {values.map((v, i) => (
         <TableCell key={i} className={`text-right ${v < 0 ? 'text-destructive' : ''}`}>
-          {formatCurrency(Math.abs(v))}
+          {formatCurrencySigned(v)}
         </TableCell>
       ))}
       <TableCell className={`text-right font-bold bg-primary/5 ${total < 0 ? 'text-destructive' : ''}`}>
-        {formatCurrency(Math.abs(total))}
+        {formatCurrencySigned(total)}
       </TableCell>
     </TableRow>
   );
 }
 
-function DRERow({ label, values, highlight, primary, negative, percent }: {
+function DRERow({ label, tooltip, values, highlight, primary, negative, percent, signed }: {
   label: string;
+  tooltip?: string;
   values: number[];
   highlight?: boolean;
   primary?: boolean;
   negative?: boolean;
   percent?: boolean;
+  signed?: boolean;
 }) {
   const total = values.reduce((s, v) => s + v, 0);
   const displayTotal = percent ? total / (values.length || 1) : total;
+  const fmt = (v: number) => signed ? formatCurrencySigned(v) : formatCurrency(Math.abs(v));
   return (
     <TableRow className={highlight ? (primary ? 'bg-primary/10 font-bold' : 'bg-muted font-semibold') : ''}>
       <TableCell className={`sticky left-0 z-10 whitespace-nowrap min-w-[220px] w-[220px] ${highlight ? (primary ? 'bg-green-100 dark:bg-green-950' : 'bg-muted') : 'bg-white dark:bg-gray-950'}`}>
-        {label}
+        {tooltip ? <LabelWithTooltip label={label} tooltip={tooltip} /> : label}
       </TableCell>
       {values.map((v, i) => (
         <TableCell key={i} className={`text-right ${v < 0 ? 'text-destructive' : ''}`}>
-          {percent ? formatPercent(v) : formatCurrency(Math.abs(v))}
+          {percent ? formatPercent(v) : fmt(v)}
         </TableCell>
       ))}
       <TableCell className={`text-right font-bold bg-primary/5 ${displayTotal < 0 ? 'text-destructive' : ''}`}>
-        {percent ? formatPercent(displayTotal) : formatCurrency(Math.abs(displayTotal))}
+        {percent ? formatPercent(displayTotal) : fmt(displayTotal)}
       </TableCell>
     </TableRow>
   );

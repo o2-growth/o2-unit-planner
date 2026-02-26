@@ -23,3 +23,10 @@ export function formatCurrencyCompact(value: number): string {
   }
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
+
+export function formatCurrencySigned(value: number): string {
+  if (value < 0) {
+    return '-' + formatCurrency(Math.abs(value));
+  }
+  return formatCurrency(value);
+}

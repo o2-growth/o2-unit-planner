@@ -7,6 +7,7 @@ export interface ProfileData {
   receitaMensal: number;
   possuiFuncionarios: boolean;
   quantosFuncionarios: number;
+  custoFuncionarios: number;
   proLaboreAtual: number;
 }
 
@@ -121,6 +122,7 @@ export interface MonthlyProjection {
   custosExpansao: number;
   custosTax: number;
   cacTotal: number;
+  cacAbsorvido: boolean;
   custosVariaveisTotal: number;
   lucroBruto: number;
   margemBruta: number;
@@ -200,6 +202,7 @@ export const INITIAL_STATE: SimulatorState = {
     receitaMensal: 0,
     possuiFuncionarios: false,
     quantosFuncionarios: 0,
+    custoFuncionarios: 0,
     proLaboreAtual: 0,
   },
   goals: {

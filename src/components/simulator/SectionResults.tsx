@@ -2,7 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SectionHeader } from './SectionHeader';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatCurrency, formatPercent } from '@/lib/formatters';
+import { formatCurrency, formatPercent, formatCurrencySigned } from '@/lib/formatters';
 import type { MonthlyProjection, InvestmentData } from '@/types/simulator';
 import { calculateROI } from '@/lib/financial';
 
@@ -21,15 +21,15 @@ export function SectionResults({ projections, investment, metaROIMeses, churnMen
   const { roiDireto, roiTotal, paybackMeses } = calculateROI(investment, projections);
 
   const kpis = [
-    { label: 'Receita Bruta Total', value: formatCurrency(total('receitaBrutaTotal')) },
-    { label: 'Receita Líquida', value: formatCurrency(total('receitaLiquida')) },
-    { label: 'MRR Final Projetado', value: formatCurrency(last.mrrTotal) },
+    { label: 'Receita Bruta Total', value: formatCurrencySigned(total('receitaBrutaTotal')) },
+    { label: 'Receita Líquida', value: formatCurrencySigned(total('receitaLiquida')) },
+    { label: 'MRR Final Projetado', value: formatCurrencySigned(last.mrrTotal) },
     { label: 'Churn Mensal', value: formatPercent(churnMensal) },
-    { label: 'Lucro Bruto', value: formatCurrency(total('lucroBruto')) },
-    { label: 'EBITDA Total', value: formatCurrency(total('ebitda')) },
+    { label: 'Lucro Bruto', value: formatCurrencySigned(total('lucroBruto')) },
+    { label: 'EBITDA Total', value: formatCurrencySigned(total('ebitda')) },
     { label: 'Margem EBITDA', value: formatPercent(total('ebitda') / (total('receitaBrutaTotal') || 1) * 100) },
-    { label: 'Resultado Líquido', value: formatCurrency(total('resultadoLiquido')) },
-    { label: 'Resultado Final', value: formatCurrency(total('resultadoFinal')) },
+    { label: 'Resultado Líquido', value: formatCurrencySigned(total('resultadoLiquido')) },
+    { label: 'Resultado Final', value: formatCurrencySigned(total('resultadoFinal')) },
     { label: 'ROI Direto', value: formatPercent(roiDireto) },
     { label: 'ROI Total', value: formatPercent(roiTotal) },
     { label: 'Payback', value: paybackMeses > 0 ? `${paybackMeses.toFixed(2)} meses` : '—' },
@@ -79,14 +79,14 @@ export function SectionResults({ projections, investment, metaROIMeses, churnMen
                   {projections.map(p => (
                     <TableRow key={p.month}>
                       <TableCell className="sticky left-0 bg-card z-10 font-medium">{p.month}</TableCell>
-                      <TableCell>{formatCurrency(p.receitaBrutaTotal)}</TableCell>
-                      <TableCell>{formatCurrency(p.mrrTotal)}</TableCell>
-                      <TableCell className="text-destructive">{formatCurrency(p.churnValor)}</TableCell>
-                      <TableCell>{formatCurrency(p.deducoesTotal)}</TableCell>
-                      <TableCell>{formatCurrency(p.receitaLiquida)}</TableCell>
-                      <TableCell>{formatCurrency(p.lucroBruto)}</TableCell>
-                      <TableCell>{formatCurrency(p.ebitda)}</TableCell>
-                      <TableCell className={p.resultadoFinal < 0 ? 'text-destructive' : 'text-primary'}>{formatCurrency(p.resultadoFinal)}</TableCell>
+                      <TableCell>{formatCurrencySigned(p.receitaBrutaTotal)}</TableCell>
+                      <TableCell>{formatCurrencySigned(p.mrrTotal)}</TableCell>
+                      <TableCell className="text-destructive">{formatCurrencySigned(-p.churnValor)}</TableCell>
+                      <TableCell>{formatCurrencySigned(-p.deducoesTotal)}</TableCell>
+                      <TableCell>{formatCurrencySigned(p.receitaLiquida)}</TableCell>
+                      <TableCell>{formatCurrencySigned(p.lucroBruto)}</TableCell>
+                      <TableCell>{formatCurrencySigned(p.ebitda)}</TableCell>
+                      <TableCell className={p.resultadoFinal < 0 ? 'text-destructive' : 'text-primary'}>{formatCurrencySigned(p.resultadoFinal)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -111,7 +111,7 @@ export function SectionResults({ projections, investment, metaROIMeses, churnMen
                 ].map(item => (
                   <div key={item.label} className="flex justify-between p-3 rounded-lg bg-muted">
                     <span>{item.label}</span>
-                    <span className={`font-bold ${item.val < 0 ? 'text-destructive' : ''}`}>{formatCurrency(item.val)}</span>
+                    <span className={`font-bold ${item.val < 0 ? 'text-destructive' : ''}`}>{formatCurrencySigned(item.val)}</span>
                   </div>
                 ))}
               </div>
@@ -139,11 +139,11 @@ export function SectionResults({ projections, investment, metaROIMeses, churnMen
                     return (
                       <TableRow key={y}>
                         <TableCell className="font-medium">Ano {y + 1}</TableCell>
-                        <TableCell>{formatCurrency(sum('receitaBrutaTotal'))}</TableCell>
-                        <TableCell>{formatCurrency(sum('receitaLiquida'))}</TableCell>
-                        <TableCell>{formatCurrency(sum('ebitda'))}</TableCell>
+                        <TableCell>{formatCurrencySigned(sum('receitaBrutaTotal'))}</TableCell>
+                        <TableCell>{formatCurrencySigned(sum('receitaLiquida'))}</TableCell>
+                        <TableCell>{formatCurrencySigned(sum('ebitda'))}</TableCell>
                         <TableCell className={sum('resultadoFinal') < 0 ? 'text-destructive' : 'text-primary'}>
-                          {formatCurrency(sum('resultadoFinal'))}
+                          {formatCurrencySigned(sum('resultadoFinal'))}
                         </TableCell>
                       </TableRow>
                     );

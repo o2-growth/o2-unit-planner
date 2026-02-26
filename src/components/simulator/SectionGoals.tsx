@@ -30,7 +30,7 @@ export function SectionGoals({ data, onChange }: Props) {
             <CurrencyInput value={data.proLaboreDesejado} onChange={v => update('proLaboreDesejado', v)} />
           </div>
           <div>
-            <Label>Quanto você quer receber de pró-labore daqui 12 meses? (R$/mês)</Label>
+            <Label>Além do seu pró-labore, quanto você quer retirar mensalmente de distribuição de lucro daqui 12 meses? (R$/mês)</Label>
             <CurrencyInput value={data.proLabore12m} onChange={v => update('proLabore12m', v)} />
           </div>
           <div>

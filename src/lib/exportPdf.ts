@@ -141,7 +141,6 @@ function buildDRERows(groups: MonthlyProjection[][], allProjections: MonthlyProj
   rows.push(row('   Custos CS', 'custosCS'));
   rows.push(row('   Custos Expansão', 'custosExpansao'));
   rows.push(row('   Custos Tax', 'custosTax'));
-  rows.push(row('   CAC Total', 'cacTotal'));
 
   rows.push(row('= MARGEM DE CONTRIBUIÇÃO', 'lucroBruto', 'result'));
   rows.push(row('   Margem Bruta %', 'margemBruta', 'percent', true));
