@@ -1,32 +1,35 @@
 
-Objetivo: corrigir o caso em que o auto-save falha quando o usuário digita e dá F5 sem clicar fora do campo.
 
-Plano de implementação:
+# Análise: Origens de Clientes e Tickets nas Premissas
 
-1) Corrigir origem do problema no `CurrencyInput`
-- Arquivo: `src/components/simulator/CurrencyInput.tsx`
-- Ajustar `handleChange` para também chamar `onChange(parseCurrencyInput(raw))` a cada digitação (não só no `onBlur`).
-- Manter `onBlur` apenas para normalizar/formatar exibição (`formatCurrencyInput`).
-- Garantir sincronização do `display` com `value` externo quando não estiver focado (evita UI “presa” em valor antigo).
+## Situação Atual
 
-2) Corrigir parse monetário para formato BR
-- Arquivo: `src/lib/formatters.ts`
-- Melhorar `parseCurrencyInput` para tratar milhares e decimais corretamente:
-  - remover separador de milhar `.`
-  - converter decimal `,` para `.`
-  - parse final numérico confiável.
-- Isso evita interpretações inconsistentes (ex.: “20.000,00” virar 20 em cenários específicos).
+Analisando o código (`financial.ts` e `PremissasHeader.tsx`):
 
-3) Preservar auto-save atual (sem mudança de backend)
-- Manter debounce local (1s), debounce no banco (3s) e flush no `beforeunload`.
-- Não mexer em esquema/tabelas/políticas, pois o envio automático já aparece com status 200 nas requisições recentes.
+**Os dois fluxos JÁ estão separados no cálculo do DRE:**
+- **Seção 4 (Venda Própria):** `mix.caas`, `mix.saas`, `mix.diagnostico` com tickets próprios (`tCaas`, `tSaas`, `tSetup`, `tDiag`) geram MRR recorrente (CAAS/SAAS) e receita pontual (Setup/Diagnóstico).
+- **Seção 5 (Matriz):** `matrixClients.qtdMensalInicial` com `setupPorCliente`, `mrrPorCliente` e `cacPorCliente` geram receita separada.
 
-4) Validação funcional (foco no bug reportado)
-- Teste A (sem blur): editar nome + valor monetário e pressionar F5 diretamente.
-- Teste B (com espera): editar, aguardar >5s, F5.
-- Teste C (comparação): repetir fluxo e comparar com botão “Salvar Simulação”.
-- Critério de aceite: dados persistem nos 3 cenários e recarregam corretamente após refresh.
+**O problema é visual:** A seção "Premissas — Ajuste Rápido" mistura os campos das duas origens sem distinção. Os labels "CAAS/mês", "Ticket CAAS" etc. referem-se à venda própria (Seção 4), e "Clientes Matriz" e "CAC/cliente" referem-se à Seção 5, mas não está claro.
 
-Detalhes técnicos (resumo):
-- Causa raiz observada: campos monetários só propagam valor para `state` no `onBlur`; se usuário recarrega com foco no input, o `state` global não recebe a última edição e o auto-save grava valor anterior.
-- Correção principal: tornar atualização de estado “on type” no `CurrencyInput`, mantendo formatação final no blur.
+Além disso, faltam na Premissas os campos de **Setup e MRR por cliente da Matriz** (`setupPorCliente`, `mrrPorCliente`), que são editáveis na Seção 5 mas não aparecem no ajuste rápido.
+
+## Plano de Implementação
+
+### Arquivo: `src/components/simulator/PremissasHeader.tsx`
+
+1. **Reorganizar o grid em dois blocos visuais separados:**
+   - **Bloco "Venda Própria (Seção 4)"** — com borda/label agrupando: CAAS/mês, SAAS/mês, Diagnóstico/mês, Ticket CAAS, Ticket SAAS, Ticket Diagnóstico, Ticket Setup
+   - **Bloco "Clientes Matriz (Seção 5)"** — agrupando: Clientes Matriz (mês 1), CAC/cliente, **Setup/cliente** (novo), **MRR/cliente** (novo)
+
+2. **Adicionar os campos faltantes da Matriz:** `setupPorCliente` e `mrrPorCliente` como `CurrencyInput` editáveis no bloco da Matriz.
+
+3. **Manter campos globais fora dos blocos:** Horizonte, Churn MRR, Pró-labore alvo.
+
+### Detalhes Técnicos
+
+- Cada bloco terá um subtítulo (`<p className="text-xs font-semibold ...">`) e um container com borda sutil para separação visual.
+- Campos `setupPorCliente` e `mrrPorCliente` já existem no `matrixClients` do state — basta conectar via `onUpdate('matrixClients', {...})`.
+- Nenhuma mudança no `financial.ts` — os cálculos já tratam as duas fontes corretamente.
+- Nenhuma mudança no schema/banco.
+
