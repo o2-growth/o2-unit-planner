@@ -139,10 +139,12 @@ export interface MonthlyProjection {
   despFinanceiras: number;
   irpjCsll: number;
   resultadoLiquido: number;
+  margemLiquida: number;
   // Final
   amortizacao: number;
   investimentos: number;
   resultadoFinal: number;
+  margemFinal: number;
   // MRR tracking
   mrrCaasOwn: number;
   mrrSaasOwn: number;

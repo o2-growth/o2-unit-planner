@@ -158,10 +158,12 @@ function buildDRERows(groups: MonthlyProjection[][], allProjections: MonthlyProj
   rows.push(row('(+) Receitas Financeiras', 'recFinanceiras', 'detail'));
   rows.push(row('(-) Despesas Financeiras', 'despFinanceiras', 'detail'));
   rows.push(row('= RESULTADO LÍQUIDO', 'resultadoLiquido', 'subtotal'));
+  rows.push(row('   Margem Líquida %', 'margemLiquida', 'percent', true));
 
   rows.push(row('(-) Amortização', 'amortizacao', 'detail'));
   rows.push(row('(-) Investimentos', 'investimentos', 'detail'));
   rows.push(row('= RESULTADO FINAL', 'resultadoFinal', 'result'));
+  rows.push(row('   Margem Final %', 'margemFinal', 'percent', true));
 
   return rows;
 }

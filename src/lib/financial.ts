@@ -149,12 +149,15 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
     const amortizacaoMes = belowEbitda.amortizacaoPMT;
 
     const resultadoLiquido = ebitda + recFinanceiras - despFinanceiras - irpjCsll;
+    const margemLiquida = receitaBrutaTotal > 0 ? (resultadoLiquido / receitaBrutaTotal) * 100 : 0;
     let resultadoFinal = resultadoLiquido - amortizacaoMes - belowEbitda.investimentosMensal;
 
     // Pro-labore as distribution: deduct only when result is positive
     if (state.proLaboreMode === 'distribuicao' && resultadoFinal > 0) {
       resultadoFinal -= proLaboreValue;
     }
+
+    const margemFinal = receitaBrutaTotal > 0 ? (resultadoFinal / receitaBrutaTotal) * 100 : 0;
 
     months.push({
       month: m,
@@ -181,9 +184,11 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
       despFinanceiras,
       irpjCsll,
       resultadoLiquido,
+      margemLiquida,
       amortizacao: amortizacaoMes,
       investimentos: belowEbitda.investimentosMensal,
       resultadoFinal,
+      margemFinal,
       mrrCaasOwn, mrrSaasOwn, mrrMatriz,
       mrrTotal: mrrCaasOwn + mrrSaasOwn + mrrMatriz,
       churnValor,

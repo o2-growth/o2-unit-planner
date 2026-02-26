@@ -321,9 +321,11 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
               )}
 
               <DRERow label="= RESULTADO LÍQUIDO" values={projections.map(p => p.resultadoLiquido)} highlight signed />
+              <DRERow label="  Margem Líquida" values={projections.map(p => p.margemLiquida)} percent />
               <DRERow label="(-) Amortização da Dívida" values={projections.map(p => -p.amortizacao)} negative />
               <DRERow label="(-) Investimentos" values={projections.map(p => -p.investimentos)} negative />
               <DRERow label="= RESULTADO FINAL" values={projections.map(p => p.resultadoFinal)} highlight primary signed />
+              <DRERow label="  Margem Final" values={projections.map(p => p.margemFinal)} percent />
             </TableBody>
           </Table>
           </div>
