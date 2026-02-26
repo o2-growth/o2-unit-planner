@@ -79,6 +79,11 @@ const Index = () => {
   });
 
   const dataReady = useRef(false);
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  const userRef = useRef(user);
+  userRef.current = user;
 
   // Load from DB on mount
   useEffect(() => {
@@ -133,10 +138,47 @@ const Index = () => {
         .upsert(
           { user_id: user.id, state: state as any, nome: state.profile.nome || 'Minha Simulação', updated_at: new Date().toISOString() },
           { onConflict: 'user_id' }
-        );
+        )
+        .then(({ error }) => {
+          if (error) console.error('[auto-save] upsert error:', error);
+        });
     }, 3000);
     return () => clearTimeout(dbTimer.current);
   }, [state, user]);
+
+  // Flush on page unload (F5, close tab, navigate away)
+  useEffect(() => {
+    const flush = () => {
+      const s = stateRef.current;
+      localStorage.setItem('o2-simulator', JSON.stringify(s));
+      const u = userRef.current;
+      if (u && dataReady.current) {
+        const body = JSON.stringify({
+          user_id: u.id,
+          state: s,
+          nome: s.profile.nome || 'Minha Simulação',
+          updated_at: new Date().toISOString(),
+        });
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/simulations?on_conflict=user_id`;
+        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        const sessionStr = localStorage.getItem('sb-ktfnnhfvkpgxdnmjqtft-auth-token');
+        const accessToken = sessionStr ? JSON.parse(sessionStr)?.access_token : null;
+        fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': anonKey,
+            'Authorization': `Bearer ${accessToken || anonKey}`,
+            'Prefer': 'resolution=merge-duplicates',
+          },
+          body,
+          keepalive: true,
+        }).catch(() => {});
+      }
+    };
+    window.addEventListener('beforeunload', flush);
+    return () => window.removeEventListener('beforeunload', flush);
+  }, []);
 
   const projections = useMemo(() => calculateProjections(state), [state]);
 
