@@ -7,7 +7,11 @@ export function formatPercent(value: number): string {
 }
 
 export function parseCurrencyInput(raw: string): number {
-  const cleaned = raw.replace(/[^\d,.-]/g, '').replace(',', '.');
+  // Remove everything except digits, dots, commas, minus
+  let cleaned = raw.replace(/[^\d,.\-]/g, '');
+  // Brazilian format: dots are thousands, comma is decimal
+  // Remove thousand separators (dots) then convert decimal comma to dot
+  cleaned = cleaned.replace(/\./g, '').replace(',', '.');
   const val = parseFloat(cleaned);
   return isNaN(val) ? 0 : val;
 }
