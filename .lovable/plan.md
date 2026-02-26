@@ -1,25 +1,53 @@
 
 
-## Plano: Aplicar churn sobre receita pré-existente
+## Plano: Mover Setup Matriz para SAAS + drilldown
 
-### O que muda
+### Resumo
 
-Atualmente, `receitaPreExistente` é um valor fixo lido de `state.profile.receitaMensal` e somado todo mês sem sofrer churn. A mudança é transformá-la em uma variável acumulada (como `mrrCaasOwn`) que sofre churn mês a mês.
+Atualmente `setupMatriz` (`clientesMes × setupPorCliente`) entra na linha **Expansão**. Vamos movê-lo para **SAAS** e adicionar drilldown visual mostrando "SAAS OXY+GENIO" e "SETUP" como sub-linhas.
 
-### Alteração em `src/lib/financial.ts`
+### 1. `src/lib/financial.ts` — Mover setupMatriz para rbSaas
 
-1. **Criar variável acumulada** `mrrPreExistente` inicializada com `state.profile.receitaMensal` antes do loop (ao lado de `mrrCaasOwn`, `mrrSaasOwn`, `mrrMatriz`).
+```
+// Antes:
+const rbSaas = mrrSaasOwn + setupOwn;
+const rbExpansao = recDiag + setupMatriz;
 
-2. **Incluir `mrrPreExistente` no bloco de churn** — aplicar `mrrPreExistente *= factor` junto com os demais MRRs. Incluir no cálculo de `totalMrrBefore` e `churnValor`.
+// Depois:
+const rbSaas = mrrSaasOwn + setupOwn + setupMatriz;
+const rbExpansao = recDiag;
+```
 
-3. **Remover a constante `receitaPreExistente`** de dentro do loop e usar `mrrPreExistente` no lugar:
-   - `rbCaas = mrrCaasOwn + mrrMatriz + mrrPreExistente` (em vez de `+ receitaPreExistente`)
+Também atualizar `revenueByProduct` para que `setup` use `setupOwn + setupMatriz` (impactos fiscais corretos).
 
-4. **No objeto `months.push`**, atualizar `receitaPreExistente` para usar o valor corrente de `mrrPreExistente` (que diminui ao longo do tempo) e incluí-lo no `mrrTotal`.
+### 2. `src/types/simulator.ts` — Adicionar campo `receitaSaasOxyGenio`
 
-### Impacto
+Novo campo no `MonthlyProjection` para permitir drilldown:
+- `receitaSaasOxyGenio` = `mrrSaasOwn` (receita recorrente SAAS pura)
+- `receitaSetupTotal` = `setupOwn + setupMatriz` (todo setup consolidado)
 
-- A receita pré-existente será corroída pelo churn mês a mês, refletindo perda natural de clientes da base original.
-- Mês 1: valor cheio. Mês 2 em diante: reduzido por `(1 - churnRate)` cumulativamente.
-- Todos os cálculos downstream (receita bruta, impostos, DRE) são afetados automaticamente pois dependem de `rbCaas`.
+O campo `receitaBrutaSaas` continua sendo o total (OXY+GENIO + Setup).
+
+### 3. `src/components/simulator/SectionPL.tsx` — Drilldown na linha SAAS
+
+Substituir a linha única "SAAS + Setup" por:
+- **SAAS** (total, com expand)
+  - **OXY+GENIO** (recorrente)
+  - **SETUP** (pontual: próprio + matriz)
+
+### 4. `src/components/simulator/SectionCharts.tsx` — Atualizar gráfico
+
+Ajustar dados do gráfico para refletir a nova composição (Setup sai de Expansão, entra em SAAS).
+
+### 5. `src/lib/exportPdf.ts` e `src/lib/exportExcel.ts` — Drilldown no export
+
+Adicionar sub-linhas "OXY+GENIO" e "SETUP" abaixo de SAAS nos exports.
+
+### Arquivos afetados
+- `src/lib/financial.ts` — fórmula rbSaas/rbExpansao
+- `src/types/simulator.ts` — novos campos drilldown
+- `src/components/simulator/SectionPL.tsx` — drilldown visual
+- `src/components/simulator/SectionCharts.tsx` — gráfico
+- `src/lib/exportPdf.ts` — PDF export
+- `src/lib/exportExcel.ts` — Excel export
 
