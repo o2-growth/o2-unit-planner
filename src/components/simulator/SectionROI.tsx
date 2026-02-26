@@ -65,6 +65,7 @@ export function SectionROI({ data, onChange, projections, metaROIMeses }: Props)
   };
 
   const { totalInvestimento, capitalGiro, roiDireto, roiTotal, paybackMeses, taxaFinal } = calculateROI(data, projections);
+  const resultadoAnual = projections.slice(0, 12).reduce((sum, p) => sum + p.resultadoFinal, 0);
   const atingeMeta = paybackMeses > 0 && paybackMeses <= metaROIMeses;
   const investimentoPreenchido = data.taxaFranquia > 0;
 
@@ -200,8 +201,15 @@ export function SectionROI({ data, onChange, projections, metaROIMeses }: Props)
                     <PopoverTrigger asChild>
                       <button type="button" className="text-muted-foreground hover:text-primary"><HelpCircle className="w-3 h-3" /></button>
                     </PopoverTrigger>
-                    <PopoverContent className="text-sm max-w-xs">
-                      Retorno sobre a taxa de franquia apenas ({formatCurrency(taxaFinal)}). Indica o retorno direto do investimento na marca.
+                    <PopoverContent className="text-xs max-w-xs space-y-2">
+                      <p className="font-semibold">Fórmula: Resultado Anual (12m) ÷ Taxa de Franquia × 100</p>
+                      <div className="border-t pt-1 space-y-1">
+                        <div className="flex justify-between"><span>Resultado Anual (12m):</span><span className="font-medium">{formatCurrency(resultadoAnual)}</span></div>
+                        <div className="flex justify-between"><span>Taxa de Franquia:</span><span className="font-medium">{formatCurrency(taxaFinal)}</span></div>
+                      </div>
+                      <div className="border-t pt-1 flex justify-between font-semibold">
+                        <span>= ROI Direto:</span><span>{formatPercent(roiDireto)}</span>
+                      </div>
                     </PopoverContent>
                   </Popover>
                 </div>
@@ -215,8 +223,17 @@ export function SectionROI({ data, onChange, projections, metaROIMeses }: Props)
                     <PopoverTrigger asChild>
                       <button type="button" className="text-muted-foreground hover:text-primary"><HelpCircle className="w-3 h-3" /></button>
                     </PopoverTrigger>
-                    <PopoverContent className="text-sm max-w-xs">
-                      Retorno sobre o investimento total ({formatCurrency(totalInvestimento)}), incluindo taxa de franquia + capital de giro.
+                    <PopoverContent className="text-xs max-w-xs space-y-2">
+                      <p className="font-semibold">Fórmula: Resultado Anual (12m) ÷ Investimento Total × 100</p>
+                      <div className="border-t pt-1 space-y-1">
+                        <div className="flex justify-between"><span>Resultado Anual (12m):</span><span className="font-medium">{formatCurrency(resultadoAnual)}</span></div>
+                        <div className="flex justify-between"><span>Taxa de Franquia:</span><span className="font-medium">{formatCurrency(taxaFinal)}</span></div>
+                        <div className="flex justify-between"><span>Capital de Giro:</span><span className="font-medium">{formatCurrency(capitalGiro)}</span></div>
+                        <div className="flex justify-between"><span>Investimento Total:</span><span className="font-medium">{formatCurrency(totalInvestimento)}</span></div>
+                      </div>
+                      <div className="border-t pt-1 flex justify-between font-semibold">
+                        <span>= ROI Total:</span><span>{formatPercent(roiTotal)}</span>
+                      </div>
                     </PopoverContent>
                   </Popover>
                 </div>
