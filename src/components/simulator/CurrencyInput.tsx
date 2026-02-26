@@ -17,14 +17,14 @@ export function CurrencyInput({ value, onChange, placeholder = '0,00', className
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
     setDisplay(raw);
-  }, []);
+    onChange(parseCurrencyInput(raw));
+  }, [onChange]);
 
   const handleBlur = useCallback(() => {
     setFocused(false);
     const parsed = parseCurrencyInput(display);
-    onChange(parsed);
     setDisplay(parsed ? formatCurrencyInput(parsed) : '');
-  }, [display, onChange]);
+  }, [display]);
 
   const handleFocus = useCallback(() => {
     setFocused(true);
