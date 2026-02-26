@@ -1,22 +1,29 @@
 
 
-# Adicionar Margem Líquida e Margem Final ao DRE
+# Tooltip com base de cálculo completa para ROI Direto e ROI Total
 
-## Alterações
+## Alteração única: `src/components/simulator/SectionROI.tsx`
 
-### 1. `src/types/simulator.ts` — Adicionar campos ao `MonthlyProjection`
-- `margemLiquida: number` (após `resultadoLiquido`)
-- `margemFinal: number` (após `resultadoFinal`)
+Substituir o conteúdo das tooltips (Popover) de ROI Direto e ROI Total para mostrar a fórmula completa com os valores reais:
 
-### 2. `src/lib/financial.ts` — Calcular as novas margens
-- `margemLiquida = receitaBrutaTotal > 0 ? (resultadoLiquido / receitaBrutaTotal) * 100 : 0`
-- `margemFinal = receitaBrutaTotal > 0 ? (resultadoFinal / receitaBrutaTotal) * 100 : 0`
-- Incluir ambos no objeto de retorno do mês
+### ROI Direto (linhas ~203-205)
+Conteúdo atual: texto genérico.
+Novo conteúdo mostrará:
+- **Fórmula:** Resultado Anual (12m) ÷ Taxa de Franquia × 100
+- **Resultado Anual (12m):** soma dos `resultadoFinal` dos primeiros 12 meses (valor formatado)
+- **Taxa de Franquia:** valor com/sem desconto (valor formatado)
+- **= ROI Direto:** percentual final
 
-### 3. `src/components/simulator/SectionPL.tsx` — Exibir no DRE
-- Após a linha `= RESULTADO LÍQUIDO`, adicionar: `Margem Líquida` (percent)
-- Após a linha `= RESULTADO FINAL`, adicionar: `Margem Final` (percent)
+### ROI Total (linhas ~218-220)
+Conteúdo atual: texto genérico.
+Novo conteúdo mostrará:
+- **Fórmula:** Resultado Anual (12m) ÷ Investimento Total × 100
+- **Resultado Anual (12m):** mesmo valor acima
+- **Investimento Total:** Taxa de Franquia + Capital de Giro (com breakdown)
+- **= ROI Total:** percentual final
 
-### 4. `src/lib/exportPdf.ts` e `src/lib/exportExcel.ts` — Incluir nos exports
-- Adicionar linhas de `margemLiquida` e `margemFinal` como tipo `percent` após suas respectivas linhas de resultado
+### Implementação
+- Calcular `resultadoAnual` localmente (já disponível via `projections.slice(0,12).reduce(...)`)
+- Formatar todos os valores com `formatCurrency` e `formatPercent`
+- Layout em lista vertical dentro do `PopoverContent` com `text-xs` e separadores visuais
 
