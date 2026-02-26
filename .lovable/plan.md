@@ -1,26 +1,29 @@
 
 
-# Auto-save do estado da simulação
+# Diagnóstico: Seções 2, 3, 4 sumiram
 
-## Situação atual
-Hoje o estado só é salvo quando o usuário clica manualmente em "Salvar Simulação". Se fechar a aba ou sair, perde tudo que não foi salvo.
+## Causa raiz
 
-Na inicialização, o `Index.tsx` já carrega do `localStorage` e, se logado, do banco de dados. Porém não há salvamento automático durante o preenchimento.
+O auto-save para o banco de dados (adicionado na última alteração) possui uma **condição de corrida**: ele pode salvar o estado vazio/inicial no banco ANTES de o carregamento do banco completar, sobrescrevendo os dados reais.
 
-## Solução
+Fluxo do problema:
+```text
+1. Página carrega → state = INITIAL_STATE (nome='', faturamento12m=0)
+2. DB auto-save inicia timer de 3s com estado vazio
+3. DB load começa (async)
+4. Se DB load demora > 3s → auto-save grava INITIAL_STATE no banco!
+5. Próximo reload carrega estado vazio do banco → seções somem
+```
 
-Adicionar um `useEffect` com **debounce** no `Index.tsx` que salva automaticamente o estado a cada alteração:
+Como `profileDone` exige `nome.trim().length > 0` e `goalsDone` exige `faturamento12m > 0`, o estado zerado esconde as seções 2 (Goals), 3 (Horizon) e 4 (Commercial).
 
-1. **localStorage** — salva sempre (debounce de 1 segundo) para que mesmo usuários não logados mantenham o progresso
-2. **Banco de dados** — se o usuário estiver logado, salva também no servidor (debounce de 3 segundos para evitar excesso de requests)
-
-### Mudança técnica
+## Correção
 
 **`src/pages/Index.tsx`**:
-- Adicionar um `useEffect` que observa `state` e, após 1s de inatividade, salva no `localStorage`
-- Adicionar outro `useEffect` que observa `state` + `user` e, após 3s de inatividade, faz upsert no banco (mesma lógica do `handleSave` atual)
-- Usar `useRef` para os timers de debounce
-- Pular o salvamento na primeira renderização (quando o estado está sendo carregado)
 
-Nenhum outro arquivo precisa ser alterado. Os botões manuais continuam funcionando normalmente como opção explícita.
+1. Adicionar um `useRef` `dbLoaded` que começa `false` e é setado para `true` após o DB load completar
+2. No efeito de auto-save para DB, verificar `if (!dbLoaded.current) return;` antes de agendar o upsert
+3. Fazer o mesmo para o auto-save de localStorage: usar um segundo ref `stateReady` que só fica true após o DB load (ou imediatamente se não há user)
+
+Isso garante que nenhum auto-save ocorra antes dos dados reais serem carregados do banco.
 
