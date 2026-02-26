@@ -102,6 +102,39 @@ const Index = () => {
   // Snapshot for "Restaurar Respostas Oficiais"
   const initialSnapshot = useRef<SimulatorState>(JSON.parse(JSON.stringify(state)));
 
+  // Skip auto-save on first render (initial load)
+  const isFirstRender = useRef(true);
+  const localTimer = useRef<ReturnType<typeof setTimeout>>();
+  const dbTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  // Auto-save to localStorage (1s debounce)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    clearTimeout(localTimer.current);
+    localTimer.current = setTimeout(() => {
+      localStorage.setItem('o2-simulator', JSON.stringify(state));
+    }, 1000);
+    return () => clearTimeout(localTimer.current);
+  }, [state]);
+
+  // Auto-save to DB (3s debounce, logged-in only)
+  useEffect(() => {
+    if (!user) return;
+    clearTimeout(dbTimer.current);
+    dbTimer.current = setTimeout(() => {
+      supabase
+        .from('simulations')
+        .upsert(
+          { user_id: user.id, state: state as any, nome: state.profile.nome || 'Minha Simulação', updated_at: new Date().toISOString() },
+          { onConflict: 'user_id' }
+        );
+    }, 3000);
+    return () => clearTimeout(dbTimer.current);
+  }, [state, user]);
+
   const projections = useMemo(() => calculateProjections(state), [state]);
 
   const update = useCallback(<K extends keyof SimulatorState>(key: K, value: SimulatorState[K]) => {
