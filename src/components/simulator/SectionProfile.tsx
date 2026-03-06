@@ -7,7 +7,7 @@ import { SectionHeader } from './SectionHeader';
 import { CurrencyInput } from './CurrencyInput';
 import type { ProfileData } from '@/types/simulator';
 
-const EXP_OPTIONS = ['01 a 5 anos', '5 a 10 anos', '10 a 15 anos', '15 a 20 anos', 'Mais de 20 anos'];
+
 
 interface Props {
   data: ProfileData;
@@ -28,17 +28,6 @@ export function SectionProfile({ data, onChange }: Props) {
             <Input value={data.nome} onChange={e => update('nome', e.target.value)} placeholder="Seu nome completo" className="mt-1" />
           </div>
 
-          <div>
-            <Label>Anos de experiência na área</Label>
-            <RadioGroup value={data.experiencia} onValueChange={v => update('experiencia', v)} className="mt-2 flex flex-wrap gap-2">
-              {EXP_OPTIONS.map(opt => (
-                <div key={opt} className="flex items-center space-x-2">
-                  <RadioGroupItem value={opt} id={`exp-${opt}`} />
-                  <Label htmlFor={`exp-${opt}`} className="font-normal cursor-pointer">{opt}</Label>
-                </div>
-              ))}
-            </RadioGroup>
-          </div>
 
           <div className="flex items-center gap-3">
             <Label>Já possuo uma Consultoria Financeira/Empresarial</Label>
