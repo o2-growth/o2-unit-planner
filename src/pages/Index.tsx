@@ -53,6 +53,10 @@ function migrateState(parsed: any): SimulatorState {
   if (!parsed.goals?.proLaboreDesejado && parsed.goals?.proLaboreDesejado !== 0) {
     parsed.goals = { ...INITIAL_STATE.goals, ...parsed.goals };
   }
+  // Ensure socios field
+  if (!parsed.socios) {
+    parsed.socios = { ...INITIAL_STATE.socios, socios: INITIAL_STATE.socios.socios.map(s => ({ ...s })) };
+  }
   return parsed;
 }
 
