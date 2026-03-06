@@ -10,9 +10,7 @@ const PRODUCTS = [
   { key: 'caas', label: 'CaaS' },
   { key: 'saas', label: 'SaaS' },
   { key: 'setup', label: 'Setup' },
-  { key: 'education', label: 'Education' },
-  { key: 'expansao', label: 'Expansão' },
-  { key: 'tax', label: 'Tax' },
+  { key: 'demais', label: 'Demais Produtos' },
 ];
 
 interface Props {

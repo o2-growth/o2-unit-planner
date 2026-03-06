@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Slider } from '@/components/ui/slider';
+
 import { SectionHeader } from './SectionHeader';
 import { CurrencyInput } from './CurrencyInput';
 import { AlertTriangle, CheckCircle2, Info } from 'lucide-react';
@@ -31,15 +31,14 @@ export function SectionCommercial({ data, onChange }: Props) {
           <div>
             <Label>Compromisso comercial mensal — quantos NOVOS CLIENTES por mês?</Label>
             <p className="text-xs text-muted-foreground mb-3">Sem considerar demandas da Matriz, somente seus relacionamentos e outbound.</p>
-            <div className="flex items-center gap-4">
-              <Slider
-                value={[data.compromissoMensal]}
-                onValueChange={([v]) => onChange({ ...data, compromissoMensal: v })}
-                min={1} max={10} step={1}
-                className="flex-1"
+          <Input
+                type="number"
+                min={1}
+                max={50}
+                value={data.compromissoMensal}
+                onChange={e => onChange({ ...data, compromissoMensal: parseInt(e.target.value) || 1 })}
+                className="w-32 mt-1"
               />
-              <span className="text-2xl font-bold text-primary w-10 text-center">{data.compromissoMensal}</span>
-            </div>
           </div>
 
           {/* Tickets */}

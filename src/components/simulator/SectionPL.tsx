@@ -227,10 +227,6 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
                 </div>
               </div>
             ))}
-            <div className="mt-2 flex items-start gap-1 text-xs text-muted-foreground">
-              <Info className="w-3 h-3 mt-0.5 shrink-0" />
-              <span>CS será 2% automaticamente quando receita &gt; R$ 500k/mês</span>
-            </div>
           </CardContent>
         </Card>
         <Card>
@@ -282,7 +278,7 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
       <Card className="mb-4">
         <CardContent className="pt-4">
           <Label className="text-base font-semibold mb-3 block">Ajustes Abaixo do Resultado Operacional</Label>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 items-stretch">
+          <div className="grid grid-cols-1 gap-4">
             <div className="flex flex-col">
               <Label className="text-xs">Receitas Financeiras (% s/ receita)</Label>
               <div className="flex items-center gap-1">
@@ -415,10 +411,6 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
                 <>
                   <DRERow label="  Custos CAAS (25%)" tooltip={LINE_TOOLTIPS['Custos CAAS']} values={projections.map(p => -p.custosCaas)} negative />
                   <DRERow label="  Custos SAAS (0%)" tooltip={LINE_TOOLTIPS['Custos SAAS']} values={projections.map(p => -p.custosSaas)} negative />
-                  <DRERow label="  Custos Education" tooltip={LINE_TOOLTIPS['Custos Education']} values={projections.map(p => -p.custosEducation)} negative />
-                  <DRERow label="  Custos CS" tooltip={LINE_TOOLTIPS['Custos CS']} values={projections.map(p => -p.custosCS)} negative />
-                  <DRERow label="  Custos Expansão" tooltip={LINE_TOOLTIPS['Custos Expansão']} values={projections.map(p => -p.custosExpansao)} negative />
-                  <DRERow label="  Custos Tax" tooltip={LINE_TOOLTIPS['Custos Tax']} values={projections.map(p => -p.custosTax)} negative />
                 </>
               )}
 

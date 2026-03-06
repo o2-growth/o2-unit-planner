@@ -58,7 +58,7 @@ export interface TaxConfig {
   nome: string;
   key: string;
   aliquota: number;
-  aplicaA: { caas: number; saas: number; setup: number; education: number; expansao: number; tax: number };
+  aplicaA: { caas: number; saas: number; setup: number; education: number; expansao: number; tax: number; demais?: number };
 }
 
 export interface TaxesData {
@@ -259,10 +259,6 @@ export const INITIAL_STATE: SimulatorState = {
   variableCostRates: [
     { nome: 'Custos CAAS', key: 'caas', percentual: 25 },
     { nome: 'Custos SAAS', key: 'saas', percentual: 0 },
-    { nome: 'Custos Education', key: 'education', percentual: 0 },
-    { nome: 'Custos Customer Success', key: 'cs', percentual: 0 },
-    { nome: 'Custos Expansão', key: 'expansao', percentual: 0 },
-    { nome: 'Custos Tax', key: 'tax', percentual: 0 },
   ],
   socios: {
     quantidade: 1,
