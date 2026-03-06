@@ -6,17 +6,30 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CurrencyInput } from './CurrencyInput';
 import { formatCurrency, formatPercent, formatCurrencySigned } from '@/lib/formatters';
-import { ChevronRight, Info } from 'lucide-react';
+import { ChevronRight, Info, Users } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import type { MonthlyProjection, CostLine, GoalsData } from '@/types/simulator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { MonthlyProjection, CostLine, GoalsData, SociosConfig, SocioData, SocioPapel } from '@/types/simulator';
 
 type BelowEbitdaData = {
   recFinanceirasPercent: number;
   despFinanceirasPercent: number;
   amortizacaoPMT: number;
   investimentosMensal: number;
+};
+
+const PAPEL_LABELS: Record<SocioPapel, string> = {
+  tecnico: 'Diretor Técnico',
+  comercial: 'Diretor Comercial',
+  administrativo: 'Diretor Administrativo',
+};
+
+const PAPEL_ALLOCATION: Record<SocioPapel, string> = {
+  tecnico: 'Custos CAAS (variável)',
+  comercial: 'Desp. Comerciais (fixa)',
+  administrativo: 'Desp. Administrativas (fixa)',
 };
 
 interface Props {
@@ -26,10 +39,12 @@ interface Props {
   belowEbitda: BelowEbitdaData;
   goals: GoalsData;
   proLaboreMode: 'custo_fixo' | 'distribuicao';
+  socios: SociosConfig;
   onProLaboreModeChange: (mode: 'custo_fixo' | 'distribuicao') => void;
   onFixedCostsChange: (costs: CostLine[]) => void;
   onVariableCostsChange: (costs: CostLine[]) => void;
   onBelowEbitdaChange: (data: BelowEbitdaData) => void;
+  onSociosChange: (socios: SociosConfig) => void;
 }
 
 const LINE_TOOLTIPS: Record<string, string> = {
