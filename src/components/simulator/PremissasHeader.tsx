@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CurrencyInput } from './CurrencyInput';
-import { Settings2, RotateCcw, Info } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Settings2, RotateCcw, Info, ChevronDown } from 'lucide-react';
 import type { SimulatorState } from '@/types/simulator';
 
 interface Props {
@@ -25,24 +27,31 @@ export function PremissasHeader({ state, onUpdate, onResetPremissas }: Props) {
     onUpdate('commercial', { ...commercial, mix: { ...commercial.mix, [key]: value } });
   };
 
+  const [open, setOpen] = useState(false);
+
   return (
     <Card className="border-primary/30 bg-accent/20">
       <CardContent className="pt-4 pb-4">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Settings2 className="w-5 h-5 text-primary" />
-            <h3 className="text-base font-bold">Premissas da Simulação — Ajuste Rápido</h3>
-          </div>
-          <Button variant="outline" size="sm" onClick={onResetPremissas} className="gap-1 text-xs">
-            <RotateCcw className="w-3 h-3" /> Restaurar Respostas Oficiais
-          </Button>
-        </div>
-        <div className="flex items-start gap-1 mb-4 text-xs text-muted-foreground">
-          <Info className="w-3 h-3 mt-0.5 shrink-0" />
-          <span>Os números abaixo foram puxados das suas respostas anteriores, mas podem ser alterados diretamente aqui para fins de projeção do DRE.</span>
-        </div>
-        {/* Campos Globais */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
+        <Collapsible open={open} onOpenChange={setOpen}>
+          <CollapsibleTrigger asChild>
+            <div className="flex items-center justify-between cursor-pointer">
+              <div className="flex items-center gap-2">
+                <Settings2 className="w-5 h-5 text-primary" />
+                <h3 className="text-base font-bold">Premissas da Simulação — Ajuste Rápido</h3>
+                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
+              </div>
+              <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); onResetPremissas(); }} className="gap-1 text-xs">
+                <RotateCcw className="w-3 h-3" /> Restaurar Respostas Oficiais
+              </Button>
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="flex items-start gap-1 mt-3 mb-4 text-xs text-muted-foreground">
+              <Info className="w-3 h-3 mt-0.5 shrink-0" />
+              <span>Os números abaixo foram puxados das suas respostas anteriores, mas podem ser alterados diretamente aqui para fins de projeção do DRE.</span>
+            </div>
+            {/* Campos Globais */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
           <div>
             <Label className="text-xs">Horizonte (meses)</Label>
             <Select value={String(state.horizonte)} onValueChange={v => onUpdate('horizonte', Number(v))}>
@@ -122,7 +131,9 @@ export function PremissasHeader({ state, onUpdate, onResetPremissas }: Props) {
               </div>
             </div>
           </div>
-        </div>
+          </div>
+          </CollapsibleContent>
+        </Collapsible>
       </CardContent>
     </Card>
   );

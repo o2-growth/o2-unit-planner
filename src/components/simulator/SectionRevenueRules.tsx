@@ -22,6 +22,8 @@ interface Props {
 export function SectionRevenueRules({ data, onChange }: Props) {
   const { isAdmin } = useAuth();
 
+  if (!isAdmin) return null;
+
   return (
     <section>
       <SectionHeader

@@ -58,7 +58,7 @@ export interface TaxConfig {
   nome: string;
   key: string;
   aliquota: number;
-  aplicaA: { caas: number; saas: number; setup: number; education: number; expansao: number; tax: number };
+  aplicaA: { caas: number; saas: number; setup: number; education: number; expansao: number; tax: number; demais?: number };
 }
 
 export interface TaxesData {
@@ -201,12 +201,12 @@ export const DEFAULT_TICKETS: ProductTicket[] = [
 ];
 
 export const DEFAULT_TAXES: TaxConfig[] = [
-  { nome: 'PIS', key: 'pis', aliquota: 0, aplicaA: { caas: 0.65, saas: 0.65, setup: 0.65, education: 0.65, expansao: 0.65, tax: 0.65 } },
-  { nome: 'COFINS', key: 'cofins', aliquota: 0, aplicaA: { caas: 3.00, saas: 3.00, setup: 3.00, education: 3.00, expansao: 3.00, tax: 3.00 } },
-  { nome: 'IRPJ', key: 'irpj', aliquota: 0, aplicaA: { caas: 5.70, saas: 5.70, setup: 2.10, education: 5.70, expansao: 5.70, tax: 5.70 } },
-  { nome: 'CSLL', key: 'csll', aliquota: 0, aplicaA: { caas: 2.88, saas: 2.88, setup: 1.08, education: 2.88, expansao: 2.88, tax: 2.88 } },
-  { nome: 'ISSQN', key: 'issqn', aliquota: 0, aplicaA: { caas: 2.90, saas: 2.90, setup: 0, education: 2.00, expansao: 5.00, tax: 2.00 } },
-  { nome: 'ICMS', key: 'icms', aliquota: 0, aplicaA: { caas: 0, saas: 0, setup: 0, education: 0, expansao: 0, tax: 0 } },
+  { nome: 'PIS', key: 'pis', aliquota: 0, aplicaA: { caas: 0.65, saas: 0.65, setup: 0.65, education: 0.65, expansao: 0.65, tax: 0.65, demais: 0.65 } },
+  { nome: 'COFINS', key: 'cofins', aliquota: 0, aplicaA: { caas: 3.00, saas: 3.00, setup: 3.00, education: 3.00, expansao: 3.00, tax: 3.00, demais: 3.00 } },
+  { nome: 'IRPJ', key: 'irpj', aliquota: 0, aplicaA: { caas: 5.70, saas: 5.70, setup: 2.10, education: 5.70, expansao: 5.70, tax: 5.70, demais: 5.70 } },
+  { nome: 'CSLL', key: 'csll', aliquota: 0, aplicaA: { caas: 2.88, saas: 2.88, setup: 1.08, education: 2.88, expansao: 2.88, tax: 2.88, demais: 2.88 } },
+  { nome: 'ISSQN', key: 'issqn', aliquota: 0, aplicaA: { caas: 2.90, saas: 2.90, setup: 0, education: 2.00, expansao: 5.00, tax: 2.00, demais: 2.00 } },
+  { nome: 'ICMS', key: 'icms', aliquota: 0, aplicaA: { caas: 0, saas: 0, setup: 0, education: 0, expansao: 0, tax: 0, demais: 0 } },
 ];
 
 export const INITIAL_STATE: SimulatorState = {
@@ -259,10 +259,6 @@ export const INITIAL_STATE: SimulatorState = {
   variableCostRates: [
     { nome: 'Custos CAAS', key: 'caas', percentual: 25 },
     { nome: 'Custos SAAS', key: 'saas', percentual: 0 },
-    { nome: 'Custos Education', key: 'education', percentual: 0 },
-    { nome: 'Custos Customer Success', key: 'cs', percentual: 0 },
-    { nome: 'Custos Expansão', key: 'expansao', percentual: 0 },
-    { nome: 'Custos Tax', key: 'tax', percentual: 0 },
   ],
   socios: {
     quantidade: 1,

@@ -42,12 +42,19 @@ function migrateState(parsed: any): SimulatorState {
     const { setup, ...rest } = parsed.commercial.mix;
     parsed.commercial.mix = rest;
   }
-  // Migrate taxes: ensure setup field exists in aplicaA
+  // Migrate taxes: ensure setup and demais fields exist in aplicaA
   if (parsed.taxes?.impostos) {
     parsed.taxes.impostos = parsed.taxes.impostos.map((imp: any) => ({
       ...imp,
-      aplicaA: { setup: 0, ...imp.aplicaA },
+      aplicaA: { setup: 0, demais: 0, ...imp.aplicaA },
     }));
+  }
+  // Migrate variableCostRates: keep only caas and saas
+  if (parsed.variableCostRates && parsed.variableCostRates.length > 2) {
+    parsed.variableCostRates = parsed.variableCostRates.filter((c: any) => c.key === 'caas' || c.key === 'saas');
+    if (parsed.variableCostRates.length === 0) {
+      parsed.variableCostRates = INITIAL_STATE.variableCostRates.map((c: any) => ({ ...c }));
+    }
   }
   // Ensure goals fields
   if (!parsed.goals?.proLaboreDesejado && parsed.goals?.proLaboreDesejado !== 0) {
