@@ -310,10 +310,12 @@ const Index = () => {
           belowEbitda={state.belowEbitda}
           goals={state.goals}
           proLaboreMode={state.proLaboreMode ?? 'custo_fixo'}
+          socios={state.socios}
           onProLaboreModeChange={v => update('proLaboreMode', v)}
           onFixedCostsChange={v => update('fixedCosts', v)}
           onVariableCostsChange={v => update('variableCostRates', v)}
           onBelowEbitdaChange={v => update('belowEbitda', v)}
+          onSociosChange={v => update('socios', v)}
         />
 
         {/* Section 10 - ROI */}
