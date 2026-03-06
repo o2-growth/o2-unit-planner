@@ -82,6 +82,18 @@ export interface CostLine {
   percentual: number;
 }
 
+export type SocioPapel = 'tecnico' | 'comercial' | 'administrativo';
+
+export interface SocioData {
+  proLabore: number;
+  papel: SocioPapel;
+}
+
+export interface SociosConfig {
+  quantidade: 1 | 2 | 3;
+  socios: SocioData[];
+}
+
 export interface InvestmentData {
   taxaFranquia: number;
   capitalGiro: number;
@@ -171,6 +183,7 @@ export interface SimulatorState {
   revenueRules: RevenueRulesData;
   fixedCosts: CostLine[];
   variableCostRates: CostLine[];
+  socios: SociosConfig;
   investment: InvestmentData;
   belowEbitda: {
     recFinanceirasPercent: number;
@@ -251,6 +264,10 @@ export const INITIAL_STATE: SimulatorState = {
     { nome: 'Custos Expansão', key: 'expansao', percentual: 0 },
     { nome: 'Custos Tax', key: 'tax', percentual: 0 },
   ],
+  socios: {
+    quantidade: 1,
+    socios: [{ proLabore: 0, papel: 'tecnico' as SocioPapel }],
+  },
   investment: {
     taxaFranquia: 190000,
     capitalGiro: 0,
