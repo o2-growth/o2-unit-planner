@@ -53,6 +53,10 @@ function migrateState(parsed: any): SimulatorState {
   if (!parsed.goals?.proLaboreDesejado && parsed.goals?.proLaboreDesejado !== 0) {
     parsed.goals = { ...INITIAL_STATE.goals, ...parsed.goals };
   }
+  // Ensure socios field
+  if (!parsed.socios) {
+    parsed.socios = { ...INITIAL_STATE.socios, socios: INITIAL_STATE.socios.socios.map(s => ({ ...s })) };
+  }
   return parsed;
 }
 
@@ -310,10 +314,12 @@ const Index = () => {
           belowEbitda={state.belowEbitda}
           goals={state.goals}
           proLaboreMode={state.proLaboreMode ?? 'custo_fixo'}
+          socios={state.socios}
           onProLaboreModeChange={v => update('proLaboreMode', v)}
           onFixedCostsChange={v => update('fixedCosts', v)}
           onVariableCostsChange={v => update('variableCostRates', v)}
           onBelowEbitdaChange={v => update('belowEbitda', v)}
+          onSociosChange={v => update('socios', v)}
         />
 
         {/* Section 10 - ROI */}

@@ -6,17 +6,30 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CurrencyInput } from './CurrencyInput';
 import { formatCurrency, formatPercent, formatCurrencySigned } from '@/lib/formatters';
-import { ChevronRight, Info } from 'lucide-react';
+import { ChevronRight, Info, Users } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import type { MonthlyProjection, CostLine, GoalsData } from '@/types/simulator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { MonthlyProjection, CostLine, GoalsData, SociosConfig, SocioData, SocioPapel } from '@/types/simulator';
 
 type BelowEbitdaData = {
   recFinanceirasPercent: number;
   despFinanceirasPercent: number;
   amortizacaoPMT: number;
   investimentosMensal: number;
+};
+
+const PAPEL_LABELS: Record<SocioPapel, string> = {
+  tecnico: 'Diretor Técnico',
+  comercial: 'Diretor Comercial',
+  administrativo: 'Diretor Administrativo',
+};
+
+const PAPEL_ALLOCATION: Record<SocioPapel, string> = {
+  tecnico: 'Custos CAAS (variável)',
+  comercial: 'Desp. Comerciais (fixa)',
+  administrativo: 'Desp. Administrativas (fixa)',
 };
 
 interface Props {
@@ -26,10 +39,12 @@ interface Props {
   belowEbitda: BelowEbitdaData;
   goals: GoalsData;
   proLaboreMode: 'custo_fixo' | 'distribuicao';
+  socios: SociosConfig;
   onProLaboreModeChange: (mode: 'custo_fixo' | 'distribuicao') => void;
   onFixedCostsChange: (costs: CostLine[]) => void;
   onVariableCostsChange: (costs: CostLine[]) => void;
   onBelowEbitdaChange: (data: BelowEbitdaData) => void;
+  onSociosChange: (socios: SociosConfig) => void;
 }
 
 const LINE_TOOLTIPS: Record<string, string> = {
@@ -96,7 +111,7 @@ function LabelWithTooltip({ label, tooltip }: { label: string; tooltip?: string 
   );
 }
 
-export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbitda, goals, proLaboreMode, onProLaboreModeChange, onFixedCostsChange, onVariableCostsChange, onBelowEbitdaChange }: Props) {
+export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbitda, goals, proLaboreMode, socios, onProLaboreModeChange, onFixedCostsChange, onVariableCostsChange, onBelowEbitdaChange, onSociosChange }: Props) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     receita: false,
     saas: false,
@@ -121,9 +136,77 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
 
   const hasCacAbsorvido = projections.some(p => p.cacAbsorvido);
 
+  const updateSocioCount = (qty: 1 | 2 | 3) => {
+    const current = [...socios.socios];
+    const defaults: SocioData[] = [
+      { proLabore: 0, papel: 'tecnico' },
+      { proLabore: 0, papel: 'comercial' },
+      { proLabore: 0, papel: 'administrativo' },
+    ];
+    while (current.length < qty) current.push(defaults[current.length] || { proLabore: 0, papel: 'administrativo' });
+    onSociosChange({ quantidade: qty, socios: current.slice(0, qty) });
+  };
+
+  const updateSocio = (idx: number, field: keyof SocioData, value: any) => {
+    const updated = [...socios.socios];
+    updated[idx] = { ...updated[idx], [field]: value };
+    onSociosChange({ ...socios, socios: updated });
+  };
+
   return (
     <section>
       <SectionHeader number={9} title="Premissas do DRE Gerencial" description="Custos e despesas em % sobre receita" />
+
+      {/* Pró-labore Sócios */}
+      <Card className="mb-4 border-primary/30">
+        <CardContent className="pt-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Users className="w-5 h-5 text-primary" />
+            <Label className="text-base font-semibold">Pró-labore Sócios</Label>
+          </div>
+
+          <div className="mb-4">
+            <Label className="text-xs mb-1 block">Número de Sócios</Label>
+            <Select value={String(socios.quantidade)} onValueChange={v => updateSocioCount(Number(v) as 1 | 2 | 3)}>
+              <SelectTrigger className="w-32 h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1 sócio</SelectItem>
+                <SelectItem value="2">2 sócios</SelectItem>
+                <SelectItem value="3">3 sócios</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-3">
+            {socios.socios.slice(0, socios.quantidade).map((socio, idx) => (
+              <div key={idx} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 rounded-md border border-border bg-muted/20">
+                <span className="text-sm font-medium whitespace-nowrap">Sócio {idx + 1}</span>
+                <Select value={socio.papel} onValueChange={v => updateSocio(idx, 'papel', v)}>
+                  <SelectTrigger className="w-48 h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="tecnico">{PAPEL_LABELS.tecnico}</SelectItem>
+                    <SelectItem value="comercial">{PAPEL_LABELS.comercial}</SelectItem>
+                    <SelectItem value="administrativo">{PAPEL_LABELS.administrativo}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="w-44">
+                  <CurrencyInput value={socio.proLabore} onChange={v => updateSocio(idx, 'proLabore', v)} />
+                </div>
+                <span className="text-[10px] text-muted-foreground">→ {PAPEL_ALLOCATION[socio.papel]}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-3 flex items-start gap-1 text-xs text-muted-foreground">
+            <Info className="w-3 h-3 mt-0.5 shrink-0" />
+            <span>Será usado MAX(premissa %, pró-labore do sócio) para a linha correspondente no DRE.</span>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Cost inputs */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">

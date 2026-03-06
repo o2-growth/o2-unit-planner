@@ -111,7 +111,13 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
     const receitaLiquida = receitaBrutaTotal - deducoesTotal - royaltiesValor;
 
     // --- Variable costs (% based) - Royalties NOT included here ---
-    const custosCaas = rbCaas * custoCaasRate;
+    // Aggregate partner pro-labore by role
+    const sociosAtivos = (state.socios?.socios || []).slice(0, state.socios?.quantidade || 1);
+    const plTecnico = sociosAtivos.filter(s => s.papel === 'tecnico').reduce((s, x) => s + x.proLabore, 0);
+    const plComercial = sociosAtivos.filter(s => s.papel === 'comercial').reduce((s, x) => s + x.proLabore, 0);
+    const plAdministrativo = sociosAtivos.filter(s => s.papel === 'administrativo').reduce((s, x) => s + x.proLabore, 0);
+
+    const custosCaas = Math.max(rbCaas * custoCaasRate, plTecnico);
     const custosSaas = rbSaas * custoSaasRate;
     const custosEducation = rbEducation * custoEdRate;
     const csEffective = receitaBrutaTotal >= 500000 ? Math.max(custoCSRate, 0.02) : custoCSRate;
@@ -127,10 +133,11 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
     const mktBase = receitaBrutaTotal * mktRate;
     const cacAbsorvido = cacTotal > mktBase;
     const despMarketing = Math.max(mktBase, cacTotal);
-    const despComerciais = receitaBrutaTotal * comRate;
+    const despComerciais = Math.max(receitaBrutaTotal * comRate, plComercial);
     const proLaboreValue = m <= 12 ? (state.goals.proLaboreDesejado || 0) : (state.goals.proLabore12m || 0);
     const despPessoal = state.proLaboreMode === 'distribuicao' ? 0 : proLaboreValue;
-    const despAdm = receitaBrutaTotal < 100000 ? 6000 : receitaBrutaTotal * admRate;
+    const despAdmBase = receitaBrutaTotal < 100000 ? 6000 : receitaBrutaTotal * admRate;
+    const despAdm = Math.max(despAdmBase, plAdministrativo);
     const despFixasTotal = despMarketing + despComerciais + despPessoal + despAdm;
 
     const ebitda = lucroBruto - despFixasTotal;

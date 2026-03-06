@@ -1,64 +1,53 @@
 
 
-## Plano: Subsecção Pró-labore Sócios na Seção 9
+## Plano: Mover Setup Matriz para SAAS + drilldown
 
 ### Resumo
 
-Criar configuração de 1-3 sócios com pró-labore individual. Cada sócio tem um papel (Técnico/Comercial/Administrativo) que determina onde seu custo é alocado. A lógica usa MAX(premissa_%, prolabore_socio) para a linha correspondente.
+Atualmente `setupMatriz` (`clientesMes × setupPorCliente`) entra na linha **Expansão**. Vamos movê-lo para **SAAS** e adicionar drilldown visual mostrando "SAAS OXY+GENIO" e "SETUP" como sub-linhas.
 
-### 1. `src/types/simulator.ts` — Novo tipo + estado
+### 1. `src/lib/financial.ts` — Mover setupMatriz para rbSaas
 
-```ts
-export interface SocioData {
-  proLabore: number;
-  papel: 'tecnico' | 'comercial' | 'administrativo';
-}
+```
+// Antes:
+const rbSaas = mrrSaasOwn + setupOwn;
+const rbExpansao = recDiag + setupMatriz;
 
-export interface SociosConfig {
-  quantidade: 1 | 2 | 3;
-  socios: SocioData[];
-}
+// Depois:
+const rbSaas = mrrSaasOwn + setupOwn + setupMatriz;
+const rbExpansao = recDiag;
 ```
 
-Adicionar `socios: SociosConfig` ao `SimulatorState` com default:
-```ts
-socios: { quantidade: 1, socios: [{ proLabore: 0, papel: 'tecnico' }] }
-```
+Também atualizar `revenueByProduct` para que `setup` use `setupOwn + setupMatriz` (impactos fiscais corretos).
 
-### 2. `src/components/simulator/SectionPL.tsx` — UI da subsecção
+### 2. `src/types/simulator.ts` — Adicionar campo `receitaSaasOxyGenio`
 
-Novo card "Pró-labore Sócios" antes dos cards de custos/despesas:
-- Select: Número de sócios (1, 2, 3)
-- Para cada sócio: nome do papel (dropdown: Técnico/Comercial/Administrativo), CurrencyInput pró-labore
-- Info: "Técnico → alocado em Custos CAAS | Comercial → Desp. Comerciais | Administrativo → Desp. Administrativas"
-- Mostrar: "Será usado MAX(premissa %, pró-labore) para cada linha"
+Novo campo no `MonthlyProjection` para permitir drilldown:
+- `receitaSaasOxyGenio` = `mrrSaasOwn` (receita recorrente SAAS pura)
+- `receitaSetupTotal` = `setupOwn + setupMatriz` (todo setup consolidado)
 
-Props: receber `socios` e `onSociosChange` do Index.
+O campo `receitaBrutaSaas` continua sendo o total (OXY+GENIO + Setup).
 
-### 3. `src/lib/financial.ts` — Lógica MAX
+### 3. `src/components/simulator/SectionPL.tsx` — Drilldown na linha SAAS
 
-Para cada sócio ativo:
-- **Técnico**: `custosCaas = MAX(rbCaas * custoCaasRate, socio.proLabore)`
-- **Comercial**: `despComerciais = MAX(receitaBrutaTotal * comRate, socio.proLabore)`
-- **Administrativo**: `despAdm = MAX(despAdm_calculada, socio.proLabore)`
+Substituir a linha única "SAAS + Setup" por:
+- **SAAS** (total, com expand)
+  - **OXY+GENIO** (recorrente)
+  - **SETUP** (pontual: próprio + matriz)
 
-Se dois sócios têm o mesmo papel, somar os pró-labores antes de aplicar MAX.
+### 4. `src/components/simulator/SectionCharts.tsx` — Atualizar gráfico
 
-### 4. `src/pages/Index.tsx` — Passar props
+Ajustar dados do gráfico para refletir a nova composição (Setup sai de Expansão, entra em SAAS).
 
-Adicionar `socios` ao state, passar para SectionPL e para `calculateProjections`.
+### 5. `src/lib/exportPdf.ts` e `src/lib/exportExcel.ts` — Drilldown no export
 
-### 5. `src/lib/financial.ts` — Assinatura
-
-`calculateProjections` já recebe `state` inteiro, então `state.socios` estará disponível sem mudança de assinatura.
-
-### 6. Migração
-
-Em `migrateState`, se `parsed.socios` não existe, usar default.
+Adicionar sub-linhas "OXY+GENIO" e "SETUP" abaixo de SAAS nos exports.
 
 ### Arquivos afetados
-- `src/types/simulator.ts` — tipos + default
-- `src/components/simulator/SectionPL.tsx` — UI subsecção
-- `src/lib/financial.ts` — lógica MAX
-- `src/pages/Index.tsx` — props + migração
+- `src/lib/financial.ts` — fórmula rbSaas/rbExpansao
+- `src/types/simulator.ts` — novos campos drilldown
+- `src/components/simulator/SectionPL.tsx` — drilldown visual
+- `src/components/simulator/SectionCharts.tsx` — gráfico
+- `src/lib/exportPdf.ts` — PDF export
+- `src/lib/exportExcel.ts` — Excel export
 
