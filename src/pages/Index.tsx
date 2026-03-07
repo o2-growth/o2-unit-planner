@@ -50,15 +50,25 @@ function migrateState(parsed: any): SimulatorState {
       simples: { rbt12: 0, folha12m: 0, fatorR: 0, anexo: 'III' },
     };
   }
-  // Ensure new tax fields exist
+  // Ensure new tax fields exist and filter to valid BUs only
+  const VALID_BU_KEYS = DEFAULT_BUS.map(b => b.buKey);
   if (parsed.taxes?.regime && parsed.taxes?.bus) {
-    parsed.taxes.bus = parsed.taxes.bus.map((b: any, i: number) => ({
-      ...DEFAULT_BUS[i % DEFAULT_BUS.length],
-      ...b,
-      faturamentoBU: b.faturamentoBU ?? 0,
-      anexoSimples: b.anexoSimples ?? 'III',
-      sujeitoFatorR: b.sujeitoFatorR ?? (b.buKey === 'caas'),
-    }));
+    const buLookup = Object.fromEntries(DEFAULT_BUS.map(b => [b.buKey, b]));
+    parsed.taxes.bus = parsed.taxes.bus
+      .filter((b: any) => VALID_BU_KEYS.includes(b.buKey))
+      .map((b: any) => ({
+        ...(buLookup[b.buKey] || DEFAULT_BUS[0]),
+        ...b,
+        faturamentoBU: b.faturamentoBU ?? 0,
+        anexoSimples: b.anexoSimples ?? 'III',
+        sujeitoFatorR: b.sujeitoFatorR ?? (b.buKey === 'caas'),
+      }));
+    // Add any missing default BUs
+    for (const def of DEFAULT_BUS) {
+      if (!parsed.taxes.bus.find((b: any) => b.buKey === def.buKey)) {
+        parsed.taxes.bus.push({ ...def });
+      }
+    }
     if (!parsed.taxes.simples) {
       parsed.taxes.simples = { rbt12: 0, folha12m: 0, fatorR: 0, anexo: 'III' };
     }
