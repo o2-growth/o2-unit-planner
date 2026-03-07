@@ -127,10 +127,16 @@ function buildDRERows(groups: MonthlyProjection[][], allProjections: MonthlyProj
   rows.push(row('   Receita Pré-existente', 'receitaPreExistente'));
 
   rows.push({ label: '(-) DEDUÇÕES', values: groups.map(g => fc(sumField(g, 'deducoesTotal'))).concat(fc(sumField(allProjections, 'deducoesTotal'))), style: 'subtotal' });
-  rows.push(row('   PIS', 'deducaoPIS'));
-  rows.push(row('   COFINS', 'deducaoCOFINS'));
-  rows.push(row('   ISSQN', 'deducaoISSQN'));
-  rows.push(row('   ICMS', 'deducaoICMS'));
+  // Show DAS or PIS/COFINS/ISS depending on regime
+  const hasDAS = allProjections.some(p => p.deducaoDAS > 0);
+  if (hasDAS) {
+    rows.push(row('   DAS (Simples Nacional)', 'deducaoDAS'));
+  } else {
+    rows.push(row('   PIS', 'deducaoPIS'));
+    rows.push(row('   COFINS', 'deducaoCOFINS'));
+    rows.push(row('   ISSQN', 'deducaoISSQN'));
+    rows.push(row('   ICMS', 'deducaoICMS'));
+  }
 
   rows.push({ label: `(-) Royalties (${state.revenueRules.royalties}%)`, values: groups.map(g => fc(sumField(g, 'royaltiesValor'))).concat(fc(sumField(allProjections, 'royaltiesValor'))), style: 'subtotal' });
   rows.push(row('   Carga Total %', 'cargaTotalPercent', 'percent', true));
@@ -139,10 +145,6 @@ function buildDRERows(groups: MonthlyProjection[][], allProjections: MonthlyProj
   rows.push({ label: '(-) CUSTOS VARIÁVEIS', values: groups.map(g => fc(sumField(g, 'custosVariaveisTotal'))).concat(fc(sumField(allProjections, 'custosVariaveisTotal'))), style: 'subtotal' });
   rows.push(row('   Custos CAAS', 'custosCaas'));
   rows.push(row('   Custos SAAS', 'custosSaas'));
-  rows.push(row('   Custos Education', 'custosEducation'));
-  rows.push(row('   Custos CS', 'custosCS'));
-  rows.push(row('   Custos Expansão', 'custosExpansao'));
-  rows.push(row('   Custos Tax', 'custosTax'));
 
   rows.push(row('= MARGEM DE CONTRIBUIÇÃO', 'lucroBruto', 'result'));
   rows.push(row('   Margem Bruta %', 'margemBruta', 'percent', true));

@@ -19,7 +19,7 @@ import { AdminLogin } from '@/components/simulator/AdminLogin';
 import { Card, CardContent } from '@/components/ui/card';
 
 import { calculateProjections } from '@/lib/financial';
-import { INITIAL_STATE, type SimulatorState } from '@/types/simulator';
+import { INITIAL_STATE, DEFAULT_BUS, type SimulatorState } from '@/types/simulator';
 
 function migrateState(parsed: any): SimulatorState {
   // Migrate from valorMensal to percentual in cost lines
@@ -42,12 +42,27 @@ function migrateState(parsed: any): SimulatorState {
     const { setup, ...rest } = parsed.commercial.mix;
     parsed.commercial.mix = rest;
   }
-  // Migrate taxes: ensure setup and demais fields exist in aplicaA
-  if (parsed.taxes?.impostos) {
-    parsed.taxes.impostos = parsed.taxes.impostos.map((imp: any) => ({
-      ...imp,
-      aplicaA: { setup: 0, demais: 0, ...imp.aplicaA },
+  // Migrate old tax format (impostos array) → new format (regime + bus)
+  if (parsed.taxes?.impostos && !parsed.taxes?.regime) {
+    parsed.taxes = {
+      regime: 'lucro_presumido',
+      faturamentoTotalMes: 0,
+      bus: DEFAULT_BUS.map(b => ({ ...b })),
+      simples: { rbt12: 0, folha12m: 0, fatorR: 0, anexo: 'III' },
+    };
+  }
+  // Ensure new tax fields exist
+  if (parsed.taxes?.regime && parsed.taxes?.bus) {
+    parsed.taxes.bus = parsed.taxes.bus.map((b: any, i: number) => ({
+      ...DEFAULT_BUS[i % DEFAULT_BUS.length],
+      ...b,
+      faturamentoBU: b.faturamentoBU ?? 0,
+      anexoSimples: b.anexoSimples ?? 'III',
+      sujeitoFatorR: b.sujeitoFatorR ?? (b.buKey === 'caas'),
     }));
+    if (!parsed.taxes.simples) {
+      parsed.taxes.simples = { rbt12: 0, folha12m: 0, fatorR: 0, anexo: 'III' };
+    }
   }
   // Migrate variableCostRates: keep only caas and saas
   if (parsed.variableCostRates && parsed.variableCostRates.length > 2) {
@@ -157,7 +172,7 @@ const Index = () => {
     return () => clearTimeout(dbTimer.current);
   }, [state, user]);
 
-  // Flush on page unload (F5, close tab, navigate away)
+  // Flush on page unload
   useEffect(() => {
     const flush = () => {
       const s = stateRef.current;
@@ -201,7 +216,7 @@ const Index = () => {
     setState({
       ...INITIAL_STATE,
       commercial: { ...INITIAL_STATE.commercial, tickets: INITIAL_STATE.commercial.tickets.map(t => ({ ...t })), mix: { ...INITIAL_STATE.commercial.mix } },
-      taxes: { impostos: INITIAL_STATE.taxes.impostos.map(t => ({ ...t, aplicaA: { ...t.aplicaA } })) },
+      taxes: { ...INITIAL_STATE.taxes, bus: INITIAL_STATE.taxes.bus.map(b => ({ ...b })), simples: { ...INITIAL_STATE.taxes.simples } },
       fixedCosts: INITIAL_STATE.fixedCosts.map(c => ({ ...c })),
       variableCostRates: INITIAL_STATE.variableCostRates.map(c => ({ ...c })),
       belowEbitda: { ...INITIAL_STATE.belowEbitda },
@@ -260,10 +275,8 @@ const Index = () => {
 
       {/* Sections */}
       <main className="max-w-4xl mx-auto px-4 pb-16 space-y-10">
-        {/* Section 1 - Profile */}
         <SectionProfile data={state.profile} onChange={v => update('profile', v)} />
 
-        {/* Transition after profile */}
         {profileDone && (
           <div className="animate-fade-in">
             <Card className="border-primary bg-accent/50">
@@ -276,10 +289,8 @@ const Index = () => {
           </div>
         )}
 
-        {/* Section 2 - Goals */}
         <SectionGoals data={state.goals} onChange={v => update('goals', v)} />
 
-        {/* Transition after goals */}
         {goalsDone && (
           <div className="animate-fade-in">
             <Card className="border-primary bg-accent/50">
@@ -292,28 +303,14 @@ const Index = () => {
           </div>
         )}
 
-        {/* Section 3 - Horizon */}
         <SectionHorizon value={state.horizonte} onChange={v => update('horizonte', v)} />
-
-        {/* Section 4 - Commercial */}
         <SectionCommercial data={state.commercial} onChange={v => update('commercial', v)} />
-
-        {/* Section 5 - Matrix Clients */}
         <SectionMatrixClients data={state.matrixClients} onChange={v => update('matrixClients', v)} />
-
-        {/* Section 6 - Churn */}
         <SectionChurn churnMensal={state.churn.churnMensal} onChangeChurn={v => update('churn', { churnMensal: v })} />
-
-        {/* Section 7 - Taxes */}
         <SectionTaxes data={state.taxes} onChange={v => update('taxes', v)} />
-
-        {/* Section 8 - Revenue Rules */}
         <SectionRevenueRules data={state.revenueRules} onChange={v => update('revenueRules', v)} />
-
-        {/* Premissas Header */}
         <PremissasHeader state={state} onUpdate={update} onResetPremissas={handleResetPremissas} />
 
-        {/* Section 9 - P&L */}
         <SectionPL
           projections={projections}
           fixedCosts={state.fixedCosts}
@@ -329,7 +326,6 @@ const Index = () => {
           onSociosChange={v => update('socios', v)}
         />
 
-        {/* Section 10 - ROI */}
         <SectionROI
           data={state.investment}
           onChange={v => update('investment', v)}
@@ -337,10 +333,8 @@ const Index = () => {
           metaROIMeses={state.goals.metaROIMeses}
         />
 
-        {/* Charts */}
         <SectionCharts projections={projections} investment={state.investment} />
 
-        {/* Results */}
         <SectionResults
           projections={projections}
           investment={state.investment}
@@ -348,7 +342,6 @@ const Index = () => {
           churnMensal={state.churn.churnMensal}
         />
 
-        {/* Bottom actions */}
         <ActionButtons state={state} projections={projections} onReset={handleReset} onLoad={setState} />
       </main>
     </div>

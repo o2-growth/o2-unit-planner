@@ -1,4 +1,16 @@
 import type { SimulatorState, MonthlyProjection, InvestmentData } from '@/types/simulator';
+import { calcAliquotaEfetiva, sugerirAnexo } from '@/lib/simplesNacional';
+
+// ── Lucro Presumido: base de cálculo por tipo de receita ──
+function getBasePresumida(tipoReceita: string): { irpj: number; csll: number } {
+  switch (tipoReceita) {
+    case 'revenda_mercadoria':
+    case 'material_didatico':
+      return { irpj: 0.08, csll: 0.12 };
+    default: // servico, royalties_licenciamento, software_assinatura, outro
+      return { irpj: 0.32, csll: 0.32 };
+  }
+}
 
 export function calculateProjections(state: SimulatorState): MonthlyProjection[] {
   const months: MonthlyProjection[] = [];
@@ -18,19 +30,16 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
   const getRate = (arr: typeof variableCostRates, key: string) => (arr.find(c => c.key === key)?.percentual || 0) / 100;
   const custoCaasRate = getRate(variableCostRates, 'caas');
   const custoSaasRate = getRate(variableCostRates, 'saas');
-  const custoEdRate = getRate(variableCostRates, 'education');
-  const custoCSRate = getRate(variableCostRates, 'cs');
-  const custoExpRate = getRate(variableCostRates, 'expansao');
-  const custoTaxRate = getRate(variableCostRates, 'tax');
 
   // Fixed cost rates
   const mktRate = getRate(fixedCosts, 'marketing');
   const comRate = getRate(fixedCosts, 'comerciais');
   const admRate = getRate(fixedCosts, 'administrativas');
 
-  // Tax configs
-  const getTaxRate = (key: string) => (taxes.impostos.find(t => t.key === key)?.aliquota || 0) / 100;
-  const getTaxConfig = (key: string) => taxes.impostos.find(t => t.key === key);
+  // Tax config
+  const regime = taxes.regime || 'lucro_presumido';
+  const buConfigs = taxes.bus || [];
+  const simplesConfig = taxes.simples || { rbt12: 0, folha12m: 0, fatorR: 0, anexo: 'III' as const };
 
   let mrrCaasOwn = 0;
   let mrrSaasOwn = 0;
@@ -53,7 +62,7 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
     const novoMrrMatriz = clientesMes * matrixClients.mrrPorCliente;
     const cacTotal = clientesMes * matrixClients.cacPorCliente;
 
-    // --- Apply churn to accumulated MRR ---
+    // --- Apply churn ---
     const totalMrrBefore = mrrCaasOwn + mrrSaasOwn + mrrMatriz + mrrPreExistente;
     const churnValor = totalMrrBefore * churnRate;
     if (totalMrrBefore > 0) {
@@ -64,54 +73,81 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
       mrrPreExistente *= factor;
     }
 
-    // --- Add new recurring MRR ---
-    mrrCaasOwn += mix.caas * tCaas;           // CAAS: 100% franqueado, recorrente
-    mrrSaasOwn += mix.saas * tSaas * revShare; // SAAS: só revenue share (30%), recorrente
+    // --- Add new MRR ---
+    mrrCaasOwn += mix.caas * tCaas;
+    mrrSaasOwn += mix.saas * tSaas * revShare;
     mrrMatriz += novoMrrMatriz;
 
-    // --- Pontual revenue (não acumula) ---
-    const setupOwn = (mix.caas + mix.saas) * tSetup;  // Setup: pontual
-    const recDiag = mix.diagnostico * tDiag;            // Diagnóstico: pontual
+    // --- Pontual revenue ---
+    const setupOwn = (mix.caas + mix.saas) * tSetup;
+    const recDiag = mix.diagnostico * tDiag;
 
     // --- DRE Revenue Lines ---
     const rbCaas = mrrCaasOwn + mrrMatriz + mrrPreExistente;
-    const rbSaas = mrrSaasOwn + setupOwn + setupMatriz;  // SAAS OXY+GENIO + Setup (own + matriz)
+    const rbSaas = mrrSaasOwn + setupOwn + setupMatriz;
     const rbEducation = 0;
     const rbExpansao = recDiag;
     const rbTax = 0;
     const receitaBrutaTotal = rbCaas + rbSaas + rbEducation + rbExpansao + rbTax;
 
-    // --- Deductions per tax (excluding IRPJ/CSLL → post-EBITDA) ---
-    const revenueByProduct: Record<string, number> = {
-      caas: rbCaas, saas: mrrSaasOwn, setup: setupOwn + setupMatriz, education: rbEducation, expansao: rbExpansao, tax: rbTax,
+    // Revenue by BU key for tax calculation
+    const revenueByBU: Record<string, number> = {
+      caas: rbCaas,
+      saas: mrrSaasOwn,
+      setup: setupOwn + setupMatriz,
+      education: rbEducation,
+      expansao: rbExpansao,
+      tax: rbTax,
     };
 
-    const calcTaxDed = (key: string): number => {
-      const cfg = getTaxConfig(key);
-      if (!cfg) return 0;
-      let total = 0;
-      for (const [prod, receita] of Object.entries(revenueByProduct)) {
-        const rate = cfg.aplicaA[prod as keyof typeof cfg.aplicaA] || 0;
-        if (rate > 0) {
-          total += receita * (rate / 100);
-        }
+    // --- Tax calculation (bifurcated by regime) ---
+    let deducaoPIS = 0;
+    let deducaoCOFINS = 0;
+    let deducaoISSQN = 0;
+    let deducaoICMS = 0;
+    let deducaoDAS = 0;
+    let irpjCsllCalc = 0;
+
+    if (regime === 'lucro_presumido') {
+      // Lucro Presumido: per-BU calculation
+      for (const bu of buConfigs) {
+        const fat = revenueByBU[bu.buKey] || 0;
+        if (fat <= 0) continue;
+
+        deducaoPIS += fat * 0.0065;      // 0.65%
+        deducaoCOFINS += fat * 0.03;     // 3%
+        deducaoISSQN += fat * (bu.aliquotaIss / 100);
+
+        const base = getBasePresumida(bu.tipoReceita);
+        irpjCsllCalc += fat * base.irpj * 0.15; // IRPJ efetivo
+        irpjCsllCalc += fat * base.csll * 0.09; // CSLL efetivo
       }
-      return total;
-    };
+    } else {
+      // Simples Nacional: DAS per BU
+      const fatorR = simplesConfig.rbt12 > 0 ? simplesConfig.folha12m / simplesConfig.rbt12 : 0;
 
-    const deducaoPIS = calcTaxDed('pis');
-    const deducaoCOFINS = calcTaxDed('cofins');
-    const deducaoISSQN = calcTaxDed('issqn');
-    const deducaoICMS = calcTaxDed('icms');
-    const deducoesTotal = deducaoPIS + deducaoCOFINS + deducaoISSQN + deducaoICMS;
+      for (const bu of buConfigs) {
+        const fat = revenueByBU[bu.buKey] || 0;
+        if (fat <= 0) continue;
 
-    // Royalties as deduction from gross revenue (before receita líquida)
+        const anexoEfetivo = bu.sujeitoFatorR ? sugerirAnexo(fatorR) : bu.anexoSimples;
+        const aliqEfetiva = calcAliquotaEfetiva(simplesConfig.rbt12, anexoEfetivo);
+        deducaoDAS += fat * (aliqEfetiva / 100);
+      }
+      // No separate PIS/COFINS/ISS — all included in DAS
+      // No IRPJ/CSLL post-EBITDA
+    }
+
+    const deducoesTotal = regime === 'simples_nacional'
+      ? deducaoDAS
+      : deducaoPIS + deducaoCOFINS + deducaoISSQN + deducaoICMS;
+
+    // Royalties
     const royaltiesValor = receitaBrutaTotal * royaltiesRate;
     const cargaTotalPercent = receitaBrutaTotal > 0 ? ((deducoesTotal + royaltiesValor) / receitaBrutaTotal) * 100 : 0;
     const receitaLiquida = receitaBrutaTotal - deducoesTotal - royaltiesValor;
 
-    // --- Variable costs (% based) - Royalties NOT included here ---
-    // Aggregate partner pro-labore by role
+    // --- Variable costs ---
     const sociosAtivos = (state.socios?.socios || []).slice(0, state.socios?.quantidade || 1);
     const plTecnico = sociosAtivos.filter(s => s.papel === 'tecnico').reduce((s, x) => s + x.proLabore, 0);
     const plComercial = sociosAtivos.filter(s => s.papel === 'comercial').reduce((s, x) => s + x.proLabore, 0);
@@ -119,12 +155,11 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
 
     const custosCaas = Math.max(rbCaas * custoCaasRate, plTecnico);
     const custosSaas = rbSaas * custoSaasRate;
-    const custosEducation = rbEducation * custoEdRate;
-    const csEffective = receitaBrutaTotal >= 500000 ? Math.max(custoCSRate, 0.02) : custoCSRate;
-    const custosCS = receitaBrutaTotal * csEffective;
-    const custosExpansao = rbExpansao * custoExpRate;
-    const custosTax = rbTax * custoTaxRate;
-    const custosVariaveisTotal = custosCaas + custosSaas + custosEducation + custosCS + custosExpansao + custosTax;
+    const custosEducation = 0;
+    const custosCS = 0;
+    const custosExpansao = 0;
+    const custosTax = 0;
+    const custosVariaveisTotal = custosCaas + custosSaas;
 
     const lucroBruto = receitaLiquida - custosVariaveisTotal;
     const margemBruta = receitaBrutaTotal > 0 ? (lucroBruto / receitaBrutaTotal) * 100 : 0;
@@ -144,11 +179,11 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
     const margemEbitda = receitaBrutaTotal > 0 ? (ebitda / receitaBrutaTotal) * 100 : 0;
 
     // --- Below EBITDA ---
-    // IRPJ/CSLL: calculated on revenue (same logic as deductions, but post-EBITDA)
     let irpjCsll = 0;
-    if (ebitda > 0) {
-      irpjCsll = calcTaxDed('irpj') + calcTaxDed('csll');
+    if (regime === 'lucro_presumido' && ebitda > 0) {
+      irpjCsll = irpjCsllCalc;
     }
+    // Simples: IRPJ/CSLL = 0 (included in DAS)
 
     const recFinanceiras = receitaBrutaTotal * (belowEbitda.recFinanceirasPercent / 100);
     const despFinanceiras = receitaBrutaTotal * (belowEbitda.despFinanceirasPercent / 100);
@@ -158,7 +193,6 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
     const margemLiquida = receitaBrutaTotal > 0 ? (resultadoLiquido / receitaBrutaTotal) * 100 : 0;
     let resultadoFinal = resultadoLiquido - amortizacaoMes - belowEbitda.investimentosMensal;
 
-    // Pro-labore as distribution: deduct only when result is positive
     if (state.proLaboreMode === 'distribuicao' && resultadoFinal > 0) {
       resultadoFinal -= proLaboreValue;
     }
@@ -178,7 +212,7 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
       receitaDiagPontual: recDiag,
       receitaSaasOxyGenio: mrrSaasOwn,
       receitaSetupTotal: setupOwn + setupMatriz,
-      deducaoPIS, deducaoCOFINS, deducaoISSQN, deducaoICMS,
+      deducaoPIS, deducaoCOFINS, deducaoISSQN, deducaoICMS, deducaoDAS,
       deducoesTotal,
       royaltiesValor,
       cargaTotalPercent,
@@ -234,9 +268,8 @@ export function calculateROI(investment: InvestmentData, projections: MonthlyPro
   const roiDireto = taxaFinal > 0 ? (resultadoAnual / taxaFinal) * 100 : 0;
   const roiTotal = totalInvestimento > 0 ? (resultadoAnual / totalInvestimento) * 100 : 0;
 
-  // Payback fracionado (2 decimais)
   let acum = 0;
-  let paybackMeses = -1; // -1 = not reached within horizon
+  let paybackMeses = -1;
   for (let i = 0; i < projections.length; i++) {
     const prev = acum;
     acum += projections[i].resultadoFinal;
