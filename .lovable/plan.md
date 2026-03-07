@@ -1,35 +1,53 @@
 
 
-## Plano: Mostrar linha de Pró-labore Sócios no DRE
+## Plano: Mover Setup Matriz para SAAS + drilldown
 
-### Problema
-No `financial.ts` (linhas 196-198), quando `proLaboreMode === 'distribuicao'`, o pró-labore é subtraído do `resultadoFinal`, mas não existe campo nem linha visível no DRE mostrando esse desconto. No modo `custo_fixo`, aparece como "Pessoal (pró-labore)" nas despesas fixas, mas no modo distribuição fica invisível.
+### Resumo
 
-### Solução
+Atualmente `setupMatriz` (`clientesMes × setupPorCliente`) entra na linha **Expansão**. Vamos movê-lo para **SAAS** e adicionar drilldown visual mostrando "SAAS OXY+GENIO" e "SETUP" como sub-linhas.
 
-**1. `src/types/simulator.ts` — Adicionar campo ao `MonthlyProjection`**
-- Adicionar `proLaboreDistribuicao: number` — valor deduzido do resultado final quando modo = distribuição
+### 1. `src/lib/financial.ts` — Mover setupMatriz para rbSaas
 
-**2. `src/lib/financial.ts` — Preencher o novo campo**
-- Calcular `proLaboreDistribuicao = proLaboreMode === 'distribuicao' && resultadoLiquido - amortização - investimentos > 0 ? proLaboreValue : 0`
-- Usar esse valor na subtração do `resultadoFinal`
-- Incluir no objeto `months.push()`
+```
+// Antes:
+const rbSaas = mrrSaasOwn + setupOwn;
+const rbExpansao = recDiag + setupMatriz;
 
-**3. `src/components/simulator/SectionPL.tsx` — Adicionar linha no DRE**
-- Entre "(-) Investimentos" e "= RESULTADO FINAL", adicionar:
-  - `(-) Pró-labore (distribuição)` — mostrando `p.proLaboreDistribuicao`
-  - Só visível quando `proLaboreMode === 'distribuicao'`
+// Depois:
+const rbSaas = mrrSaasOwn + setupOwn + setupMatriz;
+const rbExpansao = recDiag;
+```
 
-**4. `src/lib/exportExcel.ts` — Adicionar linha no Excel**
-- Adicionar `proLaboreDistribuicao` no array `DRE_ROWS` na posição correta (antes de `resultadoFinal`)
+Também atualizar `revenueByProduct` para que `setup` use `setupOwn + setupMatriz` (impactos fiscais corretos).
 
-**5. `src/lib/exportPdf.ts` — Adicionar linha no PDF**
-- Incluir a linha de pró-labore distribuição no export PDF
+### 2. `src/types/simulator.ts` — Adicionar campo `receitaSaasOxyGenio`
+
+Novo campo no `MonthlyProjection` para permitir drilldown:
+- `receitaSaasOxyGenio` = `mrrSaasOwn` (receita recorrente SAAS pura)
+- `receitaSetupTotal` = `setupOwn + setupMatriz` (todo setup consolidado)
+
+O campo `receitaBrutaSaas` continua sendo o total (OXY+GENIO + Setup).
+
+### 3. `src/components/simulator/SectionPL.tsx` — Drilldown na linha SAAS
+
+Substituir a linha única "SAAS + Setup" por:
+- **SAAS** (total, com expand)
+  - **OXY+GENIO** (recorrente)
+  - **SETUP** (pontual: próprio + matriz)
+
+### 4. `src/components/simulator/SectionCharts.tsx` — Atualizar gráfico
+
+Ajustar dados do gráfico para refletir a nova composição (Setup sai de Expansão, entra em SAAS).
+
+### 5. `src/lib/exportPdf.ts` e `src/lib/exportExcel.ts` — Drilldown no export
+
+Adicionar sub-linhas "OXY+GENIO" e "SETUP" abaixo de SAAS nos exports.
 
 ### Arquivos afetados
-- `src/types/simulator.ts`
-- `src/lib/financial.ts`
-- `src/components/simulator/SectionPL.tsx`
-- `src/lib/exportExcel.ts`
-- `src/lib/exportPdf.ts`
+- `src/lib/financial.ts` — fórmula rbSaas/rbExpansao
+- `src/types/simulator.ts` — novos campos drilldown
+- `src/components/simulator/SectionPL.tsx` — drilldown visual
+- `src/components/simulator/SectionCharts.tsx` — gráfico
+- `src/lib/exportPdf.ts` — PDF export
+- `src/lib/exportExcel.ts` — Excel export
 

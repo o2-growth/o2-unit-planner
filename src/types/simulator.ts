@@ -188,6 +188,7 @@ export interface MonthlyProjection {
   // Final
   amortizacao: number;
   investimentos: number;
+  proLaboreDistribuicao: number;
   resultadoFinal: number;
   margemFinal: number;
   // MRR tracking
