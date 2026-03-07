@@ -54,15 +54,45 @@ export interface ChurnData {
   churnMensal: number;
 }
 
-export interface TaxConfig {
+// ── Legacy tax types (for migration) ──
+export interface LegacyTaxConfig {
   nome: string;
   key: string;
   aliquota: number;
   aplicaA: { caas: number; saas: number; setup: number; education: number; expansao: number; tax: number; demais?: number };
 }
 
+// ── New tax types ──
+export type RegimeTributario = 'lucro_presumido' | 'simples_nacional';
+
+export type TipoReceita = 'servico' | 'revenda_mercadoria' | 'royalties_licenciamento' | 'material_didatico' | 'software_assinatura' | 'outro';
+
+export type AnexoSimples = 'III' | 'IV' | 'V';
+
+export interface BUTaxConfig {
+  buKey: string;
+  buNome: string;
+  tipoReceita: TipoReceita;
+  cnae: string;
+  municipioIss: string;
+  aliquotaIss: number;
+  faturamentoBU: number;
+  anexoSimples: AnexoSimples;
+  sujeitoFatorR: boolean;
+}
+
+export interface SimplesNacionalConfig {
+  rbt12: number;
+  folha12m: number;
+  fatorR: number;
+  anexo: 'III' | 'V';
+}
+
 export interface TaxesData {
-  impostos: TaxConfig[];
+  regime: RegimeTributario;
+  faturamentoTotalMes: number;
+  bus: BUTaxConfig[];
+  simples: SimplesNacionalConfig;
 }
 
 export interface RevenueRulesData {
@@ -119,11 +149,12 @@ export interface MonthlyProjection {
   receitaDiagPontual: number;
   receitaSaasOxyGenio: number;
   receitaSetupTotal: number;
-  // Deductions (per tax, excluding IRPJ/CSLL) + Royalties
+  // Deductions
   deducaoPIS: number;
   deducaoCOFINS: number;
   deducaoISSQN: number;
   deducaoICMS: number;
+  deducaoDAS: number;
   deducoesTotal: number;
   royaltiesValor: number;
   cargaTotalPercent: number;
@@ -200,13 +231,13 @@ export const DEFAULT_TICKETS: ProductTicket[] = [
   { nome: 'Diagnóstico Estratégico', key: 'diagnostico', sugerido: 18000, minimo: 12000, valor: 18000 },
 ];
 
-export const DEFAULT_TAXES: TaxConfig[] = [
-  { nome: 'PIS', key: 'pis', aliquota: 0, aplicaA: { caas: 0.65, saas: 0.65, setup: 0.65, education: 0.65, expansao: 0.65, tax: 0.65, demais: 0.65 } },
-  { nome: 'COFINS', key: 'cofins', aliquota: 0, aplicaA: { caas: 3.00, saas: 3.00, setup: 3.00, education: 3.00, expansao: 3.00, tax: 3.00, demais: 3.00 } },
-  { nome: 'IRPJ', key: 'irpj', aliquota: 0, aplicaA: { caas: 5.70, saas: 5.70, setup: 2.10, education: 5.70, expansao: 5.70, tax: 5.70, demais: 5.70 } },
-  { nome: 'CSLL', key: 'csll', aliquota: 0, aplicaA: { caas: 2.88, saas: 2.88, setup: 1.08, education: 2.88, expansao: 2.88, tax: 2.88, demais: 2.88 } },
-  { nome: 'ISSQN', key: 'issqn', aliquota: 0, aplicaA: { caas: 2.90, saas: 2.90, setup: 0, education: 2.00, expansao: 5.00, tax: 2.00, demais: 2.00 } },
-  { nome: 'ICMS', key: 'icms', aliquota: 0, aplicaA: { caas: 0, saas: 0, setup: 0, education: 0, expansao: 0, tax: 0, demais: 0 } },
+export const DEFAULT_BUS: BUTaxConfig[] = [
+  { buKey: 'caas', buNome: 'CaaS', tipoReceita: 'servico', cnae: '7020-4/00', municipioIss: '', aliquotaIss: 2, faturamentoBU: 0, anexoSimples: 'III', sujeitoFatorR: true },
+  { buKey: 'saas', buNome: 'SaaS', tipoReceita: 'software_assinatura', cnae: '', municipioIss: '', aliquotaIss: 2, faturamentoBU: 0, anexoSimples: 'III', sujeitoFatorR: false },
+  { buKey: 'setup', buNome: 'Setup', tipoReceita: 'software_assinatura', cnae: '', municipioIss: '', aliquotaIss: 0, faturamentoBU: 0, anexoSimples: 'III', sujeitoFatorR: false },
+  { buKey: 'education', buNome: 'Education', tipoReceita: 'material_didatico', cnae: '', municipioIss: '', aliquotaIss: 2, faturamentoBU: 0, anexoSimples: 'III', sujeitoFatorR: false },
+  { buKey: 'expansao', buNome: 'Expansão', tipoReceita: 'servico', cnae: '', municipioIss: '', aliquotaIss: 5, faturamentoBU: 0, anexoSimples: 'III', sujeitoFatorR: false },
+  { buKey: 'tax', buNome: 'Tax', tipoReceita: 'servico', cnae: '', municipioIss: '', aliquotaIss: 2, faturamentoBU: 0, anexoSimples: 'III', sujeitoFatorR: false },
 ];
 
 export const INITIAL_STATE: SimulatorState = {
@@ -245,7 +276,12 @@ export const INITIAL_STATE: SimulatorState = {
     mrrPorCliente: 6570.10,
   },
   churn: { churnMensal: 2 },
-  taxes: { impostos: DEFAULT_TAXES.map(t => ({ ...t, aplicaA: { ...t.aplicaA } })) },
+  taxes: {
+    regime: 'lucro_presumido',
+    faturamentoTotalMes: 0,
+    bus: DEFAULT_BUS.map(b => ({ ...b })),
+    simples: { rbt12: 0, folha12m: 0, fatorR: 0, anexo: 'III' as const },
+  },
   revenueRules: {
     revenueShareSaaS: 30,
     royalties: 20,
