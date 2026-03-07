@@ -95,9 +95,6 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
       caas: rbCaas,
       saas: mrrSaasOwn,
       setup: setupOwn + setupMatriz,
-      education: rbEducation,
-      expansao: rbExpansao,
-      tax: rbTax,
     };
 
     // --- Tax calculation (bifurcated by regime) ---
