@@ -16,7 +16,6 @@ import { SectionResults } from '@/components/simulator/SectionResults';
 import { ActionButtons } from '@/components/simulator/ActionButtons';
 import { PremissasHeader } from '@/components/simulator/PremissasHeader';
 import { AdminLogin } from '@/components/simulator/AdminLogin';
-import { Card, CardContent } from '@/components/ui/card';
 
 import { calculateProjections } from '@/lib/financial';
 import { INITIAL_STATE, DEFAULT_BUS, type SimulatorState } from '@/types/simulator';
@@ -51,15 +50,25 @@ function migrateState(parsed: any): SimulatorState {
       simples: { rbt12: 0, folha12m: 0, fatorR: 0, anexo: 'III' },
     };
   }
-  // Ensure new tax fields exist
+  // Ensure new tax fields exist and filter to valid BUs only
+  const VALID_BU_KEYS = DEFAULT_BUS.map(b => b.buKey);
   if (parsed.taxes?.regime && parsed.taxes?.bus) {
-    parsed.taxes.bus = parsed.taxes.bus.map((b: any, i: number) => ({
-      ...DEFAULT_BUS[i % DEFAULT_BUS.length],
-      ...b,
-      faturamentoBU: b.faturamentoBU ?? 0,
-      anexoSimples: b.anexoSimples ?? 'III',
-      sujeitoFatorR: b.sujeitoFatorR ?? (b.buKey === 'caas'),
-    }));
+    const buLookup = Object.fromEntries(DEFAULT_BUS.map(b => [b.buKey, b]));
+    parsed.taxes.bus = parsed.taxes.bus
+      .filter((b: any) => VALID_BU_KEYS.includes(b.buKey))
+      .map((b: any) => ({
+        ...(buLookup[b.buKey] || DEFAULT_BUS[0]),
+        ...b,
+        faturamentoBU: b.faturamentoBU ?? 0,
+        anexoSimples: b.anexoSimples ?? 'III',
+        sujeitoFatorR: b.sujeitoFatorR ?? (b.buKey === 'caas'),
+      }));
+    // Add any missing default BUs
+    for (const def of DEFAULT_BUS) {
+      if (!parsed.taxes.bus.find((b: any) => b.buKey === def.buKey)) {
+        parsed.taxes.bus.push({ ...def });
+      }
+    }
     if (!parsed.taxes.simples) {
       parsed.taxes.simples = { rbt12: 0, folha12m: 0, fatorR: 0, anexo: 'III' };
     }
@@ -82,13 +91,6 @@ function migrateState(parsed: any): SimulatorState {
   return parsed;
 }
 
-// Visibility helpers for transition cards only
-function isProfileDone(state: SimulatorState) {
-  return state.profile.nome.trim().length > 0;
-}
-function isGoalsDone(state: SimulatorState) {
-  return state.goals.faturamento12m > 0;
-}
 
 
 const Index = () => {
@@ -236,9 +238,6 @@ const Index = () => {
     }));
   }, []);
 
-  // Visibility flags for transition cards
-  const profileDone = isProfileDone(state);
-  const goalsDone = isGoalsDone(state);
 
   return (
     <div className="min-h-screen bg-background">
@@ -276,32 +275,7 @@ const Index = () => {
       {/* Sections */}
       <main className="max-w-4xl mx-auto px-4 pb-16 space-y-10">
         <SectionProfile data={state.profile} onChange={v => update('profile', v)} />
-
-        {profileDone && (
-          <div className="animate-fade-in">
-            <Card className="border-primary bg-accent/50">
-              <CardContent className="py-8 text-center">
-                <p className="text-lg font-semibold text-primary italic">
-                  "Muito obrigado por suas respostas, agora você está apto a montar o BP da sua unidade."
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
         <SectionGoals data={state.goals} onChange={v => update('goals', v)} />
-
-        {goalsDone && (
-          <div className="animate-fade-in">
-            <Card className="border-primary bg-accent/50">
-              <CardContent className="py-6 text-center">
-                <p className="text-lg font-semibold text-primary italic">
-                  "Excelente. Bora para os números."
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
 
         <SectionHorizon value={state.horizonte} onChange={v => update('horizonte', v)} />
         <SectionCommercial data={state.commercial} onChange={v => update('commercial', v)} />

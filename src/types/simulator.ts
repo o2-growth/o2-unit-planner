@@ -236,9 +236,6 @@ export const DEFAULT_BUS: BUTaxConfig[] = [
   { buKey: 'caas', buNome: 'CaaS', tipoReceita: 'servico', cnae: '7020-4/00', municipioIss: '', aliquotaIss: 2, faturamentoBU: 0, anexoSimples: 'III', sujeitoFatorR: true },
   { buKey: 'saas', buNome: 'SaaS', tipoReceita: 'software_assinatura', cnae: '', municipioIss: '', aliquotaIss: 2, faturamentoBU: 0, anexoSimples: 'III', sujeitoFatorR: false },
   { buKey: 'setup', buNome: 'Setup', tipoReceita: 'software_assinatura', cnae: '', municipioIss: '', aliquotaIss: 0, faturamentoBU: 0, anexoSimples: 'III', sujeitoFatorR: false },
-  { buKey: 'education', buNome: 'Education', tipoReceita: 'material_didatico', cnae: '', municipioIss: '', aliquotaIss: 2, faturamentoBU: 0, anexoSimples: 'III', sujeitoFatorR: false },
-  { buKey: 'expansao', buNome: 'Expansão', tipoReceita: 'servico', cnae: '', municipioIss: '', aliquotaIss: 5, faturamentoBU: 0, anexoSimples: 'III', sujeitoFatorR: false },
-  { buKey: 'tax', buNome: 'Tax', tipoReceita: 'servico', cnae: '', municipioIss: '', aliquotaIss: 2, faturamentoBU: 0, anexoSimples: 'III', sujeitoFatorR: false },
 ];
 
 export const INITIAL_STATE: SimulatorState = {
