@@ -137,6 +137,7 @@ const DRE_ROWS: DRERow[] = [
   { label: '   Margem Líquida %', field: 'margemLiquida', type: 'percent', isPercent: true },
   { label: '(-) Amortização', field: 'amortizacao', type: 'detail' },
   { label: '(-) Investimentos', field: 'investimentos', type: 'detail' },
+  { label: '(-) Pró-labore (distribuição)', field: 'proLaboreDistribuicao', type: 'detail' },
   { label: '= RESULTADO FINAL', field: 'resultadoFinal', type: 'result' },
   { label: '   Margem Final %', field: 'margemFinal', type: 'percent', isPercent: true },
 ];

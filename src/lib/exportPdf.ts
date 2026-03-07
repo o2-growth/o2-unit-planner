@@ -166,6 +166,7 @@ function buildDRERows(groups: MonthlyProjection[][], allProjections: MonthlyProj
 
   rows.push(row('(-) Amortização', 'amortizacao', 'detail'));
   rows.push(row('(-) Investimentos', 'investimentos', 'detail'));
+  rows.push(row('(-) Pró-labore (distribuição)', 'proLaboreDistribuicao', 'detail'));
   rows.push(row('= RESULTADO FINAL', 'resultadoFinal', 'result'));
   rows.push(row('   Margem Final %', 'margemFinal', 'percent', true));
 

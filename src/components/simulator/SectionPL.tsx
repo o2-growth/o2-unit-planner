@@ -445,6 +445,9 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
               <DRERow label="  Margem Líquida" tooltip={LINE_TOOLTIPS['Margem Líquida']} values={projections.map(p => p.margemLiquida)} percent />
               <DRERow label="(-) Amortização da Dívida" tooltip={LINE_TOOLTIPS['Amortização']} values={projections.map(p => -p.amortizacao)} negative />
               <DRERow label="(-) Investimentos" tooltip={LINE_TOOLTIPS['Investimentos']} values={projections.map(p => -p.investimentos)} negative />
+              {proLaboreMode === 'distribuicao' && (
+                <DRERow label="(-) Pró-labore (distribuição)" tooltip="Pró-labore retirado do resultado quando há lucro (modo distribuição)" values={projections.map(p => -p.proLaboreDistribuicao)} negative />
+              )}
               <DRERow label="= RESULTADO FINAL" tooltip={LINE_TOOLTIPS['RESULTADO FINAL']} values={projections.map(p => p.resultadoFinal)} highlight primary signed />
               <DRERow label="  Margem Final" tooltip={LINE_TOOLTIPS['Margem Final']} values={projections.map(p => p.margemFinal)} percent />
             </TableBody>

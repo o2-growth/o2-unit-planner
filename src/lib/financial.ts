@@ -193,8 +193,10 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
     const margemLiquida = receitaBrutaTotal > 0 ? (resultadoLiquido / receitaBrutaTotal) * 100 : 0;
     let resultadoFinal = resultadoLiquido - amortizacaoMes - belowEbitda.investimentosMensal;
 
+    let proLaboreDistribuicao = 0;
     if (state.proLaboreMode === 'distribuicao' && resultadoFinal > 0) {
-      resultadoFinal -= proLaboreValue;
+      proLaboreDistribuicao = proLaboreValue;
+      resultadoFinal -= proLaboreDistribuicao;
     }
 
     const margemFinal = receitaBrutaTotal > 0 ? (resultadoFinal / receitaBrutaTotal) * 100 : 0;
@@ -229,6 +231,7 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
       margemLiquida,
       amortizacao: amortizacaoMes,
       investimentos: belowEbitda.investimentosMensal,
+      proLaboreDistribuicao,
       resultadoFinal,
       margemFinal,
       mrrCaasOwn, mrrSaasOwn, mrrMatriz,
