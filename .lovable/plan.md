@@ -1,53 +1,22 @@
 
 
-## Plano: Mover Setup Matriz para SAAS + drilldown
+## Plano: Ajustes finais — banners motivacionais e BUs de impostos
 
-### Resumo
+### Parte 1 — Remover banners motivacionais
+**Arquivo:** `src/pages/Index.tsx`
+- Remover o bloco entre `SectionProfile` e `SectionGoals` (linhas 280-290) — card com "Muito obrigado por suas respostas..."
+- Remover o bloco entre `SectionGoals` e `SectionHorizon` (linhas 294-304) — card com "Excelente. Bora para os números."
+- Remover as funções `isProfileDone` e `isGoalsDone` (linhas 86-91) e as variáveis `profileDone`/`goalsDone` (linhas 240-241), já que não terão mais uso
 
-Atualmente `setupMatriz` (`clientesMes × setupPorCliente`) entra na linha **Expansão**. Vamos movê-lo para **SAAS** e adicionar drilldown visual mostrando "SAAS OXY+GENIO" e "SETUP" como sub-linhas.
+### Parte 2 — Remover Education, Expansão e Tax da tabela de BUs em impostos
+**Arquivo:** `src/types/simulator.ts`
+- Remover as 3 entradas de `DEFAULT_BUS`: education, expansao, tax
+- Manter apenas: CaaS, SaaS, Setup
 
-### 1. `src/lib/financial.ts` — Mover setupMatriz para rbSaas
+**Arquivo:** `src/pages/Index.tsx`
+- Atualizar a migração para filtrar BUs removidas do estado salvo (filtrar por `buKey` in `['caas','saas','setup']`)
+- Corrigir o `DEFAULT_BUS[i % DEFAULT_BUS.length]` para usar lookup por `buKey` em vez de índice
 
-```
-// Antes:
-const rbSaas = mrrSaasOwn + setupOwn;
-const rbExpansao = recDiag + setupMatriz;
-
-// Depois:
-const rbSaas = mrrSaasOwn + setupOwn + setupMatriz;
-const rbExpansao = recDiag;
-```
-
-Também atualizar `revenueByProduct` para que `setup` use `setupOwn + setupMatriz` (impactos fiscais corretos).
-
-### 2. `src/types/simulator.ts` — Adicionar campo `receitaSaasOxyGenio`
-
-Novo campo no `MonthlyProjection` para permitir drilldown:
-- `receitaSaasOxyGenio` = `mrrSaasOwn` (receita recorrente SAAS pura)
-- `receitaSetupTotal` = `setupOwn + setupMatriz` (todo setup consolidado)
-
-O campo `receitaBrutaSaas` continua sendo o total (OXY+GENIO + Setup).
-
-### 3. `src/components/simulator/SectionPL.tsx` — Drilldown na linha SAAS
-
-Substituir a linha única "SAAS + Setup" por:
-- **SAAS** (total, com expand)
-  - **OXY+GENIO** (recorrente)
-  - **SETUP** (pontual: próprio + matriz)
-
-### 4. `src/components/simulator/SectionCharts.tsx` — Atualizar gráfico
-
-Ajustar dados do gráfico para refletir a nova composição (Setup sai de Expansão, entra em SAAS).
-
-### 5. `src/lib/exportPdf.ts` e `src/lib/exportExcel.ts` — Drilldown no export
-
-Adicionar sub-linhas "OXY+GENIO" e "SETUP" abaixo de SAAS nos exports.
-
-### Arquivos afetados
-- `src/lib/financial.ts` — fórmula rbSaas/rbExpansao
-- `src/types/simulator.ts` — novos campos drilldown
-- `src/components/simulator/SectionPL.tsx` — drilldown visual
-- `src/components/simulator/SectionCharts.tsx` — gráfico
-- `src/lib/exportPdf.ts` — PDF export
-- `src/lib/exportExcel.ts` — Excel export
+**Arquivo:** `src/lib/financial.ts`
+- Verificar que o cálculo de impostos por BU funciona com qualquer quantidade de BUs (já itera `data.taxes.bus`, sem problema)
 
