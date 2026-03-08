@@ -69,7 +69,7 @@ export function PremissasHeader({ state, onUpdate, onResetPremissas }: Props) {
           </div>
           <div>
             <Label className="text-xs">Pró-labore alvo</Label>
-            <CurrencyInput value={goals.proLabore12m} onChange={v => onUpdate('goals', { ...goals, proLabore12m: v })} className="h-9 text-xs" />
+            <CurrencyInput value={goals.proLabore12m} onChange={v => onUpdate('goals', { ...goals, proLabore12m: v })} className="mt-1 h-9 text-xs" />
           </div>
         </div>
 
@@ -77,7 +77,7 @@ export function PremissasHeader({ state, onUpdate, onResetPremissas }: Props) {
           {/* Bloco Venda Própria (Seção 4) */}
           <div className="border border-primary/20 rounded-lg p-3">
             <p className="text-xs font-semibold text-primary mb-2">📊 Venda Própria (Seção 4)</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-3 gap-3 mb-3">
               <div>
                 <Label className="text-xs">CAAS/mês</Label>
                 <Input type="number" min={0} value={commercial.mix.caas} onChange={e => updateMix('caas', parseInt(e.target.value) || 0)} className="mt-1 h-9 text-xs" />
@@ -90,21 +90,23 @@ export function PremissasHeader({ state, onUpdate, onResetPremissas }: Props) {
                 <Label className="text-xs">Diagnóstico/mês</Label>
                 <Input type="number" min={0} value={commercial.mix.diagnostico} onChange={e => updateMix('diagnostico', parseInt(e.target.value) || 0)} className="mt-1 h-9 text-xs" />
               </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div>
                 <Label className="text-xs">Ticket CAAS</Label>
-                <CurrencyInput value={commercial.tickets.find(t => t.key === 'caas')?.valor || 0} onChange={v => updateTicket('caas', v)} className="h-9 text-xs" />
+                <CurrencyInput value={commercial.tickets.find(t => t.key === 'caas')?.valor || 0} onChange={v => updateTicket('caas', v)} className="mt-1 h-9 text-xs" />
               </div>
               <div>
                 <Label className="text-xs">Ticket SAAS</Label>
-                <CurrencyInput value={commercial.tickets.find(t => t.key === 'saas')?.valor || 0} onChange={v => updateTicket('saas', v)} className="h-9 text-xs" />
+                <CurrencyInput value={commercial.tickets.find(t => t.key === 'saas')?.valor || 0} onChange={v => updateTicket('saas', v)} className="mt-1 h-9 text-xs" />
               </div>
               <div>
                 <Label className="text-xs">Ticket Diagnóstico</Label>
-                <CurrencyInput value={commercial.tickets.find(t => t.key === 'diagnostico')?.valor || 0} onChange={v => updateTicket('diagnostico', v)} className="h-9 text-xs" />
+                <CurrencyInput value={commercial.tickets.find(t => t.key === 'diagnostico')?.valor || 0} onChange={v => updateTicket('diagnostico', v)} className="mt-1 h-9 text-xs" />
               </div>
               <div>
-                <Label className="text-xs">Ticket Setup (auto)</Label>
-                <CurrencyInput value={commercial.tickets.find(t => t.key === 'setup')?.valor || 0} onChange={v => updateTicket('setup', v)} className="h-9 text-xs" />
+                <Label className="text-xs">Ticket Setup</Label>
+                <CurrencyInput value={commercial.tickets.find(t => t.key === 'setup')?.valor || 0} onChange={v => updateTicket('setup', v)} className="mt-1 h-9 text-xs" />
               </div>
             </div>
           </div>
@@ -119,15 +121,15 @@ export function PremissasHeader({ state, onUpdate, onResetPremissas }: Props) {
               </div>
               <div>
                 <Label className="text-xs">CAC/cliente</Label>
-                <CurrencyInput value={matrixClients.cacPorCliente} onChange={v => onUpdate('matrixClients', { ...matrixClients, cacPorCliente: v })} className="h-9 text-xs" />
+                <CurrencyInput value={matrixClients.cacPorCliente} onChange={v => onUpdate('matrixClients', { ...matrixClients, cacPorCliente: v })} className="mt-1 h-9 text-xs" />
               </div>
               <div>
                 <Label className="text-xs">Setup/cliente</Label>
-                <CurrencyInput value={matrixClients.setupPorCliente} onChange={v => onUpdate('matrixClients', { ...matrixClients, setupPorCliente: v })} className="h-9 text-xs" />
+                <CurrencyInput value={matrixClients.setupPorCliente} onChange={v => onUpdate('matrixClients', { ...matrixClients, setupPorCliente: v })} className="mt-1 h-9 text-xs" />
               </div>
               <div>
                 <Label className="text-xs">MRR/cliente</Label>
-                <CurrencyInput value={matrixClients.mrrPorCliente} onChange={v => onUpdate('matrixClients', { ...matrixClients, mrrPorCliente: v })} className="h-9 text-xs" />
+                <CurrencyInput value={matrixClients.mrrPorCliente} onChange={v => onUpdate('matrixClients', { ...matrixClients, mrrPorCliente: v })} className="mt-1 h-9 text-xs" />
               </div>
             </div>
           </div>
