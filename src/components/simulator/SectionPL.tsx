@@ -281,7 +281,7 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
           <div className="grid grid-cols-1 gap-4">
             <div className="flex flex-col">
               <Label className="text-xs">Receitas Financeiras (% s/ receita)</Label>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 w-24">
                 <Input
                   type="number" min={0} max={100} step={0.1}
                   value={belowEbitda.recFinanceirasPercent}
@@ -293,7 +293,7 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
             </div>
             <div className="flex flex-col">
               <Label className="text-xs">Despesas Financeiras (% s/ receita)</Label>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 w-24">
                 <Input
                   type="number" min={0} max={100} step={0.1}
                   value={belowEbitda.despFinanceirasPercent}
@@ -309,10 +309,12 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
             </div>
             <div className="flex flex-col">
               <Label className="text-xs">PMT Empréstimo (parcela mensal)</Label>
-              <CurrencyInput
-                value={belowEbitda.amortizacaoPMT}
-                onChange={v => onBelowEbitdaChange({ ...belowEbitda, amortizacaoPMT: v })}
-              />
+              <div className="w-40">
+                <CurrencyInput
+                  value={belowEbitda.amortizacaoPMT}
+                  onChange={v => onBelowEbitdaChange({ ...belowEbitda, amortizacaoPMT: v })}
+                />
+              </div>
               <div className="flex items-start gap-1 mt-1 text-xs text-muted-foreground">
                 <Info className="w-3 h-3 mt-0.5 shrink-0" />
                 <span>Pagamento mensal de empréstimo bancário/mútuo para início da operação.</span>
@@ -320,10 +322,12 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
             </div>
             <div className="flex flex-col">
               <Label className="text-xs">Investimentos</Label>
-              <CurrencyInput
-                value={belowEbitda.investimentosMensal}
-                onChange={v => onBelowEbitdaChange({ ...belowEbitda, investimentosMensal: v })}
-              />
+              <div className="w-40">
+                <CurrencyInput
+                  value={belowEbitda.investimentosMensal}
+                  onChange={v => onBelowEbitdaChange({ ...belowEbitda, investimentosMensal: v })}
+                />
+              </div>
               <div className="flex items-start gap-1 mt-1 text-xs text-muted-foreground">
                 <Info className="w-3 h-3 mt-0.5 shrink-0" />
                 <span>Investimentos mensais em ativos (computadores, branding, compra de escritórios, partnership na matriz, etc.)</span>
