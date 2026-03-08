@@ -73,8 +73,8 @@ const LINE_TOOLTIPS: Record<string, string> = {
   'Custos Expansão': '% sobre receita de Expansão',
   'Custos Tax': '% sobre receita de Tax',
   // Despesas Fixas drilldown
-  'Marketing': '7,5% sobre receita bruta ou CAC total da Matriz (o maior valor)',
-  'Comerciais': '7,5% sobre receita bruta total',
+  'Marketing': '5% sobre receita bruta ou CAC total da Matriz (o maior valor)',
+  'Comerciais': '5% sobre receita bruta total',
   'Pessoal': 'Pró-labore definido na Seção 3 (valor mês 1-12 / após 12)',
   'Administrativas': 'R$6.000 fixo até R$100k de receita, depois % sobre receita bruta',
   // Linhas de resultado e margens
@@ -425,8 +425,8 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
               <GroupRow label="(-) Despesas Fixas" tooltip={LINE_TOOLTIPS['Despesas Fixas']} values={projections.map(p => -p.despFixasTotal)} expanded={expanded.despesas} onToggle={() => toggle('despesas')} negative />
               {expanded.despesas && (
                 <>
-                  <DRERow label={hasCacAbsorvido ? "  Marketing (inclui CAC)" : "  Marketing (7,5%)"} tooltip={LINE_TOOLTIPS['Marketing']} values={projections.map(p => -p.despMarketing)} negative />
-                  <DRERow label="  Comerciais (7,5%)" tooltip={LINE_TOOLTIPS['Comerciais']} values={projections.map(p => -p.despComerciais)} negative />
+                  <DRERow label={hasCacAbsorvido ? "  Marketing (inclui CAC)" : "  Marketing (5%)"} tooltip={LINE_TOOLTIPS['Marketing']} values={projections.map(p => -p.despMarketing)} negative />
+                  <DRERow label="  Comerciais (5%)" tooltip={LINE_TOOLTIPS['Comerciais']} values={projections.map(p => -p.despComerciais)} negative />
                   <DRERow label="  Pessoal (pró-labore)" tooltip={LINE_TOOLTIPS['Pessoal']} values={projections.map(p => -p.despPessoal)} negative />
                   <DRERow label="  Administrativas" tooltip={LINE_TOOLTIPS['Administrativas']} values={projections.map(p => -p.despAdm)} negative />
                 </>

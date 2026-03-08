@@ -286,9 +286,9 @@ export const INITIAL_STATE: SimulatorState = {
     mapeamento: { setup: 'saas', diagnostico: 'caas', caas: 'caas', saas: 'saas' },
   },
   fixedCosts: [
-    { nome: 'Despesas de Marketing', key: 'marketing', percentual: 7.5 },
-    { nome: 'Despesas Comerciais', key: 'comerciais', percentual: 7.5 },
-    { nome: 'Despesas Administrativas', key: 'administrativas', percentual: 6 },
+    { nome: 'Despesas de Marketing', key: 'marketing', percentual: 5 },
+    { nome: 'Despesas Comerciais', key: 'comerciais', percentual: 5 },
+    { nome: 'Despesas Administrativas', key: 'administrativas', percentual: 5 },
   ],
   variableCostRates: [
     { nome: 'Custos CAAS', key: 'caas', percentual: 25 },

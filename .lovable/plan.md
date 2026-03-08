@@ -1,18 +1,53 @@
 
 
-## Plano: Alterar percentuais padrão das Despesas Fixas para 5%
+## Plano: Mover Setup Matriz para SAAS + drilldown
 
-### Alterações
+### Resumo
 
-**`src/types/simulator.ts`** (linhas 289-291):
-- Marketing: 7.5 → 5
-- Comerciais: 7.5 → 5
-- Administrativas: 6 → 5
+Atualmente `setupMatriz` (`clientesMes × setupPorCliente`) entra na linha **Expansão**. Vamos movê-lo para **SAAS** e adicionar drilldown visual mostrando "SAAS OXY+GENIO" e "SETUP" como sub-linhas.
 
-**`src/components/simulator/SectionPL.tsx`**:
-- Atualizar tooltips e labels que referenciam "7,5%" para "5%"
-- Linha 76: tooltip Marketing → "5% sobre receita bruta..."
-- Linha 77: tooltip Comerciais → "5% sobre receita bruta total"
-- Linha 428: label Marketing → "(5%)"
-- Linha 429: label Comerciais → "(5%)"
+### 1. `src/lib/financial.ts` — Mover setupMatriz para rbSaas
+
+```
+// Antes:
+const rbSaas = mrrSaasOwn + setupOwn;
+const rbExpansao = recDiag + setupMatriz;
+
+// Depois:
+const rbSaas = mrrSaasOwn + setupOwn + setupMatriz;
+const rbExpansao = recDiag;
+```
+
+Também atualizar `revenueByProduct` para que `setup` use `setupOwn + setupMatriz` (impactos fiscais corretos).
+
+### 2. `src/types/simulator.ts` — Adicionar campo `receitaSaasOxyGenio`
+
+Novo campo no `MonthlyProjection` para permitir drilldown:
+- `receitaSaasOxyGenio` = `mrrSaasOwn` (receita recorrente SAAS pura)
+- `receitaSetupTotal` = `setupOwn + setupMatriz` (todo setup consolidado)
+
+O campo `receitaBrutaSaas` continua sendo o total (OXY+GENIO + Setup).
+
+### 3. `src/components/simulator/SectionPL.tsx` — Drilldown na linha SAAS
+
+Substituir a linha única "SAAS + Setup" por:
+- **SAAS** (total, com expand)
+  - **OXY+GENIO** (recorrente)
+  - **SETUP** (pontual: próprio + matriz)
+
+### 4. `src/components/simulator/SectionCharts.tsx` — Atualizar gráfico
+
+Ajustar dados do gráfico para refletir a nova composição (Setup sai de Expansão, entra em SAAS).
+
+### 5. `src/lib/exportPdf.ts` e `src/lib/exportExcel.ts` — Drilldown no export
+
+Adicionar sub-linhas "OXY+GENIO" e "SETUP" abaixo de SAAS nos exports.
+
+### Arquivos afetados
+- `src/lib/financial.ts` — fórmula rbSaas/rbExpansao
+- `src/types/simulator.ts` — novos campos drilldown
+- `src/components/simulator/SectionPL.tsx` — drilldown visual
+- `src/components/simulator/SectionCharts.tsx` — gráfico
+- `src/lib/exportPdf.ts` — PDF export
+- `src/lib/exportExcel.ts` — Excel export
 
