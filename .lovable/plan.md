@@ -1,53 +1,27 @@
 
 
-## Plano: Mover Setup Matriz para SAAS + drilldown
+## Plano: Adicionar glossário explicativo na página MRR do PDF
 
-### Resumo
+### Problema
+A página "Evolução MRR e Base de Clientes" do PDF não explica de onde vêm os números, gerando dúvidas sobre a base de cálculo de cada coluna.
 
-Atualmente `setupMatriz` (`clientesMes × setupPorCliente`) entra na linha **Expansão**. Vamos movê-lo para **SAAS** e adicionar drilldown visual mostrando "SAAS OXY+GENIO" e "SETUP" como sub-linhas.
+### Solução
 
-### 1. `src/lib/financial.ts` — Mover setupMatriz para rbSaas
+**Arquivo:** `src/lib/exportPdf.ts` — função `drawMRRPage` (linhas 434-490)
 
-```
-// Antes:
-const rbSaas = mrrSaasOwn + setupOwn;
-const rbExpansao = recDiag + setupMatriz;
+Após a tabela autoTable, adicionar um bloco de notas explicativas (footnotes) com as definições de cada coluna:
 
-// Depois:
-const rbSaas = mrrSaasOwn + setupOwn + setupMatriz;
-const rbExpansao = recDiag;
-```
+1. Capturar o `finalY` da tabela (como já feito na DRE)
+2. Desenhar um bloco de texto com as seguintes definições:
 
-Também atualizar `revenueByProduct` para que `setup` use `setupOwn + setupMatriz` (impactos fiscais corretos).
+- **MRR CAAS** — Receita recorrente mensal de CFO as a Service: inclui MRR próprio (vendas da unidade) + receita pré-existente da carteira inicial, líquido de churn.
+- **MRR SAAS** — Receita recorrente do OXY+GENIO reconhecida pela franquia: corresponde a {revenueShareSaaS}% de revenue share sobre o faturamento SAAS (não os 100%), líquido de churn.
+- **MRR Matriz** — MRR gerado por clientes adquiridos via inbound da matriz, acumulado e líquido de churn.
+- **MRR Total** — Soma de MRR CAAS + MRR SAAS + MRR Matriz + Receita Pré-existente.
+- **Churn R$** — Valor monetário da perda mensal de receita recorrente, aplicando a taxa de churn sobre o MRR total do período anterior.
+- **Clientes Mês** — Quantidade de novos clientes adquiridos no período: vendas próprias da unidade + clientes comprados da matriz.
+- **Clientes Acum.** — Base acumulada de clientes ativos ao final do período.
+- **Setup Matriz** — Receita pontual de implantação dos clientes adquiridos via matriz (clientes × ticket de setup).
 
-### 2. `src/types/simulator.ts` — Adicionar campo `receitaSaasOxyGenio`
-
-Novo campo no `MonthlyProjection` para permitir drilldown:
-- `receitaSaasOxyGenio` = `mrrSaasOwn` (receita recorrente SAAS pura)
-- `receitaSetupTotal` = `setupOwn + setupMatriz` (todo setup consolidado)
-
-O campo `receitaBrutaSaas` continua sendo o total (OXY+GENIO + Setup).
-
-### 3. `src/components/simulator/SectionPL.tsx` — Drilldown na linha SAAS
-
-Substituir a linha única "SAAS + Setup" por:
-- **SAAS** (total, com expand)
-  - **OXY+GENIO** (recorrente)
-  - **SETUP** (pontual: próprio + matriz)
-
-### 4. `src/components/simulator/SectionCharts.tsx` — Atualizar gráfico
-
-Ajustar dados do gráfico para refletir a nova composição (Setup sai de Expansão, entra em SAAS).
-
-### 5. `src/lib/exportPdf.ts` e `src/lib/exportExcel.ts` — Drilldown no export
-
-Adicionar sub-linhas "OXY+GENIO" e "SETUP" abaixo de SAAS nos exports.
-
-### Arquivos afetados
-- `src/lib/financial.ts` — fórmula rbSaas/rbExpansao
-- `src/types/simulator.ts` — novos campos drilldown
-- `src/components/simulator/SectionPL.tsx` — drilldown visual
-- `src/components/simulator/SectionCharts.tsx` — gráfico
-- `src/lib/exportPdf.ts` — PDF export
-- `src/lib/exportExcel.ts` — Excel export
+O bloco será renderizado em fonte 6.5, cor `MUTED`, com bullet points verdes, abaixo da tabela. Também incluir uma nota dinâmica com o % de revenue share configurado (ex: "30%").
 
