@@ -487,6 +487,47 @@ function drawMRRPage(doc: any, state: SimulatorState, projections: MonthlyProjec
     },
     margin: { left: 10, right: 10 },
   });
+
+  // ─── Glossário explicativo ───
+  const tableEndY = (doc as any).lastAutoTable?.finalY ?? 120;
+  const revenueShare = state.revenueRules?.revenueShareSaaS ?? 30;
+  const pageW = doc.internal.pageSize.getWidth();
+
+  const glossary: [string, string][] = [
+    ['MRR CAAS', 'Receita recorrente mensal de CFO as a Service: inclui MRR próprio (vendas da unidade) + receita pré-existente da carteira inicial, líquido de churn.'],
+    ['MRR SAAS', `Receita recorrente do OXY+GENIO reconhecida pela franquia: corresponde a ${revenueShare}% de revenue share sobre o faturamento SAAS (não os 100%), líquido de churn.`],
+    ['MRR Matriz', 'MRR gerado por clientes adquiridos via inbound da matriz, acumulado e líquido de churn.'],
+    ['MRR Total', 'Soma de MRR CAAS + MRR SAAS + MRR Matriz + Receita Pré-existente.'],
+    ['Churn R$', 'Valor monetário da perda mensal de receita recorrente, aplicando a taxa de churn sobre o MRR total do período anterior.'],
+    ['Clientes Mês', 'Quantidade de novos clientes adquiridos no período: vendas próprias da unidade + clientes comprados da matriz.'],
+    ['Clientes Acum.', 'Base acumulada de clientes ativos ao final do período: carteira inicial + clientes totais conquistados − churn.'],
+    ['Setup Matriz', 'Receita pontual de implantação dos clientes adquiridos via matriz (clientes × ticket de setup).'],
+  ];
+
+  let gy = tableEndY + 6;
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...DARK);
+  doc.text('Glossário — Base de Cálculo', 10, gy);
+  gy += 4;
+
+  doc.setFontSize(6.5);
+  glossary.forEach(([term, desc]) => {
+    if (gy > doc.internal.pageSize.getHeight() - 10) {
+      doc.addPage('landscape');
+      gy = 15;
+    }
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...GREEN_DARK);
+    doc.text('•', 12, gy);
+    doc.text(`${term}:`, 15, gy);
+    const termWidth = doc.getTextWidth(`${term}: `);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...MUTED);
+    const descLines = doc.splitTextToSize(desc, pageW - 15 - termWidth - 12);
+    doc.text(descLines, 15 + termWidth, gy);
+    gy += descLines.length * 3.2;
+  });
 }
 
 function drawROIPage(doc: any, state: SimulatorState, projections: MonthlyProjection[], logo: string | null) {
