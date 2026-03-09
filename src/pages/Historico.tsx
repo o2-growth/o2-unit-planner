@@ -2,11 +2,16 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { calculateProjections } from '@/lib/financial';
+import { exportPDF } from '@/lib/exportPdf';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Trash2, Play, FileText } from 'lucide-react';
+import { Trash2, Play, FileText, FileSpreadsheet } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from '@/hooks/use-toast';
+import { exportExcel } from '@/lib/exportExcel';
+import type { SimulatorState } from '@/types/simulator';
 
 interface SimRow {
   id: string;
@@ -21,6 +26,7 @@ export default function Historico() {
   const navigate = useNavigate();
   const [sims, setSims] = useState<SimRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generatingPdf, setGeneratingPdf] = useState<string | null>(null);
 
   const load = async () => {
     if (!user) return;
@@ -47,6 +53,31 @@ export default function Historico() {
   const handleDelete = async (id: string) => {
     await supabase.from('simulations').delete().eq('id', id);
     setSims(prev => prev.filter(s => s.id !== id));
+    toast({ title: 'Simulação excluída' });
+  };
+
+  const handleGeneratePdf = async (sim: SimRow) => {
+    setGeneratingPdf(sim.id);
+    try {
+      const state = sim.state as SimulatorState;
+      const projections = calculateProjections(state);
+      await exportPDF(state, projections);
+      toast({ title: 'PDF exportado!' });
+    } catch (e) {
+      toast({ title: 'Erro ao gerar PDF', variant: 'destructive' });
+    }
+    setGeneratingPdf(null);
+  };
+
+  const handleGenerateExcel = async (sim: SimRow) => {
+    try {
+      const state = sim.state as SimulatorState;
+      const projections = calculateProjections(state);
+      await exportExcel(state, projections);
+      toast({ title: 'Excel exportado!' });
+    } catch {
+      toast({ title: 'Erro ao gerar Excel', variant: 'destructive' });
+    }
   };
 
   if (loading) {
@@ -62,7 +93,7 @@ export default function Historico() {
       <div className="max-w-4xl mx-auto px-4 py-16 text-center space-y-4">
         <FileText className="h-16 w-16 mx-auto text-muted-foreground/40" />
         <h2 className="text-xl font-semibold text-foreground">Nenhuma simulação encontrada</h2>
-        <p className="text-muted-foreground">Crie sua primeira simulação no Simulador.</p>
+        <p className="text-muted-foreground">Salve uma simulação no Simulador para vê-la aqui.</p>
         <Button onClick={() => navigate('/simulador')}>Ir para o Simulador</Button>
       </div>
     );
@@ -72,32 +103,60 @@ export default function Historico() {
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-4">
       {sims.map(sim => {
         const profileNome = sim.state?.profile?.nome;
+        const horizonte = sim.state?.horizonte;
         return (
           <Card key={sim.id} className={sim.is_active ? 'border-primary/50 bg-accent/30' : ''}>
-            <CardContent className="p-4 flex items-center justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-foreground truncate">{sim.nome}</h3>
-                  {sim.is_active && (
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                      Ativa
-                    </span>
-                  )}
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-foreground truncate">{sim.nome}</h3>
+                    {sim.is_active && (
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                        Ativa
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {profileNome && <span>{profileNome} · </span>}
+                    {horizonte && <span>{horizonte} meses · </span>}
+                    {format(new Date(sim.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {profileNome && <span>{profileNome} · </span>}
-                  Atualizada em {format(new Date(sim.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                {!sim.is_active && (
-                  <Button variant="outline" size="sm" onClick={() => handleActivate(sim.id)} className="gap-1">
-                    <Play className="h-3.5 w-3.5" /> Continuar
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleGeneratePdf(sim)}
+                    disabled={generatingPdf === sim.id}
+                    title="Gerar PDF"
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <FileText className="h-4 w-4" />
                   </Button>
-                )}
-                <Button variant="ghost" size="icon" onClick={() => handleDelete(sim.id)} className="text-destructive hover:text-destructive">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleGenerateExcel(sim)}
+                    title="Gerar Excel"
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <FileSpreadsheet className="h-4 w-4" />
+                  </Button>
+                  {!sim.is_active && (
+                    <Button variant="outline" size="sm" onClick={() => handleActivate(sim.id)} className="gap-1">
+                      <Play className="h-3.5 w-3.5" /> Continuar
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(sim.id)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

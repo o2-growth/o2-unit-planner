@@ -4,7 +4,6 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { SimulatorState, MonthlyProjection } from '@/types/simulator';
-import { formatCurrency } from '@/lib/formatters';
 import { exportPDF } from '@/lib/exportPdf';
 import { exportExcel } from '@/lib/exportExcel';
 
@@ -25,55 +24,21 @@ export function ActionButtons({ state, projections, onReset, onLoad }: Props) {
       return;
     }
 
-    const { data: existing } = await supabase
-      .from('simulations')
-      .select('id')
-      .eq('user_id', user.id)
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .single();
+    // Create a snapshot copy in the history (is_active = false)
+    const { error } = await supabase.from('simulations').insert({
+      user_id: user.id,
+      state: state as any,
+      nome: state.profile.nome || 'Minha Simulação',
+      is_active: false,
+    } as any);
 
-    if (existing) {
-      await supabase
-        .from('simulations')
-        .update({ state: state as any, updated_at: new Date().toISOString() })
-        .eq('id', existing.id);
-    } else {
-      await supabase
-        .from('simulations')
-        .insert({ user_id: user.id, state: state as any });
-    }
-
-    localStorage.setItem('o2-simulator', JSON.stringify(state));
-    toast({ title: 'Simulação salva!', description: 'Dados salvos no servidor.' });
-  };
-
-  const handleLoad = async () => {
-    if (!user) {
-      const saved = localStorage.getItem('o2-simulator');
-      if (saved) {
-        onLoad(JSON.parse(saved));
-        toast({ title: 'Simulação carregada!' });
-      } else {
-        toast({ title: 'Nenhuma simulação salva', variant: 'destructive' });
-      }
+    if (error) {
+      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
       return;
     }
 
-    const { data } = await supabase
-      .from('simulations')
-      .select('state')
-      .eq('user_id', user.id)
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (data?.state) {
-      onLoad(data.state as unknown as SimulatorState);
-      toast({ title: 'Simulação carregada!', description: 'Dados restaurados do servidor.' });
-    } else {
-      toast({ title: 'Nenhuma simulação salva', variant: 'destructive' });
-    }
+    localStorage.setItem('o2-simulator', JSON.stringify(state));
+    toast({ title: 'Simulação salva!', description: 'Snapshot salvo no histórico.' });
   };
 
   const handleExportPDF = async () => {
@@ -91,9 +56,6 @@ export function ActionButtons({ state, projections, onReset, onLoad }: Props) {
       <div className="flex flex-wrap gap-3 justify-center">
         <Button onClick={handleSave} variant="outline">
           <Save className="mr-2 h-4 w-4" /> Salvar Simulação
-        </Button>
-        <Button onClick={handleLoad} variant="outline">
-          <Download className="mr-2 h-4 w-4" /> Carregar Simulação
         </Button>
         <Button onClick={onReset} variant="outline">
           <RotateCcw className="mr-2 h-4 w-4" /> Resetar Premissas
