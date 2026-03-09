@@ -1,53 +1,58 @@
 
 
-## Plano: Mover Setup Matriz para SAAS + drilldown
+## Plano: Reformular página Resumo Executivo do PDF
 
-### Resumo
+### Problema
+A página 2 do PDF (Resumo Executivo) precisa de mais detalhamento: período simulado no título, KPIs diferentes, premissas de vendas separadas (unidade/matriz/total), tickets médios por produto e explicação das principais premissas do P&L.
 
-Atualmente `setupMatriz` (`clientesMes × setupPorCliente`) entra na linha **Expansão**. Vamos movê-lo para **SAAS** e adicionar drilldown visual mostrando "SAAS OXY+GENIO" e "SETUP" como sub-linhas.
+### Alterações — `src/lib/exportPdf.ts`, função `drawExecutiveSummary` (linhas 265-359)
 
-### 1. `src/lib/financial.ts` — Mover setupMatriz para rbSaas
-
+#### 1. Título com período
 ```
-// Antes:
-const rbSaas = mrrSaasOwn + setupOwn;
-const rbExpansao = recDiag + setupMatriz;
-
-// Depois:
-const rbSaas = mrrSaasOwn + setupOwn + setupMatriz;
-const rbExpansao = recDiag;
+'Resumo Executivo — Período: {horizonte} meses'
 ```
 
-Também atualizar `revenueByProduct` para que `setup` use `setupOwn + setupMatriz` (impactos fiscais corretos).
+#### 2. KPI Cards (6 widgets, layout 3×2)
+Substituir os atuais por:
+- **Receita Bruta Total**
+- **Lucro Bruto** (novo, substitui Receita Líquida)
+- **EBITDA Total**
+- **Lucro Líquido** (novo, substitui Resultado Final — usar `resultadoLiquido`)
+- **Payback**
+- **ROI Total**
 
-### 2. `src/types/simulator.ts` — Adicionar campo `receitaSaasOxyGenio`
+#### 3. Premissas — reestruturar em 3 blocos
 
-Novo campo no `MonthlyProjection` para permitir drilldown:
-- `receitaSaasOxyGenio` = `mrrSaasOwn` (receita recorrente SAAS pura)
-- `receitaSetupTotal` = `setupOwn + setupMatriz` (todo setup consolidado)
+**Bloco "Vendas":**
+- Vendas Unidade: `mix.caas + mix.saas + mix.diagnostico` /mês
+- Vendas Matriz: `matrixClients.qtdMensalInicial` /mês
+- Vendas Total mensal: soma
 
-O campo `receitaBrutaSaas` continua sendo o total (OXY+GENIO + Setup).
+**Bloco "Tickets Médios":**
+- Ticket CAAS: valor
+- Ticket SAAS: valor
+- Ticket Setup: valor
+- Ticket Diagnóstico Estratégico: valor
 
-### 3. `src/components/simulator/SectionPL.tsx` — Drilldown na linha SAAS
+**Bloco "Principais Premissas P&L"** (texto descritivo com bullets):
+- Receita CAAS: 100% Unidade
+- Receita SAAS: {revenueShareSaaS}% de revenue share vindo da matriz
+- Royalties: {royalties}% sobre receita bruta (exceto SAAS que já vem do revenue share)
+- Deduções: cálculo automático de acordo com regime tributário, produto e nível de faturamento
+- Custo variável CAAS: 25% da receita bruta (time de atendimento; começando com custo do sócio — pró-labore definido na simulação ou 25%, o que for maior)
+- Marketing: 5% ou custo de CAC, o que for maior
+- Comercial: 5% ou pró-labore sócio comercial, o que for maior
+- Administrativo: 5%
+- Despesa financeira: 1%
+- Amortização dívida: se tiver (condicional)
+- Investimentos: se tiver (condicional)
 
-Substituir a linha única "SAAS + Setup" por:
-- **SAAS** (total, com expand)
-  - **OXY+GENIO** (recorrente)
-  - **SETUP** (pontual: próprio + matriz)
+#### 4. Indicador de Payback
+Manter barra visual existente abaixo dos blocos.
 
-### 4. `src/components/simulator/SectionCharts.tsx` — Atualizar gráfico
-
-Ajustar dados do gráfico para refletir a nova composição (Setup sai de Expansão, entra em SAAS).
-
-### 5. `src/lib/exportPdf.ts` e `src/lib/exportExcel.ts` — Drilldown no export
-
-Adicionar sub-linhas "OXY+GENIO" e "SETUP" abaixo de SAAS nos exports.
+#### 5. Layout
+A página ficará mais densa. Usaremos fonte menor (6-7pt) para as premissas P&L, organizadas em coluna única com bullets verdes. KPIs mantêm o grid 3×2. Os 3 blocos de premissas usam layout em colunas para vendas/tickets e full-width para premissas P&L.
 
 ### Arquivos afetados
-- `src/lib/financial.ts` — fórmula rbSaas/rbExpansao
-- `src/types/simulator.ts` — novos campos drilldown
-- `src/components/simulator/SectionPL.tsx` — drilldown visual
-- `src/components/simulator/SectionCharts.tsx` — gráfico
-- `src/lib/exportPdf.ts` — PDF export
-- `src/lib/exportExcel.ts` — Excel export
+- `src/lib/exportPdf.ts` — função `drawExecutiveSummary`
 
