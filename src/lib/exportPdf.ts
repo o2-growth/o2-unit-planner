@@ -264,16 +264,17 @@ function drawKPICard(doc: any, x: number, y: number, w: number, h: number, label
 
 function drawExecutiveSummary(doc: any, state: SimulatorState, projections: MonthlyProjection[], logo: string | null) {
   doc.addPage('landscape');
-  let y = drawPageHeader(doc, logo, 'Resumo Executivo');
+  let y = drawPageHeader(doc, logo, `Resumo Executivo — Período: ${state.horizonte} meses`);
   const pageW = doc.internal.pageSize.getWidth();
   const fc = formatCurrencyCompact;
 
   const roi = calculateROI(state.investment, projections);
   const receitaTotal = sumField(projections, 'receitaBrutaTotal');
-  const receitaLiq = sumField(projections, 'receitaLiquida');
+  const lucroBruto = sumField(projections, 'lucroBruto');
   const ebitdaTotal = sumField(projections, 'ebitda');
-  const resultadoTotal = sumField(projections, 'resultadoFinal');
+  const lucroLiquido = sumField(projections, 'resultadoLiquido');
 
+  // ── KPI Cards (3×2) ──
   const cardW = 82;
   const cardH = 28;
   const gap = 10;
@@ -281,11 +282,11 @@ function drawExecutiveSummary(doc: any, state: SimulatorState, projections: Mont
 
   const kpis = [
     { label: 'Receita Bruta Total', value: fc(receitaTotal), neg: false },
-    { label: 'Receita Líquida Total', value: fc(receitaLiq), neg: false },
+    { label: 'Lucro Bruto', value: fc(lucroBruto), neg: lucroBruto < 0 },
     { label: 'EBITDA Total', value: fc(ebitdaTotal), neg: ebitdaTotal < 0 },
-    { label: 'Resultado Final', value: fc(resultadoTotal), neg: resultadoTotal < 0 },
+    { label: 'Lucro Líquido', value: fc(lucroLiquido), neg: lucroLiquido < 0 },
     { label: 'Payback', value: roi.paybackMeses >= 0 ? `${roi.paybackMeses} meses` : 'Não atingido', neg: roi.paybackMeses < 0 },
-    { label: 'ROI Total (12 meses)', value: `${roi.roiTotal.toFixed(1)}%`, neg: roi.roiTotal < 0 },
+    { label: 'ROI Total', value: `${roi.roiTotal.toFixed(1)}%`, neg: roi.roiTotal < 0 },
   ];
 
   kpis.forEach((kpi, i) => {
@@ -296,41 +297,129 @@ function drawExecutiveSummary(doc: any, state: SimulatorState, projections: Mont
     drawKPICard(doc, cx, cy, cardW, cardH, kpi.label, kpi.value, kpi.neg);
   });
 
-  y += 2 * (cardH + gap) + 8;
+  y += 2 * (cardH + gap) + 6;
 
+  // ── Bloco Vendas + Tickets (lado a lado) ──
+  const blockW = (pageW - 28 - 10) / 2;
   doc.setFillColor(245, 248, 245);
-  doc.roundedRect(14, y, pageW - 28, 52, 3, 3, 'F');
+  doc.roundedRect(14, y, blockW, 42, 3, 3, 'F');
+  doc.roundedRect(14 + blockW + 10, y, blockW, 42, 3, 3, 'F');
 
-  doc.setFontSize(10);
+  // -- Vendas --
+  const vendasUnidade = (state.commercial.mix.caas || 0) + (state.commercial.mix.saas || 0) + (state.commercial.mix.diagnostico || 0);
+  const vendasMatriz = state.matrixClients.qtdMensalInicial || 0;
+  const vendasTotal = vendasUnidade + vendasMatriz;
+
+  doc.setFontSize(8.5);
   doc.setTextColor(...GREEN_DARK);
-  doc.text('Premissas da Simulação', 22, y + 8);
-
+  doc.text('Vendas', 22, y + 7);
   doc.setDrawColor(...GREEN);
   doc.setLineWidth(0.3);
-  doc.line(22, y + 11, pageW / 2 - 10, y + 11);
+  doc.line(22, y + 9, 14 + blockW - 8, y + 9);
 
-  const premissas = [
-    [`Vendas / mês: ${state.commercial.compromissoMensal} clientes`, `Churn mensal: ${state.churn.churnMensal}%`],
-    [`Ticket CAAS: ${fc(state.commercial.tickets.find(t => t.key === 'caas')?.valor || 0)}`, `Ticket SAAS: ${fc(state.commercial.tickets.find(t => t.key === 'saas')?.valor || 0)}`],
-    [`Royalties: ${state.revenueRules.royalties}%`, `Rev. Share SaaS: ${state.revenueRules.revenueShareSaaS}%`],
-    [`Investimento total: ${fc(roi.totalInvestimento)}`, `Pró-labore desejado: ${fc(state.goals.proLaboreDesejado)}`],
+  const vendasItems = [
+    `Vendas Unidade: ${vendasUnidade} /mês`,
+    `Vendas Matriz: ${vendasMatriz} /mês`,
+    `Vendas Total mensal: ${vendasTotal} /mês`,
   ];
-
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   doc.setTextColor(...DARK);
-  let py = y + 18;
-  premissas.forEach(([left, right]) => {
+  let vy = y + 16;
+  vendasItems.forEach(item => {
     doc.setFillColor(...GREEN);
-    doc.circle(24, py - 1.2, 1.2, 'F');
-    doc.text(left, 28, py);
-
-    doc.setFillColor(...GREEN);
-    doc.circle(pageW / 2 + 10, py - 1.2, 1.2, 'F');
-    doc.text(right, pageW / 2 + 14, py);
-    py += 7;
+    doc.circle(24, vy - 1, 1, 'F');
+    doc.text(item, 28, vy);
+    vy += 7;
   });
 
-  y = py + 8;
+  // -- Tickets Médios --
+  const ticketsX = 14 + blockW + 10;
+  doc.setFontSize(8.5);
+  doc.setTextColor(...GREEN_DARK);
+  doc.text('Tickets Médios', ticketsX + 8, y + 7);
+  doc.setDrawColor(...GREEN);
+  doc.line(ticketsX + 8, y + 9, ticketsX + blockW - 8, y + 9);
+
+  const findTicket = (key: string) => state.commercial.tickets.find(t => t.key === key)?.valor || 0;
+  const ticketItems = [
+    `Ticket CAAS: ${fc(findTicket('caas'))}`,
+    `Ticket SAAS: ${fc(findTicket('saas'))}`,
+    `Ticket Setup: ${fc(findTicket('setup'))}`,
+    `Ticket Diagnóstico Estratégico: ${fc(findTicket('diagnostico'))}`,
+  ];
+  doc.setFontSize(7);
+  doc.setTextColor(...DARK);
+  let ty = y + 16;
+  ticketItems.forEach(item => {
+    doc.setFillColor(...GREEN);
+    doc.circle(ticketsX + 10, ty - 1, 1, 'F');
+    doc.text(item, ticketsX + 14, ty);
+    ty += 7;
+  });
+
+  y += 48;
+
+  // ── Principais Premissas P&L ──
+  const plBlockH = 62;
+  doc.setFillColor(245, 248, 245);
+  doc.roundedRect(14, y, pageW - 28, plBlockH, 3, 3, 'F');
+
+  doc.setFontSize(8.5);
+  doc.setTextColor(...GREEN_DARK);
+  doc.text('Principais Premissas P&L', 22, y + 7);
+  doc.setDrawColor(...GREEN);
+  doc.setLineWidth(0.3);
+  doc.line(22, y + 9, pageW / 2, y + 9);
+
+  const revShare = state.revenueRules.revenueShareSaaS;
+  const royalties = state.revenueRules.royalties;
+  const hasAmort = (state.belowEbitda.amortizacaoPMT || 0) > 0;
+  const hasInvest = (state.belowEbitda.investimentosMensal || 0) > 0;
+
+  const plPremissas: string[] = [
+    `Receita CAAS: 100% Unidade`,
+    `Receita SAAS: ${revShare}% de revenue share vindo da matriz`,
+    `Royalties: ${royalties}% sobre receita bruta (exceto SAAS que já vem do revenue share)`,
+    `Deduções: cálculo automático de acordo com regime tributário, produto e nível de faturamento`,
+    `Custo variável CAAS: 25% da receita bruta (time de atendimento; começando com custo do sócio ou 25%, o que for maior)`,
+    `Marketing: 5% ou custo de CAC, o que for maior`,
+    `Comercial: 5% ou pró-labore sócio comercial, o que for maior`,
+    `Administrativo: 5%`,
+    `Despesa financeira: 1%`,
+  ];
+  if (hasAmort) plPremissas.push(`Amortização dívida: ${fc(state.belowEbitda.amortizacaoPMT)}/mês`);
+  if (hasInvest) plPremissas.push(`Investimentos: ${fc(state.belowEbitda.investimentosMensal)}/mês`);
+
+  doc.setFontSize(6.5);
+  doc.setTextColor(...DARK);
+
+  // Render in 2 columns
+  const colMid = Math.ceil(plPremissas.length / 2);
+  const leftItems = plPremissas.slice(0, colMid);
+  const rightItems = plPremissas.slice(colMid);
+
+  let py = y + 16;
+  leftItems.forEach(item => {
+    doc.setFillColor(...GREEN);
+    doc.circle(24, py - 1, 1, 'F');
+    const lines = doc.splitTextToSize(item, blockW - 20);
+    doc.text(lines, 28, py);
+    py += lines.length * 4.5 + 1.5;
+  });
+
+  let py2 = y + 16;
+  const rightX = pageW / 2 + 10;
+  rightItems.forEach(item => {
+    doc.setFillColor(...GREEN);
+    doc.circle(rightX, py2 - 1, 1, 'F');
+    const lines = doc.splitTextToSize(item, blockW - 20);
+    doc.text(lines, rightX + 4, py2);
+    py2 += lines.length * 4.5 + 1.5;
+  });
+
+  y += plBlockH + 6;
+
+  // ── Payback bar ──
   doc.setFontSize(9);
   doc.setTextColor(...GREEN_DARK);
   doc.text('Indicador de Payback', 22, y);
