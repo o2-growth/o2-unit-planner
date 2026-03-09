@@ -15,33 +15,27 @@ import { SectionCharts } from '@/components/simulator/SectionCharts';
 import { SectionResults } from '@/components/simulator/SectionResults';
 import { ActionButtons } from '@/components/simulator/ActionButtons';
 import { PremissasHeader } from '@/components/simulator/PremissasHeader';
-import { AdminLogin } from '@/components/simulator/AdminLogin';
 
 import { calculateProjections } from '@/lib/financial';
 import { INITIAL_STATE, DEFAULT_BUS, type SimulatorState } from '@/types/simulator';
 
 function migrateState(parsed: any): SimulatorState {
-  // Migrate from valorMensal to percentual in cost lines
   if (parsed.fixedCosts?.[0]?.valorMensal !== undefined) {
     parsed.fixedCosts = INITIAL_STATE.fixedCosts.map(c => ({ ...c }));
   }
   if (parsed.variableCostRates?.[0]?.valorMensal !== undefined) {
     parsed.variableCostRates = INITIAL_STATE.variableCostRates.map(c => ({ ...c }));
   }
-  // Remove old belowEbitda fields
   if (parsed.belowEbitda?.outrasReceitas !== undefined || parsed.belowEbitda?.recFinanceiras !== undefined) {
     parsed.belowEbitda = { ...INITIAL_STATE.belowEbitda };
   }
-  // Ensure investment fields
   if (!parsed.investment?.cupom && parsed.investment?.cupom !== '') {
     parsed.investment = { ...INITIAL_STATE.investment, ...parsed.investment };
   }
-  // Remove setup from mix
   if (parsed.commercial?.mix?.setup !== undefined) {
     const { setup, ...rest } = parsed.commercial.mix;
     parsed.commercial.mix = rest;
   }
-  // Migrate old tax format (impostos array) → new format (regime + bus)
   if (parsed.taxes?.impostos && !parsed.taxes?.regime) {
     parsed.taxes = {
       regime: 'lucro_presumido',
@@ -50,7 +44,6 @@ function migrateState(parsed: any): SimulatorState {
       simples: { rbt12: 0, folha12m: 0, fatorR: 0, anexo: 'III' },
     };
   }
-  // Ensure new tax fields exist and filter to valid BUs only
   const VALID_BU_KEYS = DEFAULT_BUS.map(b => b.buKey);
   if (parsed.taxes?.regime && parsed.taxes?.bus) {
     const buLookup = Object.fromEntries(DEFAULT_BUS.map(b => [b.buKey, b]));
@@ -63,7 +56,6 @@ function migrateState(parsed: any): SimulatorState {
         anexoSimples: b.anexoSimples ?? 'III',
         sujeitoFatorR: b.sujeitoFatorR ?? (b.buKey === 'caas'),
       }));
-    // Add any missing default BUs
     for (const def of DEFAULT_BUS) {
       if (!parsed.taxes.bus.find((b: any) => b.buKey === def.buKey)) {
         parsed.taxes.bus.push({ ...def });
@@ -73,81 +65,70 @@ function migrateState(parsed: any): SimulatorState {
       parsed.taxes.simples = { rbt12: 0, folha12m: 0, fatorR: 0, anexo: 'III' };
     }
   }
-  // Migrate variableCostRates: keep only caas and saas
   if (parsed.variableCostRates && parsed.variableCostRates.length > 2) {
     parsed.variableCostRates = parsed.variableCostRates.filter((c: any) => c.key === 'caas' || c.key === 'saas');
     if (parsed.variableCostRates.length === 0) {
       parsed.variableCostRates = INITIAL_STATE.variableCostRates.map((c: any) => ({ ...c }));
     }
   }
-  // Ensure goals fields
   if (!parsed.goals?.proLaboreDesejado && parsed.goals?.proLaboreDesejado !== 0) {
     parsed.goals = { ...INITIAL_STATE.goals, ...parsed.goals };
   }
-  // Ensure socios field
   if (!parsed.socios) {
     parsed.socios = { ...INITIAL_STATE.socios, socios: INITIAL_STATE.socios.socios.map(s => ({ ...s })) };
   }
   return parsed;
 }
 
-
-
-const Index = () => {
+const Simulador = () => {
   const { user } = useAuth();
 
   const [state, setState] = useState<SimulatorState>(() => {
     const saved = localStorage.getItem('o2-simulator');
     if (saved) {
-      try {
-        return migrateState(JSON.parse(saved));
-      } catch { /* ignore */ }
+      try { return migrateState(JSON.parse(saved)); } catch { /* ignore */ }
     }
     return { ...INITIAL_STATE };
   });
 
+  const [activeSimId, setActiveSimId] = useState<string | null>(null);
   const dataReady = useRef(false);
   const stateRef = useRef(state);
   stateRef.current = state;
-
   const userRef = useRef(user);
   userRef.current = user;
+  const activeSimIdRef = useRef(activeSimId);
+  activeSimIdRef.current = activeSimId;
 
-  // Load from DB on mount
+  // Load active simulation from DB
   useEffect(() => {
-    if (!user) {
-      dataReady.current = true;
-      return;
-    }
+    if (!user) { dataReady.current = true; return; }
     supabase
       .from('simulations')
-      .select('state')
+      .select('id, state')
       .eq('user_id', user.id)
+      .eq('is_active', true)
       .order('updated_at', { ascending: false })
       .limit(1)
       .single()
       .then(({ data }) => {
         if (data?.state) {
           setState(migrateState(data.state as any));
+          setActiveSimId(data.id);
         }
         dataReady.current = true;
       });
   }, [user]);
 
-  // Snapshot for "Restaurar Respostas Oficiais"
   const initialSnapshot = useRef<SimulatorState>(JSON.parse(JSON.stringify(state)));
 
-  // Skip auto-save on first render (initial load)
   const isFirstRender = useRef(true);
   const localTimer = useRef<ReturnType<typeof setTimeout>>();
   const dbTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  // Auto-save to localStorage (1s debounce)
+  // Auto-save to localStorage
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
     if (!dataReady.current) return;
     clearTimeout(localTimer.current);
     localTimer.current = setTimeout(() => {
@@ -156,48 +137,55 @@ const Index = () => {
     return () => clearTimeout(localTimer.current);
   }, [state]);
 
-  // Auto-save to DB (3s debounce, logged-in only)
+  // Auto-save to DB (active simulation)
   useEffect(() => {
     if (!user || !dataReady.current) return;
     clearTimeout(dbTimer.current);
     dbTimer.current = setTimeout(() => {
-      supabase
-        .from('simulations')
-        .upsert(
-          { user_id: user.id, state: state as any, nome: state.profile.nome || 'Minha Simulação', updated_at: new Date().toISOString() },
-          { onConflict: 'user_id' }
-        )
-        .then(({ error }) => {
-          if (error) console.error('[auto-save] upsert error:', error);
-        });
+      const payload: any = {
+        user_id: user.id,
+        state: state as any,
+        nome: state.profile.nome || 'Minha Simulação',
+        updated_at: new Date().toISOString(),
+        is_active: true,
+      };
+      if (activeSimId) {
+        supabase.from('simulations').update(payload).eq('id', activeSimId)
+          .then(({ error }) => { if (error) console.error('[auto-save]', error); });
+      } else {
+        supabase.from('simulations').insert(payload).select('id').single()
+          .then(({ data, error }) => {
+            if (error) console.error('[auto-save]', error);
+            if (data?.id) setActiveSimId(data.id);
+          });
+      }
     }, 3000);
     return () => clearTimeout(dbTimer.current);
-  }, [state, user]);
+  }, [state, user, activeSimId]);
 
-  // Flush on page unload
+  // Flush on unload
   useEffect(() => {
     const flush = () => {
       const s = stateRef.current;
       localStorage.setItem('o2-simulator', JSON.stringify(s));
       const u = userRef.current;
-      if (u && dataReady.current) {
+      const simId = activeSimIdRef.current;
+      if (u && dataReady.current && simId) {
         const body = JSON.stringify({
-          user_id: u.id,
           state: s,
           nome: s.profile.nome || 'Minha Simulação',
           updated_at: new Date().toISOString(),
         });
-        const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/simulations?on_conflict=user_id`;
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/simulations?id=eq.${simId}`;
         const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         const sessionStr = localStorage.getItem('sb-ktfnnhfvkpgxdnmjqtft-auth-token');
         const accessToken = sessionStr ? JSON.parse(sessionStr)?.access_token : null;
         fetch(url, {
-          method: 'POST',
+          method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
             'apikey': anonKey,
             'Authorization': `Bearer ${accessToken || anonKey}`,
-            'Prefer': 'resolution=merge-duplicates',
           },
           body,
           keepalive: true,
@@ -238,45 +226,17 @@ const Index = () => {
     }));
   }, []);
 
-
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="o2-gradient px-4 pt-6 pb-7">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between gap-4">
-            <img
-              src="/logo-o2-color.svg"
-              alt="O2 Inc."
-              className="h-8 md:h-10 w-auto flex-shrink-0"
-            />
-            <AdminLogin />
-          </div>
-          <div className="mt-5 mb-1">
-            <span className="inline-block text-xs font-semibold tracking-[0.18em] uppercase mb-2"
-              style={{ color: 'hsl(100 71% 56%)' }}>
-              Unit Planner
-            </span>
-            <h1 className="text-2xl md:text-3xl font-bold text-white leading-tight">
-              Simulador de Business Plan
-            </h1>
-            <p className="text-white/55 text-sm mt-1">
-              Monte a projeção financeira da sua unidade franqueada
-            </p>
-          </div>
-        </div>
-      </header>
-
+    <div className="bg-background">
       {/* Action buttons top */}
-      <div className="max-w-4xl mx-auto px-4">
+      <div className="max-w-4xl mx-auto px-4 pt-6">
         <ActionButtons state={state} projections={projections} onReset={handleReset} onLoad={setState} />
       </div>
 
       {/* Sections */}
-      <main className="max-w-4xl mx-auto px-4 pb-16 space-y-10">
+      <div className="max-w-4xl mx-auto px-4 pb-16 space-y-10">
         <SectionProfile data={state.profile} onChange={v => update('profile', v)} />
         <SectionGoals data={state.goals} onChange={v => update('goals', v)} />
-
         <SectionHorizon value={state.horizonte} onChange={v => update('horizonte', v)} />
         <SectionCommercial data={state.commercial} onChange={v => update('commercial', v)} />
         <SectionMatrixClients data={state.matrixClients} onChange={v => update('matrixClients', v)} />
@@ -317,9 +277,9 @@ const Index = () => {
         />
 
         <ActionButtons state={state} projections={projections} onReset={handleReset} onLoad={setState} />
-      </main>
+      </div>
     </div>
   );
 };
 
-export default Index;
+export default Simulador;
