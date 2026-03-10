@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useState, useMemo } from 'react';
-import type { TaxesData, BUTaxConfig, TipoReceita, AnexoSimples } from '@/types/simulator';
+import type { TaxesData, BUTaxConfig, TipoReceita, AnexoSimples, MonthlyProjection } from '@/types/simulator';
 import { calcAliquotaEfetiva, sugerirAnexo, getFaixaLabel, excedeSimples } from '@/lib/simplesNacional';
 import { formatCurrencyCompact } from '@/lib/formatters';
 
