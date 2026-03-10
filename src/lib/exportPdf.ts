@@ -528,32 +528,37 @@ function drawMRRPage(doc: any, state: SimulatorState, projections: MonthlyProjec
   const { headers: groupHeaders, groups } = groupProjections(projections, state.horizonte);
 
   const fc = formatCurrencyCompact;
-  const mrrHeaders = ['', 'MRR CAAS', 'MRR SAAS', 'MRR Matriz', 'MRR Total', 'Churn R$', 'Clientes Mês', 'Clientes Acum.', 'Setup Matriz'];
+  const mrrHeaders = ['', 'MRR Franquia', 'MRR Matriz', 'MRR Total', 'Churn Total', 'MRR Total Líquido', 'Novos Clientes Mês (Total)', 'Clientes Acumulados (Total)'];
 
-  const mrrBody = groups.map((g, i) => [
-    groupHeaders[i],
-    fc(lastField(g, 'mrrCaasOwn')),
-    fc(lastField(g, 'mrrSaasOwn')),
-    fc(lastField(g, 'mrrMatriz')),
-    fc(lastField(g, 'mrrTotal')),
-    fc(sumField(g, 'churnValor')),
-    sumField(g, 'clientesCompradosMes'),
-    lastField(g, 'clientesCompradosAcum'),
-    fc(sumField(g, 'setupMatriz')),
-  ]);
+  const mrrBody = groups.map((g, i) => {
+    const mrrFranquia = lastField(g, 'mrrCaasOwn') + lastField(g, 'mrrSaasOwn');
+    const mrrMatriz = lastField(g, 'mrrMatriz');
+    const mrrTotalBruto = mrrFranquia + mrrMatriz;
+    return [
+      groupHeaders[i],
+      fc(mrrFranquia),
+      fc(mrrMatriz),
+      fc(mrrTotalBruto),
+      fc(sumField(g, 'churnValor')),
+      fc(lastField(g, 'mrrTotal')),
+      sumField(g, 'clientesCompradosMes'),
+      lastField(g, 'clientesCompradosAcum'),
+    ];
+  });
 
   // Add total row
   const lastP = projections[projections.length - 1];
+  const totalMrrFranquia = lastP.mrrCaasOwn + lastP.mrrSaasOwn;
+  const totalMrrBruto = totalMrrFranquia + lastP.mrrMatriz;
   mrrBody.push([
     'Total',
-    fc(lastP.mrrCaasOwn),
-    fc(lastP.mrrSaasOwn),
+    fc(totalMrrFranquia),
     fc(lastP.mrrMatriz),
-    fc(lastP.mrrTotal),
+    fc(totalMrrBruto),
     fc(sumField(projections, 'churnValor')),
+    fc(lastP.mrrTotal),
     sumField(projections, 'clientesCompradosMes'),
     lastP.clientesCompradosAcum,
-    fc(sumField(projections, 'setupMatriz')),
   ]);
 
   const numRows = mrrBody.length;
