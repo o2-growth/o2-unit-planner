@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useState, useMemo } from 'react';
-import type { TaxesData, BUTaxConfig, TipoReceita, AnexoSimples } from '@/types/simulator';
+import type { TaxesData, BUTaxConfig, TipoReceita, AnexoSimples, MonthlyProjection } from '@/types/simulator';
 import { calcAliquotaEfetiva, sugerirAnexo, getFaixaLabel, excedeSimples } from '@/lib/simplesNacional';
 import { formatCurrencyCompact } from '@/lib/formatters';
 
@@ -36,9 +36,10 @@ function getBasePresumida(tipoReceita: string): { irpj: number; csll: number } {
 interface Props {
   data: TaxesData;
   onChange: (data: TaxesData) => void;
+  projections?: MonthlyProjection[];
 }
 
-export function SectionTaxes({ data, onChange }: Props) {
+export function SectionTaxes({ data, onChange, projections }: Props) {
   const { isAdmin } = useAuth();
   const [resultOpen, setResultOpen] = useState(false);
 
@@ -46,8 +47,27 @@ export function SectionTaxes({ data, onChange }: Props) {
   const bus = data.bus || [];
   const simples = data.simples || { rbt12: 0, folha12m: 0, fatorR: 0, anexo: 'III' as const };
 
+  // Auto-calculate faturamento per BU from projections (last month)
+  const autoFat = useMemo(() => {
+    if (!projections || projections.length === 0) return { caas: 0, saas: 0, setup: 0 };
+    const last = projections[projections.length - 1];
+    return {
+      caas: last.receitaBrutaCaas,
+      saas: last.receitaSaasOxyGenio,
+      setup: last.receitaSetupTotal,
+    };
+  }, [projections]);
+
+  const buFatMap: Record<string, number> = {
+    caas: autoFat.caas,
+    saas: autoFat.saas,
+    setup: autoFat.setup,
+  };
+
+  const getBUFat = (buKey: string) => buFatMap[buKey] ?? 0;
+
   const fatorR = simples.rbt12 > 0 ? simples.folha12m / simples.rbt12 : 0;
-  const faturamentoTotal = bus.reduce((s, b) => s + b.faturamentoBU, 0);
+  const faturamentoTotal = bus.reduce((s, b) => s + getBUFat(b.buKey), 0);
   const faturamentoAnual = faturamentoTotal * 12;
 
   // Confidence indicator
@@ -55,7 +75,7 @@ export function SectionTaxes({ data, onChange }: Props) {
     let score = 0;
     let total = 0;
     for (const bu of bus) {
-      if (bu.faturamentoBU > 0) {
+      if (getBUFat(bu.buKey) > 0) {
         total++;
         let buScore = 0;
         if (bu.cnae) buScore++;
@@ -178,6 +198,7 @@ export function SectionTaxes({ data, onChange }: Props) {
       <Card className="mb-4">
         <CardContent className="pt-6">
           <h4 className="font-semibold mb-3">Faturamento e Configuração por BU</h4>
+          <p className="text-xs text-muted-foreground mb-3">Faturamento calculado automaticamente pelo modelo (último mês projetado)</p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -218,13 +239,8 @@ export function SectionTaxes({ data, onChange }: Props) {
                   return (
                     <tr key={bu.buKey} className="border-b">
                       <td className="py-2 pr-2 font-medium">{bu.buNome}</td>
-                      <td className="py-2 px-2">
-                        <CurrencyInput
-                          value={bu.faturamentoBU}
-                          onChange={v => updateBU(idx, { faturamentoBU: v })}
-                          disabled={!isAdmin}
-                          className="w-32"
-                        />
+                      <td className="py-2 px-2 text-center text-sm font-medium text-muted-foreground">
+                        {formatCurrencyCompact(getBUFat(bu.buKey))}
                       </td>
                       <td className="py-2 px-2">
                         <Select
@@ -362,8 +378,8 @@ export function SectionTaxes({ data, onChange }: Props) {
                       </tr>
                     </thead>
                     <tbody>
-                      {bus.filter(b => b.faturamentoBU > 0).map(bu => {
-                        const fat = bu.faturamentoBU;
+                      {bus.filter(b => getBUFat(b.buKey) > 0).map(bu => {
+                        const fat = getBUFat(bu.buKey);
                         const base = getBasePresumida(bu.tipoReceita);
                         const pis = 0.65;
                         const cofins = 3;
@@ -405,10 +421,10 @@ export function SectionTaxes({ data, onChange }: Props) {
                       </tr>
                     </thead>
                     <tbody>
-                      {bus.filter(b => b.faturamentoBU > 0).map(bu => {
+                      {bus.filter(b => getBUFat(b.buKey) > 0).map(bu => {
                         const anexoEfetivo = bu.sujeitoFatorR ? sugerirAnexo(fatorR) : bu.anexoSimples;
                         const aliq = calcAliquotaEfetiva(simples.rbt12, anexoEfetivo);
-                        const das = bu.faturamentoBU * (aliq / 100);
+                        const das = getBUFat(bu.buKey) * (aliq / 100);
                         return (
                           <tr key={bu.buKey} className="border-b">
                             <td className="py-2 pr-2 font-medium">{bu.buNome}</td>
