@@ -528,32 +528,37 @@ function drawMRRPage(doc: any, state: SimulatorState, projections: MonthlyProjec
   const { headers: groupHeaders, groups } = groupProjections(projections, state.horizonte);
 
   const fc = formatCurrencyCompact;
-  const mrrHeaders = ['', 'MRR CAAS', 'MRR SAAS', 'MRR Matriz', 'MRR Total', 'Churn R$', 'Clientes Mês', 'Clientes Acum.', 'Setup Matriz'];
+  const mrrHeaders = ['', 'MRR Franquia', 'MRR Matriz', 'MRR Total', 'Churn Total', 'MRR Total Líquido', 'Novos Clientes Mês (Total)', 'Clientes Acumulados (Total)'];
 
-  const mrrBody = groups.map((g, i) => [
-    groupHeaders[i],
-    fc(lastField(g, 'mrrCaasOwn')),
-    fc(lastField(g, 'mrrSaasOwn')),
-    fc(lastField(g, 'mrrMatriz')),
-    fc(lastField(g, 'mrrTotal')),
-    fc(sumField(g, 'churnValor')),
-    sumField(g, 'clientesCompradosMes'),
-    lastField(g, 'clientesCompradosAcum'),
-    fc(sumField(g, 'setupMatriz')),
-  ]);
+  const mrrBody = groups.map((g, i) => {
+    const mrrFranquia = lastField(g, 'mrrCaasOwn') + lastField(g, 'mrrSaasOwn');
+    const mrrMatriz = lastField(g, 'mrrMatriz');
+    const mrrTotalBruto = mrrFranquia + mrrMatriz;
+    return [
+      groupHeaders[i],
+      fc(mrrFranquia),
+      fc(mrrMatriz),
+      fc(mrrTotalBruto),
+      fc(sumField(g, 'churnValor')),
+      fc(lastField(g, 'mrrTotal')),
+      sumField(g, 'clientesCompradosMes'),
+      lastField(g, 'clientesCompradosAcum'),
+    ];
+  });
 
   // Add total row
   const lastP = projections[projections.length - 1];
+  const totalMrrFranquia = lastP.mrrCaasOwn + lastP.mrrSaasOwn;
+  const totalMrrBruto = totalMrrFranquia + lastP.mrrMatriz;
   mrrBody.push([
     'Total',
-    fc(lastP.mrrCaasOwn),
-    fc(lastP.mrrSaasOwn),
+    fc(totalMrrFranquia),
     fc(lastP.mrrMatriz),
-    fc(lastP.mrrTotal),
+    fc(totalMrrBruto),
     fc(sumField(projections, 'churnValor')),
+    fc(lastP.mrrTotal),
     sumField(projections, 'clientesCompradosMes'),
     lastP.clientesCompradosAcum,
-    fc(sumField(projections, 'setupMatriz')),
   ]);
 
   const numRows = mrrBody.length;
@@ -583,14 +588,13 @@ function drawMRRPage(doc: any, state: SimulatorState, projections: MonthlyProjec
   const pageW = doc.internal.pageSize.getWidth();
 
   const glossary: [string, string][] = [
-    ['MRR CAAS', 'Receita recorrente mensal de CFO as a Service: inclui MRR próprio (vendas da unidade) + receita pré-existente da carteira inicial, líquido de churn.'],
-    ['MRR SAAS', `Receita recorrente do OXY+GENIO reconhecida pela franquia: corresponde a ${revenueShare}% de revenue share sobre o faturamento SAAS (não os 100%), líquido de churn.`],
+    ['MRR Franquia', 'Receita recorrente mensal da unidade: soma de MRR CAAS (CFO as a Service) + MRR SAAS (revenue share do OXY+GENIO).'],
     ['MRR Matriz', 'MRR gerado por clientes adquiridos via inbound da matriz, acumulado e líquido de churn.'],
-    ['MRR Total', 'Soma de MRR CAAS + MRR SAAS + MRR Matriz + Receita Pré-existente.'],
-    ['Churn R$', 'Valor monetário da perda mensal de receita recorrente, aplicando a taxa de churn sobre o MRR total do período anterior.'],
-    ['Clientes Mês', 'Quantidade de novos clientes adquiridos no período: vendas próprias da unidade + clientes comprados da matriz.'],
-    ['Clientes Acum.', 'Base acumulada de clientes ativos ao final do período: carteira inicial + clientes totais conquistados − churn.'],
-    ['Setup Matriz', 'Receita pontual de implantação dos clientes adquiridos via matriz (clientes × ticket de setup).'],
+    ['MRR Total', 'Soma bruta de MRR Franquia + MRR Matriz, antes da dedução do churn.'],
+    ['Churn Total', 'Valor monetário da perda mensal de receita recorrente, aplicando a taxa de churn sobre o MRR total do período anterior.'],
+    ['MRR Total Líquido', 'MRR Total após dedução do churn mensal. Representa a receita recorrente efetiva.'],
+    ['Novos Clientes Mês (Total)', 'Quantidade de novos clientes adquiridos no período: vendas próprias da unidade + clientes comprados da matriz.'],
+    ['Clientes Acumulados (Total)', 'Base acumulada de clientes ativos ao final do período: carteira inicial + clientes totais conquistados − churn.'],
   ];
 
   let gy = tableEndY + 6;
@@ -632,7 +636,7 @@ function drawROIPage(doc: any, state: SimulatorState, projections: MonthlyProjec
   const rightX = 14 + leftW + 14;
 
   doc.setFillColor(245, 248, 245);
-  doc.roundedRect(14, y, leftW, 80, 3, 3, 'F');
+  doc.roundedRect(14, y, leftW, 110, 3, 3, 'F');
 
   doc.setFontSize(11);
   doc.setTextColor(...GREEN_DARK);
@@ -641,22 +645,39 @@ function drawROIPage(doc: any, state: SimulatorState, projections: MonthlyProjec
   doc.setLineWidth(0.3);
   doc.line(22, y + 13, 14 + leftW - 10, y + 13);
 
-  const investItems = [
-    ['Taxa de Franquia', fc(roi.taxaFinal)],
-    ['Implantação', fc(inv.implantacao)],
-    ['Marketing Inicial', fc(inv.marketingInicial)],
-    ['Equipamentos', fc(inv.equipamentos)],
-    ['Outros', fc(inv.outros)],
-    ['Capital de Giro (sugerido)', fc(roi.capitalGiro)],
+  // Investment items with descriptions
+  type InvestItem = { label: string; value: string; desc?: string };
+  const investItems: InvestItem[] = [
+    {
+      label: 'Taxa de Franquia',
+      value: fc(roi.taxaFinal),
+      desc: inv.cupomAplicado
+        ? `Valor original: ${fc(190000)} — Cupom: ${inv.cupom} — Desconto: ${fc(190000 - roi.taxaFinal)}`
+        : `Valor: ${fc(roi.taxaFinal)}`,
+    },
+    { label: 'Implantação', value: fc(inv.implantacao) },
+    { label: 'Marketing Inicial', value: fc(inv.marketingInicial), desc: 'Evento de lançamento, Mídias, Parcerias, Patrocínios e/ou compra de mais clientes (CAC).' },
+    { label: 'Equipamentos', value: fc(inv.equipamentos), desc: 'Mesa, computador, televisão, etc.' },
+    { label: 'Outros', value: fc(inv.outros) },
+    { label: 'Capital de Giro (sugerido)', value: fc(roi.capitalGiro), desc: 'Gap dos primeiros meses para suportar período de prejuízo.' },
   ];
 
   doc.setFontSize(8);
   let iy = y + 22;
-  investItems.forEach(([label, value]) => {
+  investItems.forEach((item) => {
     doc.setTextColor(...DARK);
-    doc.text(label, 24, iy);
+    doc.text(item.label, 24, iy);
     doc.setTextColor(...MUTED);
-    doc.text(value, 14 + leftW - 12, iy, { align: 'right' });
+    doc.text(item.value, 14 + leftW - 12, iy, { align: 'right' });
+    if (item.desc) {
+      iy += 4;
+      doc.setFontSize(6.5);
+      doc.setTextColor(140, 140, 140);
+      const descLines = doc.splitTextToSize(item.desc, leftW - 30);
+      doc.text(descLines, 26, iy);
+      iy += descLines.length * 3;
+      doc.setFontSize(8);
+    }
     iy += 7;
   });
 
@@ -668,9 +689,14 @@ function drawROIPage(doc: any, state: SimulatorState, projections: MonthlyProjec
   doc.setTextColor(...GREEN_DARK);
   doc.text('INVESTIMENTO TOTAL', 24, iy);
   doc.text(fc(roi.totalInvestimento), 14 + leftW - 12, iy, { align: 'right' });
+  iy += 4;
+  doc.setFontSize(6.5);
+  doc.setTextColor(140, 140, 140);
+  doc.text('Todos investimentos + Capital de giro sugerido.', 26, iy);
 
+  // ─── Right card: Indicadores de Retorno ───
   doc.setFillColor(245, 248, 245);
-  doc.roundedRect(rightX, y, leftW, 80, 3, 3, 'F');
+  doc.roundedRect(rightX, y, leftW, 110, 3, 3, 'F');
 
   doc.setFontSize(11);
   doc.setTextColor(...GREEN_DARK);
@@ -685,7 +711,15 @@ function drawROIPage(doc: any, state: SimulatorState, projections: MonthlyProjec
   drawROIIndicator(doc, rightX + 5, roiCardY, roiCardW, 25, 'ROI Direto', `${roi.roiDireto.toFixed(1)}%`, roi.roiDireto >= 0);
   drawROIIndicator(doc, rightX + 10 + roiCardW, roiCardY, roiCardW, 25, 'ROI Total', `${roi.roiTotal.toFixed(1)}%`, roi.roiTotal >= 0);
 
-  const pbY = roiCardY + 32;
+  // ROI subtexts
+  let roiDescY = roiCardY + 28;
+  doc.setFontSize(6.5);
+  doc.setTextColor(140, 140, 140);
+  doc.text('ROI Direto = Resultado Anual (12m) ÷ Taxa de Franquia × 100', rightX + 8, roiDescY);
+  roiDescY += 4;
+  doc.text('ROI Total = Resultado Anual (12m) ÷ Investimento Total × 100', rightX + 8, roiDescY);
+
+  const pbY = roiDescY + 10;
   doc.setFontSize(9);
   doc.setTextColor(...DARK);
   doc.text('Payback', rightX + 8, pbY);
@@ -701,7 +735,12 @@ function drawROIPage(doc: any, state: SimulatorState, projections: MonthlyProjec
   doc.setTextColor(...(paybackOk ? GREEN_DARK : [180, 30, 30] as [number, number, number]));
   doc.text(paybackOk ? `${roi.paybackMeses} meses` : 'Não atingido', rightX + 8, pbY + 10);
 
-  const bottomY = y + 90;
+  // Payback description
+  doc.setFontSize(6.5);
+  doc.setTextColor(140, 140, 140);
+  doc.text('Tempo até o Lucro Líquido acumulado pagar o INVESTIMENTO TOTAL.', rightX + 8, pbY + 16);
+
+  const bottomY = y + 120;
   doc.setDrawColor(...GREEN);
   doc.setLineWidth(0.3);
   doc.line(14, bottomY, pageW - 14, bottomY);
