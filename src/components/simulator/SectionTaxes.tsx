@@ -36,9 +36,10 @@ function getBasePresumida(tipoReceita: string): { irpj: number; csll: number } {
 interface Props {
   data: TaxesData;
   onChange: (data: TaxesData) => void;
+  projections?: MonthlyProjection[];
 }
 
-export function SectionTaxes({ data, onChange }: Props) {
+export function SectionTaxes({ data, onChange, projections }: Props) {
   const { isAdmin } = useAuth();
   const [resultOpen, setResultOpen] = useState(false);
 
@@ -46,8 +47,27 @@ export function SectionTaxes({ data, onChange }: Props) {
   const bus = data.bus || [];
   const simples = data.simples || { rbt12: 0, folha12m: 0, fatorR: 0, anexo: 'III' as const };
 
+  // Auto-calculate faturamento per BU from projections (last month)
+  const autoFat = useMemo(() => {
+    if (!projections || projections.length === 0) return { caas: 0, saas: 0, setup: 0 };
+    const last = projections[projections.length - 1];
+    return {
+      caas: last.receitaBrutaCaas,
+      saas: last.receitaSaasOxyGenio,
+      setup: last.receitaSetupTotal,
+    };
+  }, [projections]);
+
+  const buFatMap: Record<string, number> = {
+    caas: autoFat.caas,
+    saas: autoFat.saas,
+    setup: autoFat.setup,
+  };
+
+  const getBUFat = (buKey: string) => buFatMap[buKey] ?? 0;
+
   const fatorR = simples.rbt12 > 0 ? simples.folha12m / simples.rbt12 : 0;
-  const faturamentoTotal = bus.reduce((s, b) => s + b.faturamentoBU, 0);
+  const faturamentoTotal = bus.reduce((s, b) => s + getBUFat(b.buKey), 0);
   const faturamentoAnual = faturamentoTotal * 12;
 
   // Confidence indicator
