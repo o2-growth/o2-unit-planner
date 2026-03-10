@@ -588,14 +588,13 @@ function drawMRRPage(doc: any, state: SimulatorState, projections: MonthlyProjec
   const pageW = doc.internal.pageSize.getWidth();
 
   const glossary: [string, string][] = [
-    ['MRR CAAS', 'Receita recorrente mensal de CFO as a Service: inclui MRR próprio (vendas da unidade) + receita pré-existente da carteira inicial, líquido de churn.'],
-    ['MRR SAAS', `Receita recorrente do OXY+GENIO reconhecida pela franquia: corresponde a ${revenueShare}% de revenue share sobre o faturamento SAAS (não os 100%), líquido de churn.`],
+    ['MRR Franquia', 'Receita recorrente mensal da unidade: soma de MRR CAAS (CFO as a Service) + MRR SAAS (revenue share do OXY+GENIO).'],
     ['MRR Matriz', 'MRR gerado por clientes adquiridos via inbound da matriz, acumulado e líquido de churn.'],
-    ['MRR Total', 'Soma de MRR CAAS + MRR SAAS + MRR Matriz + Receita Pré-existente.'],
-    ['Churn R$', 'Valor monetário da perda mensal de receita recorrente, aplicando a taxa de churn sobre o MRR total do período anterior.'],
-    ['Clientes Mês', 'Quantidade de novos clientes adquiridos no período: vendas próprias da unidade + clientes comprados da matriz.'],
-    ['Clientes Acum.', 'Base acumulada de clientes ativos ao final do período: carteira inicial + clientes totais conquistados − churn.'],
-    ['Setup Matriz', 'Receita pontual de implantação dos clientes adquiridos via matriz (clientes × ticket de setup).'],
+    ['MRR Total', 'Soma bruta de MRR Franquia + MRR Matriz, antes da dedução do churn.'],
+    ['Churn Total', 'Valor monetário da perda mensal de receita recorrente, aplicando a taxa de churn sobre o MRR total do período anterior.'],
+    ['MRR Total Líquido', 'MRR Total após dedução do churn mensal. Representa a receita recorrente efetiva.'],
+    ['Novos Clientes Mês (Total)', 'Quantidade de novos clientes adquiridos no período: vendas próprias da unidade + clientes comprados da matriz.'],
+    ['Clientes Acumulados (Total)', 'Base acumulada de clientes ativos ao final do período: carteira inicial + clientes totais conquistados − churn.'],
   ];
 
   let gy = tableEndY + 6;
