@@ -238,13 +238,8 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                   return (
                     <tr key={bu.buKey} className="border-b">
                       <td className="py-2 pr-2 font-medium">{bu.buNome}</td>
-                      <td className="py-2 px-2">
-                        <CurrencyInput
-                          value={bu.faturamentoBU}
-                          onChange={v => updateBU(idx, { faturamentoBU: v })}
-                          disabled={!isAdmin}
-                          className="w-32"
-                        />
+                      <td className="py-2 px-2 text-center text-sm font-medium text-muted-foreground">
+                        {formatCurrencyCompact(getBUFat(bu.buKey))}
                       </td>
                       <td className="py-2 px-2">
                         <Select
