@@ -75,7 +75,7 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
     let score = 0;
     let total = 0;
     for (const bu of bus) {
-      if (bu.faturamentoBU > 0) {
+      if (getBUFat(bu.buKey) > 0) {
         total++;
         let buScore = 0;
         if (bu.cnae) buScore++;
