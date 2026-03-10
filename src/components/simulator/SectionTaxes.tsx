@@ -378,8 +378,8 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                       </tr>
                     </thead>
                     <tbody>
-                      {bus.filter(b => b.faturamentoBU > 0).map(bu => {
-                        const fat = bu.faturamentoBU;
+                      {bus.filter(b => getBUFat(b.buKey) > 0).map(bu => {
+                        const fat = getBUFat(bu.buKey);
                         const base = getBasePresumida(bu.tipoReceita);
                         const pis = 0.65;
                         const cofins = 3;
