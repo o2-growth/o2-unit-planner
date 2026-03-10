@@ -421,10 +421,10 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                       </tr>
                     </thead>
                     <tbody>
-                      {bus.filter(b => b.faturamentoBU > 0).map(bu => {
+                      {bus.filter(b => getBUFat(b.buKey) > 0).map(bu => {
                         const anexoEfetivo = bu.sujeitoFatorR ? sugerirAnexo(fatorR) : bu.anexoSimples;
                         const aliq = calcAliquotaEfetiva(simples.rbt12, anexoEfetivo);
-                        const das = bu.faturamentoBU * (aliq / 100);
+                        const das = getBUFat(bu.buKey) * (aliq / 100);
                         return (
                           <tr key={bu.buKey} className="border-b">
                             <td className="py-2 pr-2 font-medium">{bu.buNome}</td>
