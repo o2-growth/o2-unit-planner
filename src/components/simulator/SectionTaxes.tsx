@@ -198,6 +198,7 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
       <Card className="mb-4">
         <CardContent className="pt-6">
           <h4 className="font-semibold mb-3">Faturamento e Configuração por BU</h4>
+          <p className="text-xs text-muted-foreground mb-3">Faturamento calculado automaticamente pelo modelo (último mês projetado)</p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
