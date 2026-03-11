@@ -40,6 +40,7 @@ interface Props {
   goals: GoalsData;
   proLaboreMode: 'custo_fixo' | 'distribuicao';
   socios: SociosConfig;
+  regime: RegimeTributario;
   onProLaboreModeChange: (mode: 'custo_fixo' | 'distribuicao') => void;
   onFixedCostsChange: (costs: CostLine[]) => void;
   onVariableCostsChange: (costs: CostLine[]) => void;
