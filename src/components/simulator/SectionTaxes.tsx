@@ -526,7 +526,7 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
       {/* Confidence indicator */}
       <div className="mt-3 flex items-center gap-2 text-sm">
         {confidence === 'alto' && <><CheckCircle className="w-4 h-4 text-primary" /> <span className="text-primary font-medium">Confiança Alta</span></>}
-        {confidence === 'medio' && <><AlertCircle className="w-4 h-4 text-amber-500" /> <span className="text-amber-600 font-medium">Confiança Média</span> <span className="text-muted-foreground">— preencha CNAE e tipo de receita</span></>}
+        {confidence === 'medio' && <><AlertCircle className="w-4 h-4 text-amber-500" /> <span className="text-amber-600 font-medium">Confiança Média</span></>}
         {confidence === 'baixo' && <><AlertTriangle className="w-4 h-4 text-destructive" /> <span className="text-destructive font-medium">Confiança Baixa</span> <span className="text-muted-foreground">— configure faturamento e dados das BUs</span></>}
       </div>
     </section>
