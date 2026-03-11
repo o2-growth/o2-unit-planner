@@ -224,7 +224,10 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                   <th className="text-center py-2 px-2">Faturamento/mês</th>
                   <th className="text-center py-2 px-2">Tipo Receita</th>
                   {regime === 'lucro_presumido' && (
-                    <th className="text-center py-2 px-2">ISS %</th>
+                    <>
+                      <th className="text-center py-2 px-2">ISS %</th>
+                      <th className="text-center py-2 px-2">ISS (R$)</th>
+                    </>
                   )}
                   {regime === 'simples_nacional' && (
                     <>
