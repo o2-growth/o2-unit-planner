@@ -301,6 +301,7 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
                             ))}
                           </SelectContent>
                         </Select>
+                        </div>
                         {bu.tipoReceita === 'software_assinatura' && (
                           <TooltipProvider>
                             <Tooltip>
