@@ -13,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useState, useMemo } from 'react';
 import type { TaxesData, BUTaxConfig, TipoReceita, AnexoSimples, MonthlyProjection, ProfileData, SociosConfig } from '@/types/simulator';
 import { calcAliquotaEfetiva, sugerirAnexo, getFaixaLabel, excedeSimples } from '@/lib/simplesNacional';
-import { formatCurrencyCompact } from '@/lib/formatters';
+import { formatCurrencyCompact, formatCurrency } from '@/lib/formatters';
 
 const TIPO_RECEITA_LABELS: Record<TipoReceita, string> = {
   servico: 'Serviço',
