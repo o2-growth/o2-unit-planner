@@ -466,13 +466,13 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
                     <tbody>
                       {bus.filter(b => getBUFat(b.buKey) > 0).map(bu => {
                         const anexoEfetivo = bu.sujeitoFatorR ? sugerirAnexo(fatorR) : bu.anexoSimples;
-                        const aliq = calcAliquotaEfetiva(simples.rbt12, anexoEfetivo);
+                        const aliq = calcAliquotaEfetiva(rbt12Efetivo, anexoEfetivo);
                         const das = getBUFat(bu.buKey) * (aliq / 100);
                         return (
                           <tr key={bu.buKey} className="border-b">
                             <td className="py-2 pr-2 font-medium">{bu.buNome}</td>
                             <td className="text-center py-2 px-1">{anexoEfetivo}</td>
-                            <td className="text-center py-2 px-1">{getFaixaLabel(simples.rbt12, anexoEfetivo)}</td>
+                            <td className="text-center py-2 px-1">{getFaixaLabel(rbt12Efetivo, anexoEfetivo)}</td>
                             <td className="text-center py-2 px-1">{aliq.toFixed(2)}%</td>
                             <td className="text-center py-2 px-1 font-semibold">{formatCurrencyCompact(das)}</td>
                             <td className="text-center py-2 px-1">
