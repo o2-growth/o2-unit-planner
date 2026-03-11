@@ -187,7 +187,7 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
                   onChange={v => onChange({ ...data, simples: { ...simples, rbt12: v } })}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Sugerido: {formatCurrencyCompact(rbt12Sugerido)} (mês 1 DRE × 12). Você pode alterar com o valor do extrato do Simples Nacional.
+                  Sugerido: {formatCurrencyCompact(rbt12Sugerido)} (mês 1 DRE × 12). Você pode alterar com o respectivo valor do campo RBT12 do seu extrato atual do Simples Nacional.
                 </p>
               </div>
               <div>
