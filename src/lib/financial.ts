@@ -1,5 +1,5 @@
 import type { SimulatorState, MonthlyProjection, InvestmentData } from '@/types/simulator';
-import { calcAliquotaEfetiva, sugerirAnexo } from '@/lib/simplesNacional';
+import { calcAliquotaEfetiva, sugerirAnexo, getDistribuicaoEfetiva } from '@/lib/simplesNacional';
 
 // ── Lucro Presumido: base de cálculo por tipo de receita ──
 function getBasePresumida(tipoReceita: string): { irpj: number; csll: number } {
