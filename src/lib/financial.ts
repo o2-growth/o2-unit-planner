@@ -125,7 +125,7 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
       const sociosAtivosForFR = (state.socios?.socios || []).slice(0, state.socios?.quantidade || 1);
       const proLaboreSocios = sociosAtivosForFR.reduce((s, x) => s + x.proLabore, 0);
       const folha12m = (proLaboreSocios + (state.profile.custoFuncionarios || 0)) * 12;
-      const rbt12Efetivo = simplesConfig.rbt12 > 0 ? simplesConfig.rbt12 : (projections.length > 0 ? projections[0]?.receitaBrutaTotal || 0 : receitaBrutaTotal) * 12;
+      const rbt12Efetivo = simplesConfig.rbt12 > 0 ? simplesConfig.rbt12 : receitaBrutaTotal * 12;
       const fatorR = rbt12Efetivo > 0 ? folha12m / rbt12Efetivo : 0;
 
       for (const bu of buConfigs) {
