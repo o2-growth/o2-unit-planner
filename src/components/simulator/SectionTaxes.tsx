@@ -224,7 +224,7 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
                 Fator R ≥ 28% — enquadramento no Anexo III (alíquotas menores, a partir de 6%)
               </div>
             )}
-            {excedeSimples(simples.rbt12 || rbt12Sugerido) && (
+            {excedeSimples(rbt12Efetivo) && (
               <div className="mt-3 flex items-center gap-2 text-destructive text-sm">
                 <AlertTriangle className="w-4 h-4" />
                 RBT12 excede o limite de R$ 4.800.000 do Simples Nacional
