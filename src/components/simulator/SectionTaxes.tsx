@@ -443,7 +443,7 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
                             <td className="text-center py-2 px-1">{csllPct.toFixed(2)}</td>
                             <td className="text-center py-2 px-1">{iss.toFixed(2)}</td>
                             <td className="text-center py-2 px-1 font-semibold">{totalPct.toFixed(2)}</td>
-                            <td className="text-center py-2 px-1 font-semibold">{formatCurrencyCompact(totalR)}</td>
+                            <td className="text-center py-2 px-1 font-semibold">{formatCurrency(totalR)}</td>
                           </tr>
                         );
                       })}
