@@ -524,10 +524,15 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
       </Collapsible>
 
       {/* Confidence indicator */}
-      <div className="mt-3 flex items-center gap-2 text-sm">
-        {confidence === 'alto' && <><CheckCircle className="w-4 h-4 text-primary" /> <span className="text-primary font-medium">Confiança Alta</span></>}
-        {confidence === 'medio' && <><AlertCircle className="w-4 h-4 text-amber-500" /> <span className="text-amber-600 font-medium">Confiança Média</span></>}
-        {confidence === 'baixo' && <><AlertTriangle className="w-4 h-4 text-destructive" /> <span className="text-destructive font-medium">Confiança Baixa</span> <span className="text-muted-foreground">— configure faturamento e dados das BUs</span></>}
+      <div className="mt-3 flex flex-col gap-1 text-sm">
+        <div className="flex items-center gap-2">
+          {confidence === 'alto' && <><CheckCircle className="w-4 h-4 text-primary" /> <span className="text-primary font-medium">Confiança Alta</span></>}
+          {confidence === 'medio' && <><AlertCircle className="w-4 h-4 text-amber-500" /> <span className="text-amber-600 font-medium">Confiança Média</span></>}
+          {confidence === 'baixo' && <><AlertTriangle className="w-4 h-4 text-destructive" /> <span className="text-destructive font-medium">Confiança Baixa</span> <span className="text-muted-foreground">— configure faturamento e dados das BUs</span></>}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Os valores apresentados são uma simulação estimada. Para apuração exata dos tributos, consulte sua contabilidade.
+        </p>
       </div>
     </section>
   );
