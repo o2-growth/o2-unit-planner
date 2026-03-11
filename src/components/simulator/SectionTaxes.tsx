@@ -466,7 +466,7 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
                     <tbody>
                       {bus.filter(b => getBUFat(b.buKey) > 0).map(bu => {
                         const anexoEfetivo = bu.sujeitoFatorR ? sugerirAnexo(fatorR) : bu.anexoSimples;
-                        const aliq = calcAliquotaEfetiva(simples.rbt12, anexoEfetivo);
+                        const aliq = calcAliquotaEfetiva(rbt12Efetivo, anexoEfetivo);
                         const das = getBUFat(bu.buKey) * (aliq / 100);
                         return (
                           <tr key={bu.buKey} className="border-b">
