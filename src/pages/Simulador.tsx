@@ -253,6 +253,7 @@ const Simulador = () => {
           goals={state.goals}
           proLaboreMode={state.proLaboreMode ?? 'custo_fixo'}
           socios={state.socios}
+          regime={state.taxes.regime || 'lucro_presumido'}
           onProLaboreModeChange={v => update('proLaboreMode', v)}
           onFixedCostsChange={v => update('fixedCosts', v)}
           onVariableCostsChange={v => update('variableCostRates', v)}

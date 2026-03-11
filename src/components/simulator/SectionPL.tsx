@@ -375,8 +375,18 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
               )}
 
               {/* DEDUÇÕES */}
-              <GroupRow label="(-) Deduções de Vendas" tooltip={LINE_TOOLTIPS['Deduções de Vendas']} values={projections.map(p => -p.deducoesTotal)} expanded={expanded.deducoes} onToggle={() => toggle('deducoes')} negative />
-              {expanded.deducoes && (
+              <GroupRow label={regime === 'simples_nacional' ? '(-) DAS (Simples Nacional)' : '(-) Deduções de Vendas'} tooltip={regime === 'simples_nacional' ? 'Documento de Arrecadação do Simples Nacional — tributos unificados' : LINE_TOOLTIPS['Deduções de Vendas']} values={projections.map(p => -p.deducoesTotal)} expanded={expanded.deducoes} onToggle={() => toggle('deducoes')} negative />
+              {expanded.deducoes && regime === 'simples_nacional' && (
+                <>
+                  <DRERow label="  IRPJ" tooltip="Imposto de Renda Pessoa Jurídica — incluso no DAS" values={projections.map(p => -p.dasIRPJ)} negative />
+                  <DRERow label="  CSLL" tooltip="Contribuição Social sobre o Lucro Líquido — incluso no DAS" values={projections.map(p => -p.dasCSLL)} negative />
+                  <DRERow label="  COFINS" tooltip="Contribuição para Financiamento da Seguridade Social — incluso no DAS" values={projections.map(p => -p.dasCOFINS)} negative />
+                  <DRERow label="  PIS/Pasep" tooltip="Programa de Integração Social — incluso no DAS" values={projections.map(p => -p.dasPIS)} negative />
+                  <DRERow label="  CPP" tooltip="Contribuição Previdenciária Patronal — incluso no DAS (exceto Anexo IV)" values={projections.map(p => -p.dasCPP)} negative />
+                  <DRERow label="  ISS" tooltip="Imposto Sobre Serviços — incluso no DAS" values={projections.map(p => -p.dasISS)} negative />
+                </>
+              )}
+              {expanded.deducoes && regime !== 'simples_nacional' && (
                 <>
                   <DRERow label="  PIS" tooltip={LINE_TOOLTIPS['PIS']} values={projections.map(p => -p.deducaoPIS)} negative />
                   <DRERow label="  COFINS" tooltip={LINE_TOOLTIPS['COFINS']} values={projections.map(p => -p.deducaoCOFINS)} negative />
