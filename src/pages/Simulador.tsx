@@ -241,7 +241,7 @@ const Simulador = () => {
         <SectionCommercial data={state.commercial} onChange={v => update('commercial', v)} />
         <SectionMatrixClients data={state.matrixClients} onChange={v => update('matrixClients', v)} />
         <SectionChurn churnMensal={state.churn.churnMensal} onChangeChurn={v => update('churn', { churnMensal: v })} />
-        <SectionTaxes data={state.taxes} onChange={v => update('taxes', v)} projections={projections} />
+        <SectionTaxes data={state.taxes} onChange={v => update('taxes', v)} projections={projections} profileData={state.profile} sociosData={state.socios} />
         <SectionRevenueRules data={state.revenueRules} onChange={v => update('revenueRules', v)} />
         <PremissasHeader state={state} onUpdate={update} onResetPremissas={handleResetPremissas} />
 

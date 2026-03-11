@@ -85,7 +85,8 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
     return projections[0].receitaBrutaTotal * 12;
   }, [projections]);
 
-  const fatorR = simples.rbt12 > 0 ? simples.folha12m / simples.rbt12 : 0;
+  const rbt12Efetivo = simples.rbt12 || rbt12Sugerido;
+  const fatorR = rbt12Efetivo > 0 ? folhaAutoCalculada / rbt12Efetivo : 0;
   const faturamentoTotal = bus.reduce((s, b) => s + getBUFat(b.buKey), 0);
   const faturamentoAnual = faturamentoTotal * 12;
 
