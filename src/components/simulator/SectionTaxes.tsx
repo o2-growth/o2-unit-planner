@@ -287,6 +287,7 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                         )}
                       </td>
                       {regime === 'lucro_presumido' && (
+                        <>
                           <td className="py-2 px-2">
                             <Input
                               type="number" min={2} max={5} step={0.5}
@@ -306,6 +307,7 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                           </td>
                         </>
                       )}
+                      {regime === 'simples_nacional' && (
                         <>
                           <td className="py-2 px-2 text-center">
                             {bu.sujeitoFatorR ? (
