@@ -294,7 +294,7 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                                 const clamped = Math.min(5, Math.max(2, val));
                                 updateBU(idx, { aliquotaIss: clamped });
                               }}
-                              disabled={!isAdmin}
+                              disabled={false}
                               className="w-16 h-8 text-xs text-center"
                             />
                           </td>
