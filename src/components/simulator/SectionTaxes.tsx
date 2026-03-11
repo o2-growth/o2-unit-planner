@@ -13,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useState, useMemo } from 'react';
 import type { TaxesData, BUTaxConfig, TipoReceita, AnexoSimples, MonthlyProjection, ProfileData, SociosConfig } from '@/types/simulator';
 import { calcAliquotaEfetiva, sugerirAnexo, getFaixaLabel, excedeSimples } from '@/lib/simplesNacional';
-import { formatCurrencyCompact } from '@/lib/formatters';
+import { formatCurrencyCompact, formatCurrency } from '@/lib/formatters';
 
 const TIPO_RECEITA_LABELS: Record<TipoReceita, string> = {
   servico: 'Serviço',
@@ -443,7 +443,7 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
                             <td className="text-center py-2 px-1">{csllPct.toFixed(2)}</td>
                             <td className="text-center py-2 px-1">{iss.toFixed(2)}</td>
                             <td className="text-center py-2 px-1 font-semibold">{totalPct.toFixed(2)}</td>
-                            <td className="text-center py-2 px-1 font-semibold">{formatCurrencyCompact(totalR)}</td>
+                            <td className="text-center py-2 px-1 font-semibold">{formatCurrency(totalR)}</td>
                           </tr>
                         );
                       })}
@@ -474,7 +474,7 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
                             <td className="text-center py-2 px-1">{anexoEfetivo}</td>
                             <td className="text-center py-2 px-1">{getFaixaLabel(rbt12Efetivo, anexoEfetivo)}</td>
                             <td className="text-center py-2 px-1">{aliq.toFixed(2)}%</td>
-                            <td className="text-center py-2 px-1 font-semibold">{formatCurrencyCompact(das)}</td>
+                            <td className="text-center py-2 px-1 font-semibold">{formatCurrency(das)}</td>
                             <td className="text-center py-2 px-1">
                               {bu.sujeitoFatorR && (
                                 <Badge variant="outline" className="text-xs">FR</Badge>
@@ -491,7 +491,7 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
                         <td></td>
                         <td></td>
                         <td className="text-center py-2 px-1">
-                          {formatCurrencyCompact(
+                          {formatCurrency(
                             bus.filter(b => getBUFat(b.buKey) > 0).reduce((sum, bu) => {
                               const anexoEfetivo = bu.sujeitoFatorR ? sugerirAnexo(fatorR) : bu.anexoSimples;
                               const aliq = calcAliquotaEfetiva(rbt12Efetivo, anexoEfetivo);
