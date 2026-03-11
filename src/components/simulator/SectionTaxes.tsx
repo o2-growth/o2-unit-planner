@@ -224,7 +224,10 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                   <th className="text-center py-2 px-2">Faturamento/mês</th>
                   <th className="text-center py-2 px-2">Tipo Receita</th>
                   {regime === 'lucro_presumido' && (
-                    <th className="text-center py-2 px-2">ISS %</th>
+                    <>
+                      <th className="text-center py-2 px-2">ISS %</th>
+                      <th className="text-center py-2 px-2">ISS (R$)</th>
+                    </>
                   )}
                   {regime === 'simples_nacional' && (
                     <>
@@ -284,6 +287,7 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                         )}
                       </td>
                       {regime === 'lucro_presumido' && (
+                        <>
                           <td className="py-2 px-2">
                             <Input
                               type="number" min={2} max={5} step={0.5}
@@ -298,6 +302,10 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                               className="w-16 h-8 text-xs text-center"
                             />
                           </td>
+                          <td className="py-2 px-2 text-center text-sm font-medium text-muted-foreground">
+                            {formatCurrencyCompact(getBUFat(bu.buKey) * (bu.aliquotaIss / 100))}
+                          </td>
+                        </>
                       )}
                       {regime === 'simples_nacional' && (
                         <>
@@ -342,7 +350,7 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                 <tr className="border-t font-semibold">
                   <td className="py-2 pr-2">Total</td>
                   <td className="py-2 px-2 text-center">{formatCurrencyCompact(faturamentoTotal)}</td>
-                  <td colSpan={regime === 'lucro_presumido' ? 2 : 3}></td>
+                  <td colSpan={regime === 'lucro_presumido' ? 3 : 3}></td>
                 </tr>
               </tfoot>
             </table>
