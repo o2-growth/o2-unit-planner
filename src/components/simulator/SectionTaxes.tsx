@@ -205,10 +205,10 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
 
             <div className="mt-4 flex flex-wrap gap-3 text-sm">
               <Badge variant={fatorR >= 0.28 ? 'default' : 'destructive'}>
-                Fator R: {((folhaAutoCalculada / ((simples.rbt12 || rbt12Sugerido) || 1)) * 100).toFixed(1)}%
+                Fator R: {((folhaAutoCalculada / (rbt12Efetivo || 1)) * 100).toFixed(1)}%
               </Badge>
               <Badge variant="secondary">
-                Anexo sugerido: {sugerirAnexo(folhaAutoCalculada / ((simples.rbt12 || rbt12Sugerido) || 1))}
+                Anexo sugerido: {sugerirAnexo(folhaAutoCalculada / (rbt12Efetivo || 1))}
               </Badge>
               <Badge variant="secondary">
                 Fat. mensal (BUs): {formatCurrencyCompact(faturamentoTotal)}
