@@ -337,7 +337,7 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                 <tr className="border-t font-semibold">
                   <td className="py-2 pr-2">Total</td>
                   <td className="py-2 px-2 text-center">{formatCurrencyCompact(faturamentoTotal)}</td>
-                  <td colSpan={regime === 'lucro_presumido' ? 4 : 3}></td>
+                  <td colSpan={regime === 'lucro_presumido' ? 2 : 3}></td>
                 </tr>
               </tfoot>
             </table>
