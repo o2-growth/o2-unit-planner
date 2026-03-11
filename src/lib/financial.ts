@@ -121,7 +121,12 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
       }
     } else {
       // Simples Nacional: DAS per BU
-      const fatorR = simplesConfig.rbt12 > 0 ? simplesConfig.folha12m / simplesConfig.rbt12 : 0;
+      // Folha auto-calculada: (pró-labore sócios + custo funcionários) × 12
+      const sociosAtivosForFR = (state.socios?.socios || []).slice(0, state.socios?.quantidade || 1);
+      const proLaboreSocios = sociosAtivosForFR.reduce((s, x) => s + x.proLabore, 0);
+      const folha12m = (proLaboreSocios + (state.profile.custoFuncionarios || 0)) * 12;
+      const rbt12Efetivo = simplesConfig.rbt12 > 0 ? simplesConfig.rbt12 : receitaBrutaTotal * 12;
+      const fatorR = rbt12Efetivo > 0 ? folha12m / rbt12Efetivo : 0;
 
       for (const bu of buConfigs) {
         const fat = revenueByBU[bu.buKey] || 0;

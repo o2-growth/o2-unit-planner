@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useState, useMemo } from 'react';
-import type { TaxesData, BUTaxConfig, TipoReceita, AnexoSimples, MonthlyProjection } from '@/types/simulator';
+import type { TaxesData, BUTaxConfig, TipoReceita, AnexoSimples, MonthlyProjection, ProfileData, SociosConfig } from '@/types/simulator';
 import { calcAliquotaEfetiva, sugerirAnexo, getFaixaLabel, excedeSimples } from '@/lib/simplesNacional';
 import { formatCurrencyCompact } from '@/lib/formatters';
 
@@ -38,9 +38,11 @@ interface Props {
   data: TaxesData;
   onChange: (data: TaxesData) => void;
   projections?: MonthlyProjection[];
+  profileData?: ProfileData;
+  sociosData?: SociosConfig;
 }
 
-export function SectionTaxes({ data, onChange, projections }: Props) {
+export function SectionTaxes({ data, onChange, projections, profileData, sociosData }: Props) {
   const { isAdmin } = useAuth();
   const [resultOpen, setResultOpen] = useState(false);
   const [pendingRegime, setPendingRegime] = useState<string | null>(null);
@@ -68,7 +70,23 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
 
   const getBUFat = (buKey: string) => buFatMap[buKey] ?? 0;
 
-  const fatorR = simples.rbt12 > 0 ? simples.folha12m / simples.rbt12 : 0;
+  // Auto-calculate Folha de Pagamento: (pró-labore sócios + custo funcionários) × 12
+  const folhaAutoCalculada = useMemo(() => {
+    const proLaboreSocios = (sociosData?.socios || [])
+      .slice(0, sociosData?.quantidade || 1)
+      .reduce((sum, s) => sum + s.proLabore, 0);
+    const custoFunc = profileData?.custoFuncionarios || 0;
+    return (proLaboreSocios + custoFunc) * 12;
+  }, [sociosData, profileData]);
+
+  // RBT12 sugerido: receita bruta mês 1 × 12
+  const rbt12Sugerido = useMemo(() => {
+    if (!projections || projections.length === 0) return 0;
+    return projections[0].receitaBrutaTotal * 12;
+  }, [projections]);
+
+  const rbt12Efetivo = simples.rbt12 || rbt12Sugerido;
+  const fatorR = rbt12Efetivo > 0 ? folhaAutoCalculada / rbt12Efetivo : 0;
   const faturamentoTotal = bus.reduce((s, b) => s + getBUFat(b.buKey), 0);
   const faturamentoAnual = faturamentoTotal * 12;
 
@@ -165,27 +183,30 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
               <div>
                 <label className="text-sm font-medium">RBT12 (Receita Bruta 12 meses)</label>
                 <CurrencyInput
-                  value={simples.rbt12}
-                  onChange={v => onChange({ ...data, simples: { ...simples, rbt12: v, fatorR } })}
-                  disabled={!isAdmin}
+                  value={simples.rbt12 || rbt12Sugerido}
+                  onChange={v => onChange({ ...data, simples: { ...simples, rbt12: v } })}
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Sugerido: {formatCurrencyCompact(rbt12Sugerido)} (mês 1 DRE × 12). Você pode alterar com o valor do extrato do Simples Nacional.
+                </p>
               </div>
               <div>
                 <label className="text-sm font-medium">Folha de Pagamento 12 meses</label>
-                <CurrencyInput
-                  value={simples.folha12m}
-                  onChange={v => onChange({ ...data, simples: { ...simples, folha12m: v, fatorR: simples.rbt12 > 0 ? v / simples.rbt12 : 0 } })}
-                  disabled={!isAdmin}
-                />
+                <div className="py-2 px-3 bg-muted rounded-md text-sm font-medium">
+                  {formatCurrencyCompact(folhaAutoCalculada)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Calculado automaticamente: (pró-labore dos sócios + custo funcionários) × 12 meses
+                </p>
               </div>
             </div>
 
             <div className="mt-4 flex flex-wrap gap-3 text-sm">
-              <Badge variant="secondary">
-                Fator R: {(fatorR * 100).toFixed(1)}%
+              <Badge variant={fatorR >= 0.28 ? 'default' : 'destructive'}>
+                Fator R: {((folhaAutoCalculada / ((simples.rbt12 || rbt12Sugerido) || 1)) * 100).toFixed(1)}%
               </Badge>
               <Badge variant="secondary">
-                Anexo sugerido: {sugerirAnexo(fatorR)}
+                Anexo sugerido: {sugerirAnexo(folhaAutoCalculada / ((simples.rbt12 || rbt12Sugerido) || 1))}
               </Badge>
               <Badge variant="secondary">
                 Fat. mensal (BUs): {formatCurrencyCompact(faturamentoTotal)}
@@ -195,7 +216,13 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
               </Badge>
             </div>
 
-            {excedeSimples(simples.rbt12) && (
+            {fatorR >= 0.28 && (
+              <div className="mt-2 flex items-center gap-2 text-emerald-600 text-sm">
+                <CheckCircle className="w-4 h-4" />
+                Fator R ≥ 28% — enquadramento no Anexo III (alíquotas menores, a partir de 6%)
+              </div>
+            )}
+            {excedeSimples(simples.rbt12 || rbt12Sugerido) && (
               <div className="mt-3 flex items-center gap-2 text-destructive text-sm">
                 <AlertTriangle className="w-4 h-4" />
                 RBT12 excede o limite de R$ 4.800.000 do Simples Nacional
@@ -204,7 +231,7 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
             {fatorR > 0 && fatorR < 0.28 && (
               <div className="mt-2 flex items-center gap-2 text-amber-600 text-sm">
                 <AlertCircle className="w-4 h-4" />
-                Fator R abaixo de 28% — BUs sujeitas ao Fator R serão tributadas pelo Anexo V (maior carga)
+                Fator R abaixo de 28% — BUs sujeitas ao Fator R serão tributadas pelo Anexo V (alíquotas maiores, a partir de 15,5%)
               </div>
             )}
           </CardContent>
