@@ -185,7 +185,7 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
               <div>
                 <label className="text-sm font-medium">RBT12 (Receita Bruta 12 meses)</label>
                 <CurrencyInput
-                  value={simples.rbt12 || rbt12Sugerido}
+                  value={rbt12Efetivo}
                   onChange={v => onChange({ ...data, simples: { ...simples, rbt12: v } })}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
