@@ -70,6 +70,21 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
 
   const getBUFat = (buKey: string) => buFatMap[buKey] ?? 0;
 
+  // Auto-calculate Folha de Pagamento: (pró-labore sócios + custo funcionários) × 12
+  const folhaAutoCalculada = useMemo(() => {
+    const proLaboreSocios = (sociosData?.socios || [])
+      .slice(0, sociosData?.quantidade || 1)
+      .reduce((sum, s) => sum + s.proLabore, 0);
+    const custoFunc = profileData?.custoFuncionarios || 0;
+    return (proLaboreSocios + custoFunc) * 12;
+  }, [sociosData, profileData]);
+
+  // RBT12 sugerido: receita bruta mês 1 × 12
+  const rbt12Sugerido = useMemo(() => {
+    if (!projections || projections.length === 0) return 0;
+    return projections[0].receitaBrutaTotal * 12;
+  }, [projections]);
+
   const fatorR = simples.rbt12 > 0 ? simples.folha12m / simples.rbt12 : 0;
   const faturamentoTotal = bus.reduce((s, b) => s + getBUFat(b.buKey), 0);
   const faturamentoAnual = faturamentoTotal * 12;
