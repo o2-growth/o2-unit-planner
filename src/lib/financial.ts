@@ -133,7 +133,7 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
         if (fat <= 0) continue;
 
         const anexoEfetivo = bu.sujeitoFatorR ? sugerirAnexo(fatorR) : bu.anexoSimples;
-        const aliqEfetiva = calcAliquotaEfetiva(simplesConfig.rbt12, anexoEfetivo);
+        const aliqEfetiva = calcAliquotaEfetiva(rbt12Efetivo, anexoEfetivo);
         deducaoDAS += fat * (aliqEfetiva / 100);
       }
       // No separate PIS/COFINS/ISS — all included in DAS
