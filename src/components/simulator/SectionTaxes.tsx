@@ -484,6 +484,24 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
                         );
                       })}
                     </tbody>
+                    <tfoot>
+                      <tr className="border-t font-semibold">
+                        <td className="py-2 pr-2">Total</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td className="text-center py-2 px-1">
+                          {formatCurrencyCompact(
+                            bus.filter(b => getBUFat(b.buKey) > 0).reduce((sum, bu) => {
+                              const anexoEfetivo = bu.sujeitoFatorR ? sugerirAnexo(fatorR) : bu.anexoSimples;
+                              const aliq = calcAliquotaEfetiva(rbt12Efetivo, anexoEfetivo);
+                              return sum + getBUFat(bu.buKey) * (aliq / 100);
+                            }, 0)
+                          )}
+                        </td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
                   </table>
                 </div>
               )}
