@@ -350,7 +350,17 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                 <tr className="border-t font-semibold">
                   <td className="py-2 pr-2">Total</td>
                   <td className="py-2 px-2 text-center">{formatCurrencyCompact(faturamentoTotal)}</td>
-                  <td colSpan={regime === 'lucro_presumido' ? 3 : 3}></td>
+                  {regime === 'lucro_presumido' ? (
+                    <>
+                      <td></td>
+                      <td></td>
+                      <td className="py-2 px-2 text-center">
+                        {formatCurrencyCompact(bus.reduce((sum, bu) => sum + getBUFat(bu.buKey) * (bu.aliquotaIss / 100), 0))}
+                      </td>
+                    </>
+                  ) : (
+                    <td colSpan={3}></td>
+                  )}
                 </tr>
               </tfoot>
             </table>
