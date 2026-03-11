@@ -231,6 +231,7 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
       receitaSaasOxyGenio: mrrSaasOwn,
       receitaSetupTotal: setupOwn + setupMatriz,
       deducaoPIS, deducaoCOFINS, deducaoISSQN, deducaoICMS, deducaoDAS,
+      dasIRPJ, dasCSLL, dasCOFINS, dasPIS, dasCPP, dasISS,
       deducoesTotal,
       royaltiesValor,
       cargaTotalPercent,
