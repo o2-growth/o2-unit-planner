@@ -223,12 +223,8 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                   <th className="text-left py-2 pr-2">BU</th>
                   <th className="text-center py-2 px-2">Faturamento/mês</th>
                   <th className="text-center py-2 px-2">Tipo Receita</th>
-                  <th className="text-center py-2 px-2">CNAE</th>
                   {regime === 'lucro_presumido' && (
-                    <>
-                      <th className="text-center py-2 px-2">ISS %</th>
-                      <th className="text-center py-2 px-2">Município</th>
-                    </>
+                    <th className="text-center py-2 px-2">ISS %</th>
                   )}
                   {regime === 'simples_nacional' && (
                     <>
