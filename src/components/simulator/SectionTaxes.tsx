@@ -182,27 +182,30 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
               <div>
                 <label className="text-sm font-medium">RBT12 (Receita Bruta 12 meses)</label>
                 <CurrencyInput
-                  value={simples.rbt12}
-                  onChange={v => onChange({ ...data, simples: { ...simples, rbt12: v, fatorR } })}
-                  disabled={!isAdmin}
+                  value={simples.rbt12 || rbt12Sugerido}
+                  onChange={v => onChange({ ...data, simples: { ...simples, rbt12: v } })}
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Sugerido: {formatCurrencyCompact(rbt12Sugerido)} (mês 1 DRE × 12). Você pode alterar com o valor do extrato do Simples Nacional.
+                </p>
               </div>
               <div>
                 <label className="text-sm font-medium">Folha de Pagamento 12 meses</label>
-                <CurrencyInput
-                  value={simples.folha12m}
-                  onChange={v => onChange({ ...data, simples: { ...simples, folha12m: v, fatorR: simples.rbt12 > 0 ? v / simples.rbt12 : 0 } })}
-                  disabled={!isAdmin}
-                />
+                <div className="py-2 px-3 bg-muted rounded-md text-sm font-medium">
+                  {formatCurrencyCompact(folhaAutoCalculada)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Calculado automaticamente: (pró-labore dos sócios + custo funcionários) × 12 meses
+                </p>
               </div>
             </div>
 
             <div className="mt-4 flex flex-wrap gap-3 text-sm">
-              <Badge variant="secondary">
-                Fator R: {(fatorR * 100).toFixed(1)}%
+              <Badge variant={fatorR >= 0.28 ? 'default' : 'destructive'}>
+                Fator R: {((folhaAutoCalculada / ((simples.rbt12 || rbt12Sugerido) || 1)) * 100).toFixed(1)}%
               </Badge>
               <Badge variant="secondary">
-                Anexo sugerido: {sugerirAnexo(fatorR)}
+                Anexo sugerido: {sugerirAnexo(folhaAutoCalculada / ((simples.rbt12 || rbt12Sugerido) || 1))}
               </Badge>
               <Badge variant="secondary">
                 Fat. mensal (BUs): {formatCurrencyCompact(faturamentoTotal)}
@@ -212,7 +215,13 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
               </Badge>
             </div>
 
-            {excedeSimples(simples.rbt12) && (
+            {fatorR >= 0.28 && (
+              <div className="mt-2 flex items-center gap-2 text-emerald-600 text-sm">
+                <CheckCircle className="w-4 h-4" />
+                Fator R ≥ 28% — enquadramento no Anexo III (alíquotas menores, a partir de 6%)
+              </div>
+            )}
+            {excedeSimples(simples.rbt12 || rbt12Sugerido) && (
               <div className="mt-3 flex items-center gap-2 text-destructive text-sm">
                 <AlertTriangle className="w-4 h-4" />
                 RBT12 excede o limite de R$ 4.800.000 do Simples Nacional
@@ -221,7 +230,7 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
             {fatorR > 0 && fatorR < 0.28 && (
               <div className="mt-2 flex items-center gap-2 text-amber-600 text-sm">
                 <AlertCircle className="w-4 h-4" />
-                Fator R abaixo de 28% — BUs sujeitas ao Fator R serão tributadas pelo Anexo V (maior carga)
+                Fator R abaixo de 28% — BUs sujeitas ao Fator R serão tributadas pelo Anexo V (alíquotas maiores, a partir de 15,5%)
               </div>
             )}
           </CardContent>
