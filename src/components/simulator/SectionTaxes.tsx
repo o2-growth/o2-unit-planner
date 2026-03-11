@@ -491,7 +491,7 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
                         <td></td>
                         <td></td>
                         <td className="text-center py-2 px-1">
-                          {formatCurrencyCompact(
+                          {formatCurrency(
                             bus.filter(b => getBUFat(b.buKey) > 0).reduce((sum, bu) => {
                               const anexoEfetivo = bu.sujeitoFatorR ? sugerirAnexo(fatorR) : bu.anexoSimples;
                               const aliq = calcAliquotaEfetiva(rbt12Efetivo, anexoEfetivo);
