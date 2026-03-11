@@ -283,17 +283,7 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                           </TooltipProvider>
                         )}
                       </td>
-                      <td className="py-2 px-2">
-                        <Input
-                          value={bu.cnae}
-                          onChange={e => updateBU(idx, { cnae: e.target.value })}
-                          placeholder="Ex: 6920-6/00"
-                          disabled={!isAdmin}
-                          className="w-28 h-8 text-xs text-center"
-                        />
-                      </td>
                       {regime === 'lucro_presumido' && (
-                        <>
                           <td className="py-2 px-2">
                             <Input
                               type="number" min={0} max={5} step={0.5}
@@ -303,16 +293,6 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                               className="w-16 h-8 text-xs text-center"
                             />
                           </td>
-                          <td className="py-2 px-2">
-                            <Input
-                              value={bu.municipioIss}
-                              onChange={e => updateBU(idx, { municipioIss: e.target.value })}
-                              placeholder="Município"
-                              disabled={!isAdmin}
-                              className="w-28 h-8 text-xs text-center"
-                            />
-                          </td>
-                        </>
                       )}
                       {regime === 'simples_nacional' && (
                         <>
