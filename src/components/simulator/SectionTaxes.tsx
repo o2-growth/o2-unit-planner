@@ -301,8 +301,11 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                               className="w-16 h-8 text-xs text-center"
                             />
                           </td>
+                          <td className="py-2 px-2 text-center text-sm font-medium text-muted-foreground">
+                            {formatCurrencyCompact(getBUFat(bu.buKey) * (bu.aliquotaIss / 100))}
+                          </td>
+                        </>
                       )}
-                      {regime === 'simples_nacional' && (
                         <>
                           <td className="py-2 px-2 text-center">
                             {bu.sujeitoFatorR ? (
