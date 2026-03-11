@@ -286,14 +286,15 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
                         {formatCurrencyCompact(getBUFat(bu.buKey))}
                       </td>
                       <td className="py-2 px-2">
-                        <Select
-                          value={bu.tipoReceita}
-                          onValueChange={v => updateBU(idx, { tipoReceita: v as TipoReceita })}
-                          disabled={!isAdmin}
-                        >
-                          <SelectTrigger className="w-40 h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
+                        <div className="flex justify-center">
+                          <Select
+                            value={bu.tipoReceita}
+                            onValueChange={v => updateBU(idx, { tipoReceita: v as TipoReceita })}
+                            disabled={!isAdmin}
+                          >
+                            <SelectTrigger className="w-40 h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
                           <SelectContent>
                             {Object.entries(TIPO_RECEITA_LABELS).map(([k, label]) => (
                               <SelectItem key={k} value={k}>{label}</SelectItem>
