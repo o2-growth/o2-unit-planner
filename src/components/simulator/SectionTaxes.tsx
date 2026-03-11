@@ -110,12 +110,6 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
         description="Configure regime, faturamento por BU e tributação específica."
       />
 
-      {!isAdmin && (
-        <Badge variant="outline" className="text-xs gap-1 mb-4 w-fit">
-          <Lock className="w-3 h-3" /> Somente Admin
-        </Badge>
-      )}
-
       {/* Regime Tributário */}
       <Card className="mb-4">
         <CardContent className="pt-6">
@@ -124,22 +118,43 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
             <Button
               variant={regime === 'lucro_presumido' ? 'default' : 'outline'}
               className={regime === 'lucro_presumido' ? 'bg-primary text-primary-foreground' : ''}
-              onClick={() => onChange({ ...data, regime: 'lucro_presumido' })}
-              disabled={!isAdmin}
+              onClick={() => {
+                if (regime !== 'lucro_presumido') setPendingRegime('lucro_presumido');
+              }}
             >
               Lucro Presumido
             </Button>
             <Button
               variant={regime === 'simples_nacional' ? 'default' : 'outline'}
               className={regime === 'simples_nacional' ? 'bg-primary text-primary-foreground' : ''}
-              onClick={() => onChange({ ...data, regime: 'simples_nacional' })}
-              disabled={!isAdmin}
+              onClick={() => {
+                if (regime !== 'simples_nacional') setPendingRegime('simples_nacional');
+              }}
             >
               Simples Nacional
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* AlertDialog de confirmação de troca de regime */}
+      <AlertDialog open={pendingRegime !== null} onOpenChange={open => { if (!open) setPendingRegime(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alterar Regime Tributário</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja alterar o regime para {pendingRegime === 'lucro_presumido' ? 'Lucro Presumido' : 'Simples Nacional'}?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Não</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (pendingRegime) onChange({ ...data, regime: pendingRegime as TaxesData['regime'] });
+              setPendingRegime(null);
+            }}>Sim</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Simples Nacional params */}
       {regime === 'simples_nacional' && (
