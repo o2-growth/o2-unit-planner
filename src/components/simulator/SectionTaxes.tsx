@@ -43,6 +43,7 @@ interface Props {
 export function SectionTaxes({ data, onChange, projections }: Props) {
   const { isAdmin } = useAuth();
   const [resultOpen, setResultOpen] = useState(false);
+  const [pendingRegime, setPendingRegime] = useState<string | null>(null);
 
   const regime = data.regime || 'lucro_presumido';
   const bus = data.bus || [];
