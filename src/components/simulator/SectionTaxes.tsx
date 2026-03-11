@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useState, useMemo } from 'react';
-import type { TaxesData, BUTaxConfig, TipoReceita, AnexoSimples, MonthlyProjection } from '@/types/simulator';
+import type { TaxesData, BUTaxConfig, TipoReceita, AnexoSimples, MonthlyProjection, ProfileData, SociosConfig } from '@/types/simulator';
 import { calcAliquotaEfetiva, sugerirAnexo, getFaixaLabel, excedeSimples } from '@/lib/simplesNacional';
 import { formatCurrencyCompact } from '@/lib/formatters';
 
