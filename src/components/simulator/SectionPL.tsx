@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { MonthlyProjection, CostLine, GoalsData, SociosConfig, SocioData, SocioPapel } from '@/types/simulator';
+import type { MonthlyProjection, CostLine, GoalsData, SociosConfig, SocioData, SocioPapel, RegimeTributario } from '@/types/simulator';
 
 type BelowEbitdaData = {
   recFinanceirasPercent: number;
