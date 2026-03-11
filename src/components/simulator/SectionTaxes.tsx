@@ -474,7 +474,7 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
                             <td className="text-center py-2 px-1">{anexoEfetivo}</td>
                             <td className="text-center py-2 px-1">{getFaixaLabel(rbt12Efetivo, anexoEfetivo)}</td>
                             <td className="text-center py-2 px-1">{aliq.toFixed(2)}%</td>
-                            <td className="text-center py-2 px-1 font-semibold">{formatCurrencyCompact(das)}</td>
+                            <td className="text-center py-2 px-1 font-semibold">{formatCurrency(das)}</td>
                             <td className="text-center py-2 px-1">
                               {bu.sujeitoFatorR && (
                                 <Badge variant="outline" className="text-xs">FR</Badge>
