@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { MonthlyProjection, CostLine, GoalsData, SociosConfig, SocioData, SocioPapel } from '@/types/simulator';
+import type { MonthlyProjection, CostLine, GoalsData, SociosConfig, SocioData, SocioPapel, RegimeTributario } from '@/types/simulator';
 
 type BelowEbitdaData = {
   recFinanceirasPercent: number;
@@ -40,6 +40,7 @@ interface Props {
   goals: GoalsData;
   proLaboreMode: 'custo_fixo' | 'distribuicao';
   socios: SociosConfig;
+  regime: RegimeTributario;
   onProLaboreModeChange: (mode: 'custo_fixo' | 'distribuicao') => void;
   onFixedCostsChange: (costs: CostLine[]) => void;
   onVariableCostsChange: (costs: CostLine[]) => void;
@@ -111,7 +112,7 @@ function LabelWithTooltip({ label, tooltip }: { label: string; tooltip?: string 
   );
 }
 
-export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbitda, goals, proLaboreMode, socios, onProLaboreModeChange, onFixedCostsChange, onVariableCostsChange, onBelowEbitdaChange, onSociosChange }: Props) {
+export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbitda, goals, proLaboreMode, socios, regime, onProLaboreModeChange, onFixedCostsChange, onVariableCostsChange, onBelowEbitdaChange, onSociosChange }: Props) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     receita: false,
     saas: false,
@@ -374,8 +375,18 @@ export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbi
               )}
 
               {/* DEDUÇÕES */}
-              <GroupRow label="(-) Deduções de Vendas" tooltip={LINE_TOOLTIPS['Deduções de Vendas']} values={projections.map(p => -p.deducoesTotal)} expanded={expanded.deducoes} onToggle={() => toggle('deducoes')} negative />
-              {expanded.deducoes && (
+              <GroupRow label={regime === 'simples_nacional' ? '(-) DAS (Simples Nacional)' : '(-) Deduções de Vendas'} tooltip={regime === 'simples_nacional' ? 'Documento de Arrecadação do Simples Nacional — tributos unificados' : LINE_TOOLTIPS['Deduções de Vendas']} values={projections.map(p => -p.deducoesTotal)} expanded={expanded.deducoes} onToggle={() => toggle('deducoes')} negative />
+              {expanded.deducoes && regime === 'simples_nacional' && (
+                <>
+                  <DRERow label="  IRPJ" tooltip="Imposto de Renda Pessoa Jurídica — incluso no DAS" values={projections.map(p => -p.dasIRPJ)} negative />
+                  <DRERow label="  CSLL" tooltip="Contribuição Social sobre o Lucro Líquido — incluso no DAS" values={projections.map(p => -p.dasCSLL)} negative />
+                  <DRERow label="  COFINS" tooltip="Contribuição para Financiamento da Seguridade Social — incluso no DAS" values={projections.map(p => -p.dasCOFINS)} negative />
+                  <DRERow label="  PIS/Pasep" tooltip="Programa de Integração Social — incluso no DAS" values={projections.map(p => -p.dasPIS)} negative />
+                  <DRERow label="  CPP" tooltip="Contribuição Previdenciária Patronal — incluso no DAS (exceto Anexo IV)" values={projections.map(p => -p.dasCPP)} negative />
+                  <DRERow label="  ISS" tooltip="Imposto Sobre Serviços — incluso no DAS" values={projections.map(p => -p.dasISS)} negative />
+                </>
+              )}
+              {expanded.deducoes && regime !== 'simples_nacional' && (
                 <>
                   <DRERow label="  PIS" tooltip={LINE_TOOLTIPS['PIS']} values={projections.map(p => -p.deducaoPIS)} negative />
                   <DRERow label="  COFINS" tooltip={LINE_TOOLTIPS['COFINS']} values={projections.map(p => -p.deducaoCOFINS)} negative />

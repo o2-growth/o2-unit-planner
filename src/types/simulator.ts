@@ -155,6 +155,13 @@ export interface MonthlyProjection {
   deducaoISSQN: number;
   deducaoICMS: number;
   deducaoDAS: number;
+  // DAS breakdown (Simples Nacional only)
+  dasIRPJ: number;
+  dasCSLL: number;
+  dasCOFINS: number;
+  dasPIS: number;
+  dasCPP: number;
+  dasISS: number;
   deducoesTotal: number;
   royaltiesValor: number;
   cargaTotalPercent: number;

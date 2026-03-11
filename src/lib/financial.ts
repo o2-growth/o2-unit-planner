@@ -1,5 +1,5 @@
 import type { SimulatorState, MonthlyProjection, InvestmentData } from '@/types/simulator';
-import { calcAliquotaEfetiva, sugerirAnexo } from '@/lib/simplesNacional';
+import { calcAliquotaEfetiva, sugerirAnexo, getDistribuicaoEfetiva } from '@/lib/simplesNacional';
 
 // ── Lucro Presumido: base de cálculo por tipo de receita ──
 function getBasePresumida(tipoReceita: string): { irpj: number; csll: number } {
@@ -103,6 +103,12 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
     let deducaoISSQN = 0;
     let deducaoICMS = 0;
     let deducaoDAS = 0;
+    let dasIRPJ = 0;
+    let dasCSLL = 0;
+    let dasCOFINS = 0;
+    let dasPIS = 0;
+    let dasCPP = 0;
+    let dasISS = 0;
     let irpjCsllCalc = 0;
 
     if (regime === 'lucro_presumido') {
@@ -120,8 +126,7 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
         irpjCsllCalc += fat * base.csll * 0.09; // CSLL efetivo
       }
     } else {
-      // Simples Nacional: DAS per BU
-      // Folha auto-calculada: (pró-labore sócios + custo funcionários) × 12
+      // Simples Nacional: DAS per BU with breakdown
       const sociosAtivosForFR = (state.socios?.socios || []).slice(0, state.socios?.quantidade || 1);
       const proLaboreSocios = sociosAtivosForFR.reduce((s, x) => s + x.proLabore, 0);
       const folha12m = (proLaboreSocios + (state.profile.custoFuncionarios || 0)) * 12;
@@ -135,6 +140,15 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
         const anexoEfetivo = bu.sujeitoFatorR ? sugerirAnexo(fatorR) : bu.anexoSimples;
         const aliqEfetiva = calcAliquotaEfetiva(rbt12Efetivo, anexoEfetivo);
         deducaoDAS += fat * (aliqEfetiva / 100);
+
+        // Breakdown by tax component
+        const dist = getDistribuicaoEfetiva(rbt12Efetivo, anexoEfetivo);
+        dasIRPJ += fat * (dist.irpj / 100);
+        dasCSLL += fat * (dist.csll / 100);
+        dasCOFINS += fat * (dist.cofins / 100);
+        dasPIS += fat * (dist.pis / 100);
+        dasCPP += fat * (dist.cpp / 100);
+        dasISS += fat * (dist.iss / 100);
       }
       // No separate PIS/COFINS/ISS — all included in DAS
       // No IRPJ/CSLL post-EBITDA
@@ -217,6 +231,7 @@ export function calculateProjections(state: SimulatorState): MonthlyProjection[]
       receitaSaasOxyGenio: mrrSaasOwn,
       receitaSetupTotal: setupOwn + setupMatriz,
       deducaoPIS, deducaoCOFINS, deducaoISSQN, deducaoICMS, deducaoDAS,
+      dasIRPJ, dasCSLL, dasCOFINS, dasPIS, dasCPP, dasISS,
       deducoesTotal,
       royaltiesValor,
       cargaTotalPercent,
