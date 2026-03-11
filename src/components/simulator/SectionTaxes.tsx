@@ -286,9 +286,14 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                       {regime === 'lucro_presumido' && (
                           <td className="py-2 px-2">
                             <Input
-                              type="number" min={0} max={5} step={0.5}
+                              type="number" min={2} max={5} step={0.5}
                               value={bu.aliquotaIss}
-                              onChange={e => updateBU(idx, { aliquotaIss: parseFloat(e.target.value) || 0 })}
+                              onChange={e => {
+                                const val = parseFloat(e.target.value);
+                                if (isNaN(val)) return;
+                                const clamped = Math.min(5, Math.max(2, val));
+                                updateBU(idx, { aliquotaIss: clamped });
+                              }}
                               disabled={!isAdmin}
                               className="w-16 h-8 text-xs text-center"
                             />
