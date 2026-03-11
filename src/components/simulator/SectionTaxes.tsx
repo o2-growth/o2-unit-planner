@@ -85,7 +85,9 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
     return projections[0].receitaBrutaTotal * 12;
   }, [projections]);
 
-  const rbt12Efetivo = simples.rbt12 || rbt12Sugerido;
+  // Use rbt12Sugerido only if user hasn't explicitly set rbt12 (null/undefined means "use suggestion")
+  const userSetRbt12 = simples.rbt12 !== null && simples.rbt12 !== undefined;
+  const rbt12Efetivo = userSetRbt12 ? simples.rbt12 : rbt12Sugerido;
   const fatorR = rbt12Efetivo > 0 ? folhaAutoCalculada / rbt12Efetivo : 0;
   const faturamentoTotal = bus.reduce((s, b) => s + getBUFat(b.buKey), 0);
   const faturamentoAnual = faturamentoTotal * 12;
@@ -183,7 +185,7 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
               <div>
                 <label className="text-sm font-medium">RBT12 (Receita Bruta 12 meses)</label>
                 <CurrencyInput
-                  value={simples.rbt12 || rbt12Sugerido}
+                  value={rbt12Efetivo}
                   onChange={v => onChange({ ...data, simples: { ...simples, rbt12: v } })}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
@@ -203,10 +205,10 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
 
             <div className="mt-4 flex flex-wrap gap-3 text-sm">
               <Badge variant={fatorR >= 0.28 ? 'default' : 'destructive'}>
-                Fator R: {((folhaAutoCalculada / ((simples.rbt12 || rbt12Sugerido) || 1)) * 100).toFixed(1)}%
+                Fator R: {((folhaAutoCalculada / (rbt12Efetivo || 1)) * 100).toFixed(1)}%
               </Badge>
               <Badge variant="secondary">
-                Anexo sugerido: {sugerirAnexo(folhaAutoCalculada / ((simples.rbt12 || rbt12Sugerido) || 1))}
+                Anexo sugerido: {sugerirAnexo(folhaAutoCalculada / (rbt12Efetivo || 1))}
               </Badge>
               <Badge variant="secondary">
                 Fat. mensal (BUs): {formatCurrencyCompact(faturamentoTotal)}
@@ -222,7 +224,7 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
                 Fator R ≥ 28% — enquadramento no Anexo III (alíquotas menores, a partir de 6%)
               </div>
             )}
-            {excedeSimples(simples.rbt12 || rbt12Sugerido) && (
+            {excedeSimples(rbt12Efetivo) && (
               <div className="mt-3 flex items-center gap-2 text-destructive text-sm">
                 <AlertTriangle className="w-4 h-4" />
                 RBT12 excede o limite de R$ 4.800.000 do Simples Nacional
