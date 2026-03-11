@@ -231,7 +231,7 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
             {fatorR > 0 && fatorR < 0.28 && (
               <div className="mt-2 flex items-center gap-2 text-amber-600 text-sm">
                 <AlertCircle className="w-4 h-4" />
-                Fator R abaixo de 28% — BUs sujeitas ao Fator R serão tributadas pelo Anexo V (alíquotas maiores, a partir de 15,5%)
+                Fator R abaixo de 28% — BUs não sujeitas ao Fator R serão tributadas pelo Anexo V (alíquotas maiores, a partir de 15,5%)
               </div>
             )}
           </CardContent>
