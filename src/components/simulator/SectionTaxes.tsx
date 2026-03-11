@@ -339,26 +339,37 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
                       {regime === 'simples_nacional' && (
                         <>
                           <td className="py-2 px-2 text-center">
-                            {bu.sujeitoFatorR ? (
-                              <Badge variant="outline" className="text-xs">
-                                {anexoEfetivo} <span className="text-muted-foreground ml-1">(FR)</span>
-                              </Badge>
-                            ) : (
-                              <Select
-                                value={bu.anexoSimples}
-                                onValueChange={v => updateBU(idx, { anexoSimples: v as AnexoSimples })}
-                                disabled={!isAdmin}
-                              >
-                                <SelectTrigger className="w-20 h-8 text-xs">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="III">III</SelectItem>
-                                  <SelectItem value="IV">IV</SelectItem>
-                                  <SelectItem value="V">V</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            )}
+                            <div className="flex justify-center">
+                              {bu.sujeitoFatorR ? (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="outline" className="text-xs cursor-help">
+                                        {anexoEfetivo} <span className="text-muted-foreground ml-1">(FR)</span>
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      Anexo definido pelo Fator R (relação folha/receita). Fator R ≥ 28% → Anexo III, senão Anexo V.
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              ) : (
+                                <Select
+                                  value={bu.anexoSimples}
+                                  onValueChange={v => updateBU(idx, { anexoSimples: v as AnexoSimples })}
+                                  disabled={!isAdmin}
+                                >
+                                  <SelectTrigger className="w-20 h-8 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="III">III</SelectItem>
+                                    <SelectItem value="IV">IV</SelectItem>
+                                    <SelectItem value="V">V</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </div>
                           </td>
                           <td className="py-2 px-2 text-center">
                             <input
