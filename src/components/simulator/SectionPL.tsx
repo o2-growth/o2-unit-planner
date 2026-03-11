@@ -112,7 +112,7 @@ function LabelWithTooltip({ label, tooltip }: { label: string; tooltip?: string 
   );
 }
 
-export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbitda, goals, proLaboreMode, socios, onProLaboreModeChange, onFixedCostsChange, onVariableCostsChange, onBelowEbitdaChange, onSociosChange }: Props) {
+export function SectionPL({ projections, fixedCosts, variableCostRates, belowEbitda, goals, proLaboreMode, socios, regime, onProLaboreModeChange, onFixedCostsChange, onVariableCostsChange, onBelowEbitdaChange, onSociosChange }: Props) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     receita: false,
     saas: false,
