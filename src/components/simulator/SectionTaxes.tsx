@@ -4,11 +4,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SectionHeader } from './SectionHeader';
 import { CurrencyInput } from './CurrencyInput';
-import { Lock, Info, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react';
+import { Info, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useState, useMemo } from 'react';
 import type { TaxesData, BUTaxConfig, TipoReceita, AnexoSimples, MonthlyProjection } from '@/types/simulator';
 import { calcAliquotaEfetiva, sugerirAnexo, getFaixaLabel, excedeSimples } from '@/lib/simplesNacional';
@@ -42,6 +43,7 @@ interface Props {
 export function SectionTaxes({ data, onChange, projections }: Props) {
   const { isAdmin } = useAuth();
   const [resultOpen, setResultOpen] = useState(false);
+  const [pendingRegime, setPendingRegime] = useState<string | null>(null);
 
   const regime = data.regime || 'lucro_presumido';
   const bus = data.bus || [];
@@ -108,12 +110,6 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
         description="Configure regime, faturamento por BU e tributação específica."
       />
 
-      {!isAdmin && (
-        <Badge variant="outline" className="text-xs gap-1 mb-4 w-fit">
-          <Lock className="w-3 h-3" /> Somente Admin
-        </Badge>
-      )}
-
       {/* Regime Tributário */}
       <Card className="mb-4">
         <CardContent className="pt-6">
@@ -122,22 +118,43 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
             <Button
               variant={regime === 'lucro_presumido' ? 'default' : 'outline'}
               className={regime === 'lucro_presumido' ? 'bg-primary text-primary-foreground' : ''}
-              onClick={() => onChange({ ...data, regime: 'lucro_presumido' })}
-              disabled={!isAdmin}
+              onClick={() => {
+                if (regime !== 'lucro_presumido') setPendingRegime('lucro_presumido');
+              }}
             >
               Lucro Presumido
             </Button>
             <Button
               variant={regime === 'simples_nacional' ? 'default' : 'outline'}
               className={regime === 'simples_nacional' ? 'bg-primary text-primary-foreground' : ''}
-              onClick={() => onChange({ ...data, regime: 'simples_nacional' })}
-              disabled={!isAdmin}
+              onClick={() => {
+                if (regime !== 'simples_nacional') setPendingRegime('simples_nacional');
+              }}
             >
               Simples Nacional
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* AlertDialog de confirmação de troca de regime */}
+      <AlertDialog open={pendingRegime !== null} onOpenChange={open => { if (!open) setPendingRegime(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alterar Regime Tributário</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja alterar o regime para {pendingRegime === 'lucro_presumido' ? 'Lucro Presumido' : 'Simples Nacional'}?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Não</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (pendingRegime) onChange({ ...data, regime: pendingRegime as TaxesData['regime'] });
+              setPendingRegime(null);
+            }}>Sim</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Simples Nacional params */}
       {regime === 'simples_nacional' && (
@@ -206,12 +223,8 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                   <th className="text-left py-2 pr-2">BU</th>
                   <th className="text-center py-2 px-2">Faturamento/mês</th>
                   <th className="text-center py-2 px-2">Tipo Receita</th>
-                  <th className="text-center py-2 px-2">CNAE</th>
                   {regime === 'lucro_presumido' && (
-                    <>
-                      <th className="text-center py-2 px-2">ISS %</th>
-                      <th className="text-center py-2 px-2">Município</th>
-                    </>
+                    <th className="text-center py-2 px-2">ISS %</th>
                   )}
                   {regime === 'simples_nacional' && (
                     <>
@@ -270,17 +283,7 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                           </TooltipProvider>
                         )}
                       </td>
-                      <td className="py-2 px-2">
-                        <Input
-                          value={bu.cnae}
-                          onChange={e => updateBU(idx, { cnae: e.target.value })}
-                          placeholder="Ex: 6920-6/00"
-                          disabled={!isAdmin}
-                          className="w-28 h-8 text-xs text-center"
-                        />
-                      </td>
                       {regime === 'lucro_presumido' && (
-                        <>
                           <td className="py-2 px-2">
                             <Input
                               type="number" min={0} max={5} step={0.5}
@@ -290,16 +293,6 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                               className="w-16 h-8 text-xs text-center"
                             />
                           </td>
-                          <td className="py-2 px-2">
-                            <Input
-                              value={bu.municipioIss}
-                              onChange={e => updateBU(idx, { municipioIss: e.target.value })}
-                              placeholder="Município"
-                              disabled={!isAdmin}
-                              className="w-28 h-8 text-xs text-center"
-                            />
-                          </td>
-                        </>
                       )}
                       {regime === 'simples_nacional' && (
                         <>
@@ -344,7 +337,7 @@ export function SectionTaxes({ data, onChange, projections }: Props) {
                 <tr className="border-t font-semibold">
                   <td className="py-2 pr-2">Total</td>
                   <td className="py-2 px-2 text-center">{formatCurrencyCompact(faturamentoTotal)}</td>
-                  <td colSpan={regime === 'lucro_presumido' ? 4 : 3}></td>
+                  <td colSpan={regime === 'lucro_presumido' ? 2 : 3}></td>
                 </tr>
               </tfoot>
             </table>
