@@ -38,9 +38,11 @@ interface Props {
   data: TaxesData;
   onChange: (data: TaxesData) => void;
   projections?: MonthlyProjection[];
+  profileData?: ProfileData;
+  sociosData?: SociosConfig;
 }
 
-export function SectionTaxes({ data, onChange, projections }: Props) {
+export function SectionTaxes({ data, onChange, projections, profileData, sociosData }: Props) {
   const { isAdmin } = useAuth();
   const [resultOpen, setResultOpen] = useState(false);
   const [pendingRegime, setPendingRegime] = useState<string | null>(null);
