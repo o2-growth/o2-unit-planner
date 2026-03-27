@@ -407,6 +407,17 @@ export function SectionTaxes({ data, onChange, projections, profileData, sociosD
               </tfoot>
             </table>
           </div>
+
+          {regime === 'lucro_presumido' && (
+            <Alert className="mt-3 border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <AlertTitle className="text-amber-800 dark:text-amber-300 text-sm">Alíquotas de ISS padrão (referência SP)</AlertTitle>
+              <AlertDescription className="text-amber-700 dark:text-amber-400 text-xs">
+                CaaS: 5% · SaaS/Setup: 2,9%. A alíquota de ISS varia de 2% a 5% conforme o município. 
+                Ajuste os valores acima de acordo com a legislação do seu município.
+              </AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
 
