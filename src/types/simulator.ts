@@ -241,8 +241,8 @@ export const DEFAULT_TICKETS: ProductTicket[] = [
 
 export const DEFAULT_BUS: BUTaxConfig[] = [
   { buKey: 'caas', buNome: 'CaaS', tipoReceita: 'servico', cnae: '7020-4/00', municipioIss: '', aliquotaIss: 5, faturamentoBU: 0, anexoSimples: 'III', sujeitoFatorR: true },
-  { buKey: 'saas', buNome: 'SaaS', tipoReceita: 'software_assinatura', cnae: '', municipioIss: '', aliquotaIss: 3.5, faturamentoBU: 0, anexoSimples: 'III', sujeitoFatorR: false },
-  { buKey: 'setup', buNome: 'Setup', tipoReceita: 'software_assinatura', cnae: '', municipioIss: '', aliquotaIss: 3.5, faturamentoBU: 0, anexoSimples: 'III', sujeitoFatorR: false },
+  { buKey: 'saas', buNome: 'SaaS', tipoReceita: 'software_assinatura', cnae: '', municipioIss: '', aliquotaIss: 2.9, faturamentoBU: 0, anexoSimples: 'III', sujeitoFatorR: false },
+  { buKey: 'setup', buNome: 'Setup', tipoReceita: 'software_assinatura', cnae: '', municipioIss: '', aliquotaIss: 2.9, faturamentoBU: 0, anexoSimples: 'III', sujeitoFatorR: false },
 ];
 
 export const INITIAL_STATE: SimulatorState = {
