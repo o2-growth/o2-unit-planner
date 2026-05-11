@@ -22,38 +22,25 @@ interface GroupedData {
   groups: MonthlyProjection[][];
 }
 
-function groupProjections(projections: MonthlyProjection[], horizonte: number): GroupedData {
-  if (horizonte <= 12) {
-    return {
-      headers: projections.map(p => `Mês ${p.month}`),
-      groups: projections.map(p => [p]),
-    };
+/**
+ * Always returns month-by-month projections (no aggregation).
+ * For long horizons, the caller should paginate columns across multiple PDF pages.
+ */
+function groupProjections(projections: MonthlyProjection[], _horizonte: number): GroupedData {
+  return {
+    headers: projections.map(p => `Mês ${p.month}`),
+    groups: projections.map(p => [p]),
+  };
+}
+
+/** Split projections into pages of N months for PDF rendering. */
+const MONTHS_PER_PAGE = 12;
+function chunkProjections(projections: MonthlyProjection[], size = MONTHS_PER_PAGE): MonthlyProjection[][] {
+  const chunks: MonthlyProjection[][] = [];
+  for (let i = 0; i < projections.length; i += size) {
+    chunks.push(projections.slice(i, i + size));
   }
-
-  let groupSize: number;
-  let prefix: string;
-
-  if (horizonte <= 24) {
-    groupSize = 3;
-    prefix = 'Tri';
-  } else if (horizonte <= 48) {
-    groupSize = 6;
-    prefix = 'Sem';
-  } else {
-    groupSize = 12;
-    prefix = 'Ano';
-  }
-
-  const groups: MonthlyProjection[][] = [];
-  const headers: string[] = [];
-
-  for (let i = 0; i < projections.length; i += groupSize) {
-    const chunk = projections.slice(i, i + groupSize);
-    groups.push(chunk);
-    headers.push(`${prefix} ${groups.length}`);
-  }
-
-  return { headers, groups };
+  return chunks;
 }
 
 /** Sum a numeric field across a group of projections */
