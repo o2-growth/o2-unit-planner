@@ -22,38 +22,25 @@ interface GroupedData {
   groups: MonthlyProjection[][];
 }
 
-function groupProjections(projections: MonthlyProjection[], horizonte: number): GroupedData {
-  if (horizonte <= 12) {
-    return {
-      headers: projections.map(p => `Mês ${p.month}`),
-      groups: projections.map(p => [p]),
-    };
+/**
+ * Always returns month-by-month projections (no aggregation).
+ * For long horizons, the caller should paginate columns across multiple PDF pages.
+ */
+function groupProjections(projections: MonthlyProjection[], _horizonte: number): GroupedData {
+  return {
+    headers: projections.map(p => `Mês ${p.month}`),
+    groups: projections.map(p => [p]),
+  };
+}
+
+/** Split projections into pages of N months for PDF rendering. */
+const MONTHS_PER_PAGE = 12;
+function chunkProjections(projections: MonthlyProjection[], size = MONTHS_PER_PAGE): MonthlyProjection[][] {
+  const chunks: MonthlyProjection[][] = [];
+  for (let i = 0; i < projections.length; i += size) {
+    chunks.push(projections.slice(i, i + size));
   }
-
-  let groupSize: number;
-  let prefix: string;
-
-  if (horizonte <= 24) {
-    groupSize = 3;
-    prefix = 'Tri';
-  } else if (horizonte <= 48) {
-    groupSize = 6;
-    prefix = 'Sem';
-  } else {
-    groupSize = 12;
-    prefix = 'Ano';
-  }
-
-  const groups: MonthlyProjection[][] = [];
-  const headers: string[] = [];
-
-  for (let i = 0; i < projections.length; i += groupSize) {
-    const chunk = projections.slice(i, i + groupSize);
-    groups.push(chunk);
-    headers.push(`${prefix} ${groups.length}`);
-  }
-
-  return { headers, groups };
+  return chunks;
 }
 
 /** Sum a numeric field across a group of projections */
@@ -444,76 +431,71 @@ function drawExecutiveSummary(doc: any, state: SimulatorState, projections: Mont
 }
 
 function drawDREPage(doc: any, state: SimulatorState, projections: MonthlyProjection[], logo: string | null) {
-  doc.addPage('landscape');
-  const y = drawPageHeader(doc, logo, 'DRE Gerencial');
-
-  const { headers: groupHeaders, groups } = groupProjections(projections, state.horizonte);
-  const dreRows = buildDRERows(groups, projections, state);
-  const headers = ['', ...groupHeaders, 'Total'];
-  const body = dreRows.map(r => [r.label, ...r.values]);
-
-  const numCols = headers.length;
-  const fontSize = numCols <= 14 ? 5.5 : 5;
-  const cellPadding = numCols <= 14 ? 1.2 : 0.8;
-  const labelWidth = numCols <= 14 ? 38 : 34;
-
   const { default: autoTable } = (window as any).__autoTableModule;
+  const chunks = chunkProjections(projections);
+  const totalPages = chunks.length;
 
-  // Grouping footnote
-  let groupNote = '';
-  if (state.horizonte > 12 && state.horizonte <= 24) groupNote = 'Dados agrupados trimestralmente';
-  else if (state.horizonte > 24 && state.horizonte <= 48) groupNote = 'Dados agrupados semestralmente';
-  else if (state.horizonte > 48) groupNote = 'Dados agrupados anualmente';
+  chunks.forEach((chunk, pageIdx) => {
+    doc.addPage('landscape');
+    const titleSuffix = totalPages > 1
+      ? ` — Meses ${chunk[0].month} a ${chunk[chunk.length - 1].month} (${pageIdx + 1}/${totalPages})`
+      : '';
+    const y = drawPageHeader(doc, logo, `DRE Gerencial${titleSuffix}`);
 
-  autoTable(doc, {
-    startY: y,
-    head: [headers],
-    body,
-    styles: { fontSize, cellPadding, textColor: DARK, overflow: 'ellipsize' },
-    headStyles: { fillColor: GREEN_DARK, textColor: WHITE, fontSize: fontSize + 0.5, fontStyle: 'bold', halign: 'center' },
-    columnStyles: { 0: { cellWidth: labelWidth, fontStyle: 'normal', halign: 'left' } },
-    didParseCell: (data: any) => {
-      if (data.section !== 'body') return;
-      const dreRow = dreRows[data.row.index];
-      if (!dreRow) return;
+    // Each month becomes its own group → preserves month-by-month rendering.
+    const groups: MonthlyProjection[][] = chunk.map(p => [p]);
+    const groupHeaders = chunk.map(p => `Mês ${p.month}`);
+    const dreRows = buildDRERows(groups, projections, state);
+    const headers = ['', ...groupHeaders, 'Total Geral'];
+    const body = dreRows.map(r => [r.label, ...r.values]);
 
-      if (dreRow.style === 'subtotal') {
-        data.cell.styles.fillColor = SUBTOTAL_BG;
-        data.cell.styles.fontStyle = 'bold';
-        data.cell.styles.fontSize = fontSize + 0.3;
-      }
-      if (dreRow.style === 'result') {
-        data.cell.styles.fillColor = RESULT_BG;
-        data.cell.styles.fontStyle = 'bold';
-        data.cell.styles.fontSize = fontSize + 0.5;
-      }
-      if (dreRow.style === 'percent') {
-        data.cell.styles.fontStyle = 'italic';
-        data.cell.styles.textColor = [80, 80, 80];
-      }
-      if (data.column.index === headers.length - 1 && data.column.index > 0) {
-        const bg = Array.isArray(data.cell.styles.fillColor) ? data.cell.styles.fillColor : [255, 255, 255];
-        data.cell.styles.fillColor = [Math.max(bg[0] - 10, 200), Math.max(bg[1] - 5, 220), Math.max(bg[2] - 10, 200)];
-      }
-      if (data.column.index > 0) {
-        const raw = String(data.cell.raw);
-        if (raw.includes('-') && !raw.startsWith('(') && !raw.startsWith(' ')) {
-          data.cell.styles.textColor = [180, 30, 30];
+    const numCols = headers.length;
+    const fontSize = numCols <= 14 ? 6 : 5.5;
+    const cellPadding = numCols <= 14 ? 1.4 : 1;
+    const labelWidth = numCols <= 14 ? 42 : 38;
+
+    autoTable(doc, {
+      startY: y,
+      head: [headers],
+      body,
+      styles: { fontSize, cellPadding, textColor: DARK, overflow: 'ellipsize' },
+      headStyles: { fillColor: GREEN_DARK, textColor: WHITE, fontSize: fontSize + 0.5, fontStyle: 'bold', halign: 'center' },
+      columnStyles: { 0: { cellWidth: labelWidth, fontStyle: 'normal', halign: 'left' } },
+      didParseCell: (data: any) => {
+        if (data.section !== 'body') return;
+        const dreRow = dreRows[data.row.index];
+        if (!dreRow) return;
+
+        if (dreRow.style === 'subtotal') {
+          data.cell.styles.fillColor = SUBTOTAL_BG;
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fontSize = fontSize + 0.3;
         }
-        data.cell.styles.halign = 'right';
-      }
-    },
-    margin: { left: 10, right: 10 },
-    tableWidth: 'auto',
+        if (dreRow.style === 'result') {
+          data.cell.styles.fillColor = RESULT_BG;
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fontSize = fontSize + 0.5;
+        }
+        if (dreRow.style === 'percent') {
+          data.cell.styles.fontStyle = 'italic';
+          data.cell.styles.textColor = [80, 80, 80];
+        }
+        if (data.column.index === headers.length - 1 && data.column.index > 0) {
+          const bg = Array.isArray(data.cell.styles.fillColor) ? data.cell.styles.fillColor : [255, 255, 255];
+          data.cell.styles.fillColor = [Math.max(bg[0] - 10, 200), Math.max(bg[1] - 5, 220), Math.max(bg[2] - 10, 200)];
+        }
+        if (data.column.index > 0) {
+          const raw = String(data.cell.raw);
+          if (raw.includes('-') && !raw.startsWith('(') && !raw.startsWith(' ')) {
+            data.cell.styles.textColor = [180, 30, 30];
+          }
+          data.cell.styles.halign = 'right';
+        }
+      },
+      margin: { left: 8, right: 8 },
+      tableWidth: 'auto',
+    });
   });
-
-  if (groupNote) {
-    const pageW = doc.internal.pageSize.getWidth();
-    const tableEndY = (doc as any).lastAutoTable?.finalY || 180;
-    doc.setFontSize(7);
-    doc.setTextColor(...MUTED);
-    doc.text(`* ${groupNote}. Valores monetários somados; percentuais são médias do período.`, pageW / 2, tableEndY + 5, { align: 'center' });
-  }
 }
 
 function drawMRRPage(doc: any, state: SimulatorState, projections: MonthlyProjection[], logo: string | null) {
